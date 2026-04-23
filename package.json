@@ -5,26 +5,35 @@
   "scripts": {
     "build": "react-router build",
     "dev": "react-router dev",
-    "start": "react-router-serve ./build/server/index.js",
-    "typecheck": "react-router typegen && tsc"
+    "start": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "typecheck": "react-router typegen && tsc",
+    "cf-typegen": "wrangler types"
   },
   "dependencies": {
-    "@react-router/node": "7.14.0",
-    "@react-router/serve": "7.14.0",
+    "@react-router/cloudflare": "^7.14.2",
     "isbot": "^5.1.36",
     "pnpm": "^10.33.1",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
-    "react-router": "7.14.0"
+    "react-router": "7.14.2"
   },
   "devDependencies": {
-    "@react-router/dev": "7.14.0",
+    "@cloudflare/workers-types": "^4.20260423.1",
+    "@react-router/dev": "7.14.2",
     "@tailwindcss/vite": "^4.2.2",
-    "@types/node": "^22",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "tailwindcss": "^4.2.2",
     "typescript": "^5.9.3",
-    "vite": "^8.0.3"
+    "vite": "^8.0.3",
+    "wrangler": "^4.84.1"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild",
+      "workerd",
+      "sharp"
+    ]
   }
 }
