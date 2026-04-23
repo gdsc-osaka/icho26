@@ -20,6 +20,12 @@
 - Commit at every meaningful unit of progress (e.g., after completing a function, passing tests, finishing a component).
 - Push to the remote branch regularly to avoid losing work.
 
+## Pull Request
+
+- After completing each implementation Step (as defined in `specs/11-implementation-task-list-ai-chunks.md`), **verify that all completion criteria are met before creating a PR**.
+- Do not create a PR until the completion conditions are fully satisfied.
+- Include the completion criteria checklist in the PR body.
+
 ## Branch Strategy
 
 - **Never develop directly on the main branch.**
