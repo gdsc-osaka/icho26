@@ -14,6 +14,12 @@
 
 - When implementing important features (domain logic, API endpoints, state transitions, authentication), always add corresponding tests (unit/integration/e2e as appropriate).
 
+## Commit & Push
+
+- **Commit and push frequently during implementation.** Do not accumulate large uncommitted changes.
+- Commit at every meaningful unit of progress (e.g., after completing a function, passing tests, finishing a component).
+- Push to the remote branch regularly to avoid losing work.
+
 ## Branch Strategy
 
 - **Never develop directly on the main branch.**
