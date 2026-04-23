@@ -10,6 +10,10 @@
 - When writing code, always follow the skill defined in `.claude/skills/coding-rules.md/SKILL.md`.
 - When creating UI, always refer to `/design.md`.
 
+## Testing
+
+- When implementing important features (domain logic, API endpoints, state transitions, authentication), always add corresponding tests (unit/integration/e2e as appropriate).
+
 ## Branch Strategy
 
 - **Never develop directly on the main branch.**
