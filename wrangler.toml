@@ -10,11 +10,11 @@ directory = "build/client"
 [[d1_databases]]
 binding = "DB"
 database_name = "icho-game-prod-d1"
-database_id = ""
+database_id = "local"  # Terraform output から本番値を設定
 
 [[kv_namespaces]]
 binding = "CACHE"
-id = ""
+id = "local"  # Terraform output から本番値を設定
 
 [vars]
 ENV = "prod"
