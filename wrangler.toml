@@ -1,0 +1,20 @@
+#:schema node_modules/wrangler/config-schema.json
+name = "icho-game-prod-app"
+main = "build/server/index.js"
+compatibility_date = "2025-04-01"
+compatibility_flags = ["nodejs_compat"]
+
+[assets]
+directory = "build/client"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "icho-game-prod-d1"
+database_id = "local"  # Terraform output から本番値を設定
+
+[[kv_namespaces]]
+binding = "CACHE"
+id = "local"  # Terraform output から本番値を設定
+
+[vars]
+ENV = "prod"
