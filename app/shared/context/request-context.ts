@@ -1,4 +1,4 @@
-import type { AppEnv } from "../../../workers/bindings/env";
+import type { AppEnv } from "~/workers/bindings/env";
 import { createLogger, type Logger } from "./logger";
 import { getOrCreateRequestId } from "./request-id";
 

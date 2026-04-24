@@ -8,7 +8,13 @@
     "start": "wrangler dev",
     "deploy": "wrangler deploy",
     "typecheck": "react-router typegen && tsc",
-    "cf-typegen": "wrangler types"
+    "cf-typegen": "wrangler types",
+    "test": "vitest run",
+    "test:unit": "vitest run tests/unit",
+    "test:watch": "vitest",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate:local": "wrangler d1 execute icho-game-prod-d1 --local --file=db/migrations/0001_initial.sql",
+    "db:seed:local": "wrangler d1 execute icho-game-prod-d1 --local --file=db/seeds/0001_checkpoint_codes.sql"
   },
   "dependencies": {
     "@react-router/cloudflare": "^7.14.2",
@@ -25,10 +31,12 @@
     "@tailwindcss/vite": "^4.2.2",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
+    "@vitest/ui": "^4.1.5",
     "drizzle-kit": "^0.31.10",
     "tailwindcss": "^4.2.2",
     "typescript": "^5.9.3",
     "vite": "^8.0.3",
+    "vitest": "^4.1.5",
     "wrangler": "^4.84.1"
   },
   "pnpm": {
