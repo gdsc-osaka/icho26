@@ -5,9 +5,9 @@ import type { Clock } from "~/shared/ports/clock.port";
 import type { IdGenerator } from "~/shared/ports/id-generator.port";
 
 export interface AppContainer {
-  clock: Clock;
-  idGenerator: IdGenerator;
-  env: AppEnv;
+  readonly clock: Clock;
+  readonly idGenerator: IdGenerator;
+  readonly env: AppEnv;
 }
 
 export function getContainer(env: AppEnv): AppContainer {
