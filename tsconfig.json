@@ -14,7 +14,8 @@
     "jsx": "react-jsx",
     "rootDirs": [".", "./.react-router/types"],
     "paths": {
-      "~/*": ["./app/*"]
+      "~/*": ["./app/*"],
+      "~/workers/*": ["./workers/*"]
     },
     "esModuleInterop": true,
     "verbatimModuleSyntax": true,
