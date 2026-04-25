@@ -13,7 +13,8 @@ export default defineConfig({
   },
   test: {
     globals: true,
-    include: ["tests/**/*.test.ts", "app/**/*.test.ts"],
+    include: ["tests/**/*.test.ts", "tests/**/*.test.tsx", "app/**/*.test.ts", "app/**/*.test.tsx"],
+    setupFiles: ["./tests/setup.ts"],
     environment: "node",
   },
 });
