@@ -7,7 +7,7 @@ import {
   StageHeader,
   SystemPanel,
   TextInput,
-} from "~/shared/ui";
+} from "../shared/ui";
 
 export function meta({}: Route.MetaArgs) {
   return [
