@@ -7,7 +7,6 @@
 
 ## Coding Rules
 
-- When writing code, always follow the skill defined in `.claude/skills/coding-rules.md/SKILL.md`.
 - When creating UI, always refer to `/design.md`.
 
 ## Testing
