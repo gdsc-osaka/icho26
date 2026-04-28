@@ -17,9 +17,6 @@ importers:
       isbot:
         specifier: ^5.1.36
         version: 5.1.39
-      pnpm:
-        specifier: ^10.33.1
-        version: 10.33.1
       react:
         specifier: ^19.2.4
         version: 19.2.5
@@ -2111,11 +2108,6 @@ packages:
   pkg-types@2.3.0:
     resolution: {integrity: sha512-SIqCzDRg0s9npO5XQ3tNZioRY1uK06lA41ynBC1YmFTmnY6FjUjVt6s4LoADmwoig1qqD0oK8h1p/8mlMx8Oig==}
 
-  pnpm@10.33.1:
-    resolution: {integrity: sha512-Bbo8HV0cGPaN8GRw10BV5i1B/BEKDGYNsbLfsnhTJ/BM8PaDRdRgm8Ugief6A0PDFZOy+VlOLF1dpCYjCsyYIA==}
-    engines: {node: '>=18.12'}
-    hasBin: true
-
   postcss@8.5.10:
     resolution: {integrity: sha512-pMMHxBOZKFU6HgAZ4eyGnwXF/EvPGGqUr0MnZ5+99485wwW41kW91A4LOGxSHhgugZmSChL5AlElNdwlNgcnLQ==}
     engines: {node: ^10 || ^12 || >=14}
@@ -4050,8 +4042,6 @@ snapshots:
       confbox: 0.2.4
       exsolve: 1.0.8
       pathe: 2.0.3
-
-  pnpm@10.33.1: {}
 
   postcss@8.5.10:
     dependencies:
