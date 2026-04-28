@@ -1,5 +1,6 @@
 import { eq } from "drizzle-orm";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
+import { redirect } from "react-router";
 import * as schema from "../../../db/schema";
 
 const SESSION_COOKIE_NAME = "operator_session";
@@ -56,6 +57,17 @@ export async function verifySession(
   if (session.revokedAt !== null) return null;
   if (session.expiresAt <= new Date().toISOString()) return null;
   return { operatorId: session.operatorId };
+}
+
+export async function requireOperatorSession(
+  request: Request,
+  db: DrizzleD1Database<typeof schema>,
+): Promise<{ operatorId: string }> {
+  const sessionId = getSessionIdFromRequest(request);
+  if (!sessionId) throw redirect("/operator/login");
+  const session = await verifySession(db, sessionId);
+  if (!session) throw redirect("/operator/login");
+  return session;
 }
 
 export function generateSessionId(): string {

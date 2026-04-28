@@ -4,6 +4,7 @@ import * as schema from "../../db/schema";
 import { GlowButton, StageHeader, SystemPanel } from "~/components";
 import { createUser } from "~/lib/operator/mutations";
 import { listUsers } from "~/lib/operator/queries";
+import { requireOperatorSession } from "~/lib/operator/session";
 import type { Route } from "./+types/operator.dashboard";
 
 export function meta() {
@@ -19,12 +20,14 @@ export async function loader({ context }: Route.LoaderArgs) {
 
 export async function action({ request, context }: Route.ActionArgs) {
   const env = context.cloudflare.env;
+  const db = drizzle(env.DB, { schema });
+  await requireOperatorSession(request, db);
+
   const formData = await request.formData();
   const intent = String(formData.get("_action") ?? "");
 
   if (intent === "create-user") {
     const groupId = `g_${crypto.randomUUID()}`;
-    const db = drizzle(env.DB, { schema });
     await createUser(db, { groupId, now: new Date().toISOString() });
     return { issuedGroupId: groupId } as const;
   }
