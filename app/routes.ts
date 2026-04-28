@@ -19,5 +19,6 @@ export default [
   route("operator/login", "routes/operator.login.tsx"),
   layout("routes/operator.tsx", [
     route("operator/dashboard", "routes/operator.dashboard.tsx"),
+    route("operator/group/:groupId", "routes/operator.group.$groupId.tsx"),
   ]),
 ] satisfies RouteConfig;
