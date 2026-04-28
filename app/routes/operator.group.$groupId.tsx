@@ -1,3 +1,4 @@
+import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { Form, useActionData, useLoaderData } from "react-router";
 import * as schema from "../../db/schema";
@@ -40,6 +41,19 @@ export async function action({
   const env = context.cloudflare.env;
   const db = drizzle(env.DB, { schema });
   const session = await requireOperatorSession(request, db);
+
+  // Validate group existence before any mutation. Without this check
+  // an INSERT into operator_actions would orphan an audit row whose
+  // group_id never resolved to a user, because actions run before
+  // their loader's 404 is raised in React Router v7.
+  const existing = await db
+    .select({ groupId: schema.users.groupId })
+    .from(schema.users)
+    .where(eq(schema.users.groupId, params.groupId))
+    .limit(1);
+  if (existing.length === 0) {
+    throw new Response("Group not found", { status: 404 });
+  }
 
   const formData = await request.formData();
   const intent = String(formData.get("_action") ?? "");
