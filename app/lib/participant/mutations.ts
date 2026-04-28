@@ -13,25 +13,8 @@ import type {
   UserRow,
 } from "./types";
 
-export async function createUser(
-  db: DrizzleD1Database,
-  groupId: string,
-  now: string,
-): Promise<UserRow> {
-  await db.insert(users).values({
-    groupId,
-    currentStage: "START",
-    q1Order: null,
-    createdAt: now,
-    updatedAt: now,
-  });
-  const [row] = await db
-    .select()
-    .from(users)
-    .where(eq(users.groupId, groupId))
-    .limit(1);
-  return row;
-}
+// `createUser` lives in `~/lib/shared/users.ts` — both participant /start and
+// operator dashboard share the same insertion path.
 
 function eventToProgressLog(
   groupId: string,

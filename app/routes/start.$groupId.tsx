@@ -1,7 +1,8 @@
 import { drizzle } from "drizzle-orm/d1";
 import { redirect } from "react-router";
-import { applyTransition, createUser } from "~/lib/participant/mutations";
+import { applyTransition } from "~/lib/participant/mutations";
 import { findUserByGroupId } from "~/lib/participant/queries";
+import { createUser } from "~/lib/shared/users";
 import { setGroupIdCookie, type AppEnv } from "~/lib/participant/session";
 import { startOrResume } from "~/lib/participant/transitions";
 import type { Q1Order } from "~/lib/participant/types";

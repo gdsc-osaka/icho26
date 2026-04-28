@@ -2,9 +2,9 @@ import { drizzle } from "drizzle-orm/d1";
 import { Form, Link, useActionData, useLoaderData } from "react-router";
 import * as schema from "../../db/schema";
 import { GlowButton, StageHeader, SystemPanel } from "~/components";
-import { createUser } from "~/lib/operator/mutations";
 import { listUsers } from "~/lib/operator/queries";
 import { requireOperatorSession } from "~/lib/operator/session";
+import { createUser } from "~/lib/shared/users";
 import type { Route } from "./+types/operator.dashboard";
 
 export function meta() {
@@ -28,7 +28,7 @@ export async function action({ request, context }: Route.ActionArgs) {
 
   if (intent === "create-user") {
     const groupId = `g_${crypto.randomUUID()}`;
-    await createUser(db, { groupId, now: new Date().toISOString() });
+    await createUser(db, groupId, new Date().toISOString());
     return { issuedGroupId: groupId } as const;
   }
 

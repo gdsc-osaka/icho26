@@ -31,20 +31,7 @@ export async function revokeSession(
     );
 }
 
-export async function createUser(
-  db: DrizzleD1Database<typeof schema>,
-  params: { groupId: string; now: string },
-): Promise<void> {
-  await db.insert(schema.users).values({
-    groupId: params.groupId,
-    currentStage: "START",
-    q1_1Cleared: 0,
-    q1_2Cleared: 0,
-    q2Cleared: 0,
-    createdAt: params.now,
-    updatedAt: params.now,
-  });
-}
+// `createUser` lives in `~/lib/shared/users.ts` — see that module.
 
 export async function correctStatus(
   db: DrizzleD1Database<typeof schema>,
