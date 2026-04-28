@@ -9,6 +9,7 @@ import {
 import {
   ErrorAlert,
   GlowButton,
+  HintChat,
   StageHeader,
   SystemPanel,
   TextInput,
@@ -135,6 +136,8 @@ export default function Q2() {
       >
         BACK
       </Link>
+
+      <HintChat />
     </main>
   );
 }

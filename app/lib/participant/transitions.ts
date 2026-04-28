@@ -295,6 +295,41 @@ export function applyQ3Code(
 }
 
 /**
+ * Mark the epilogue as viewed. Transitions `FAKE_END` → `COMPLETE` and
+ * stamps `epilogueViewedAt` + `completedAt`. Idempotent: if the user has
+ * already viewed the epilogue, returns the user unchanged with no events.
+ */
+export function markEpilogueViewed(
+  user: UserRow,
+  now: string,
+): { user: UserRow; events: ProgressEvent[] } {
+  if (user.currentStage === "COMPLETE") {
+    // Already viewed — no-op, keeps re-visits cheap.
+    return { user, events: [] };
+  }
+  if (user.currentStage !== "FAKE_END") {
+    throw new TransitionError(
+      "INVALID_STAGE",
+      `Epilogue rejected: current stage is ${user.currentStage}`,
+    );
+  }
+  const updated: UserRow = {
+    ...user,
+    currentStage: "COMPLETE",
+    epilogueViewedAt: now,
+    completedAt: user.completedAt ?? now,
+    updatedAt: now,
+  };
+  return {
+    user: updated,
+    events: [
+      { type: "EPILOGUE_VIEWED" },
+      { type: "STAGE_TRANSITION", from: "FAKE_END", to: "COMPLETE" },
+    ],
+  };
+}
+
+/**
  * Apply a Q4 answer submission. Correct → transition to `FAKE_END`.
  */
 export function applyQ4Answer(

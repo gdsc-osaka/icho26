@@ -1,8 +1,5 @@
 import { Link, useLoaderData } from "react-router";
-import {
-  StageHeader,
-  SystemPanel,
-} from "~/components";
+import { HintChat, StageHeader, SystemPanel } from "~/components";
 import { requireParticipant, type AppEnv } from "~/lib/participant/session";
 import { unlockedSub } from "~/lib/participant/transitions";
 import type { Route } from "./+types/q1";
@@ -46,6 +43,7 @@ export default function Q1Hub() {
           unlocked={data.unlocked === "Q1_2"}
         />
       </div>
+      <HintChat />
     </main>
   );
 }

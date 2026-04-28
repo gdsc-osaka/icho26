@@ -3,6 +3,7 @@ import { Form, redirect, useActionData } from "react-router";
 import {
   ErrorAlert,
   GlowButton,
+  HintChat,
   StageHeader,
   SystemPanel,
   TextInput,
@@ -98,6 +99,8 @@ export default function Q3Keyword() {
           SUBMIT
         </GlowButton>
       </Form>
+
+      <HintChat />
     </main>
   );
 }
