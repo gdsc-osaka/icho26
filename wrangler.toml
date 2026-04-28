@@ -11,6 +11,7 @@ directory = "build/client"
 binding = "DB"
 database_name = "icho26"
 database_id = "00000000-0000-0000-0000-000000000000"
+migrations_dir = "db/migrations"
 
 [[kv_namespaces]]
 binding = "CACHE"
