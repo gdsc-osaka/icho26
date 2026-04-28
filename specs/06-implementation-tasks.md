@@ -198,25 +198,28 @@ Step 7: CI + 本番デプロイ整備
 
 ---
 
-## Step 7: CI + 本番デプロイ整備
+## Step 7: インフラ + CI + 本番デプロイ整備
 
-> 目的: PR チェックと本番デプロイを自動化する
+> 目的: Cloudflare リソースを Terraform で構築し、PR チェックと本番デプロイを自動化する
 
 参照: `05-ci-deploy.md`
 
-ブランチ例: `chore/ci-deploy`
+ブランチ例: `chore/infra-ci-deploy`
 
 ### 作業
 
-1. `.github/workflows/ci.yml` を作成(typecheck + test + build)
-2. `.github/workflows/deploy.yml` を作成(main push でマイグレーション適用 + `wrangler deploy`)
-3. Cloudflare ダッシュボードで本番 D1 / KV を作成し、ID を `wrangler.toml` に記述
-4. GitHub Secrets に `CLOUDFLARE_API_TOKEN` / `CLOUDFLARE_ACCOUNT_ID` を登録
-5. seed を本番に投入(運営パスワードハッシュ + checkpoint コード)
-6. 受け入れチェックリスト(`05` §8)を実機で実施
+1. `terraform/` 配下に `main.tf` / `outputs.tf` / `variables.tf` を作成(Cloudflare D1 + KV)
+2. `terraform init` → `terraform apply` を手動実行し、本番 D1 / KV を作成
+3. `terraform output` の値を `wrangler.toml` の `database_id` / `id` に転記してコミット
+4. `.github/workflows/ci.yml` を作成(typecheck + test + build)
+5. `.github/workflows/deploy.yml` を作成(main push でマイグレーション適用 + `wrangler deploy`)
+6. GitHub Secrets に `CLOUDFLARE_API_TOKEN` / `CLOUDFLARE_ACCOUNT_ID` を登録
+7. seed を本番に投入(運営パスワードハッシュ + checkpoint コード)
+8. 受け入れチェックリスト(`05` §8)を実機で実施
 
 ### 完了条件
 
+- `terraform apply` が冪等に成功する(2 回目以降の `plan` で差分なし)
 - PR で CI が green になる
 - main マージで本番が自動更新される
 - 本番 URL で開始 → 完走 → 運営ダッシュボード操作の主要フローが動く

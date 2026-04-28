@@ -33,6 +33,7 @@
 | パッケージマネージャ | pnpm |
 | ローカル開発 | Wrangler (`pnpm dev`) |
 | テスト | Vitest |
+| インフラ管理 | Terraform(Cloudflare D1 / KV のリソース宣言) |
 
 ## 4. アーキテクチャ方針
 
@@ -144,7 +145,7 @@ public/                    # 静的ファイル
 | 02 | UI / デザイン基盤 | デザイントークン、共通 UI atoms、フォント |
 | 03 | 参加者 feature | `lib/participant/` + 関連ルート + UI(BE と UI を同一仕様で扱う) |
 | 04 | 運営者 feature | `lib/operator/` + 認証 + ダッシュボード(BE と UI を同一仕様で扱う) |
-| 05 | CI / デプロイ | GitHub Actions、Wrangler 設定 |
+| 05 | インフラ・CI・デプロイ | Terraform(Cloudflare D1/KV)、GitHub Actions、Wrangler |
 | 06 | 実装タスク一覧 | feature 単位の vertical slice を依存順に Step 化したロードマップ |
 
 ### 現状の実装状況(2026-04-29 時点)
