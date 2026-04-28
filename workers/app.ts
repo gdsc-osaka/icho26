@@ -1,7 +1,9 @@
+import type { AppEnv } from "~/lib/shared/env";
+
 declare module "react-router" {
   interface AppLoadContext {
     cloudflare: {
-      env: Env;
+      env: AppEnv;
       ctx: ExecutionContext;
     };
   }
