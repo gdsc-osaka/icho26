@@ -159,3 +159,171 @@ export function applyQ1Checkpoint(
 
   return { user: updated, events };
 }
+
+/**
+ * Validate a Q2 answer submission. Same gated semantics as Q1: a correct
+ * answer alone does not advance state — checkpoint visit is required.
+ */
+export function applyQ2Answer(
+  user: UserRow,
+  correct: boolean,
+  _now: string,
+): { user: UserRow; events: ProgressEvent[] } {
+  if (user.currentStage !== "Q2") {
+    throw new TransitionError(
+      "INVALID_STAGE",
+      `Q2 answer rejected: current stage is ${user.currentStage}`,
+    );
+  }
+  return {
+    user,
+    events: [
+      {
+        type: correct ? "ANSWER_CORRECT" : "ANSWER_INCORRECT",
+        stage: "Q2",
+      },
+    ],
+  };
+}
+
+/**
+ * Apply a Q2 checkpoint visit. Sets `q2Cleared` and transitions to
+ * `Q3_KEYWORD`. Caller verifies the checkpoint code and prior correct answer.
+ */
+export function applyQ2Checkpoint(
+  user: UserRow,
+  hasCorrectAnswer: boolean,
+  now: string,
+): { user: UserRow; events: ProgressEvent[] } {
+  if (user.currentStage !== "Q2") {
+    throw new TransitionError(
+      "INVALID_STAGE",
+      `Q2 checkpoint rejected: current stage is ${user.currentStage}`,
+    );
+  }
+  if (!hasCorrectAnswer) {
+    throw new TransitionError(
+      "MISSING_ANSWER",
+      "Q2 checkpoint requires a prior correct answer",
+    );
+  }
+
+  const updated: UserRow = {
+    ...user,
+    q2Cleared: 1,
+    currentStage: "Q3_KEYWORD",
+    updatedAt: now,
+  };
+
+  return {
+    user: updated,
+    events: [
+      { type: "CHECKPOINT_COMPLETED", stage: "Q2" },
+      { type: "STAGE_TRANSITION", from: "Q2", to: "Q3_KEYWORD" },
+    ],
+  };
+}
+
+/**
+ * Apply a Q3 keyword submission. Correct → transition to `Q3_CODE`.
+ * Q3 has no physical checkpoint — the in-room exploration itself is the
+ * gate, so the answer alone advances state.
+ */
+export function applyQ3Keyword(
+  user: UserRow,
+  correct: boolean,
+  now: string,
+): { user: UserRow; events: ProgressEvent[] } {
+  if (user.currentStage !== "Q3_KEYWORD") {
+    throw new TransitionError(
+      "INVALID_STAGE",
+      `Q3 keyword rejected: current stage is ${user.currentStage}`,
+    );
+  }
+  if (!correct) {
+    return {
+      user,
+      events: [{ type: "ANSWER_INCORRECT", stage: "Q3_KEYWORD" }],
+    };
+  }
+  const updated: UserRow = {
+    ...user,
+    currentStage: "Q3_CODE",
+    updatedAt: now,
+  };
+  return {
+    user: updated,
+    events: [
+      { type: "ANSWER_CORRECT", stage: "Q3_KEYWORD" },
+      { type: "STAGE_TRANSITION", from: "Q3_KEYWORD", to: "Q3_CODE" },
+    ],
+  };
+}
+
+/**
+ * Apply a Q3 numeric code submission. Correct → transition to `Q4`.
+ */
+export function applyQ3Code(
+  user: UserRow,
+  correct: boolean,
+  now: string,
+): { user: UserRow; events: ProgressEvent[] } {
+  if (user.currentStage !== "Q3_CODE") {
+    throw new TransitionError(
+      "INVALID_STAGE",
+      `Q3 code rejected: current stage is ${user.currentStage}`,
+    );
+  }
+  if (!correct) {
+    return {
+      user,
+      events: [{ type: "ANSWER_INCORRECT", stage: "Q3_CODE" }],
+    };
+  }
+  const updated: UserRow = {
+    ...user,
+    currentStage: "Q4",
+    updatedAt: now,
+  };
+  return {
+    user: updated,
+    events: [
+      { type: "ANSWER_CORRECT", stage: "Q3_CODE" },
+      { type: "STAGE_TRANSITION", from: "Q3_CODE", to: "Q4" },
+    ],
+  };
+}
+
+/**
+ * Apply a Q4 answer submission. Correct → transition to `FAKE_END`.
+ */
+export function applyQ4Answer(
+  user: UserRow,
+  correct: boolean,
+  now: string,
+): { user: UserRow; events: ProgressEvent[] } {
+  if (user.currentStage !== "Q4") {
+    throw new TransitionError(
+      "INVALID_STAGE",
+      `Q4 answer rejected: current stage is ${user.currentStage}`,
+    );
+  }
+  if (!correct) {
+    return {
+      user,
+      events: [{ type: "ANSWER_INCORRECT", stage: "Q4" }],
+    };
+  }
+  const updated: UserRow = {
+    ...user,
+    currentStage: "FAKE_END",
+    updatedAt: now,
+  };
+  return {
+    user: updated,
+    events: [
+      { type: "ANSWER_CORRECT", stage: "Q4" },
+      { type: "STAGE_TRANSITION", from: "Q4", to: "FAKE_END" },
+    ],
+  };
+}
