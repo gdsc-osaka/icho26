@@ -122,14 +122,14 @@ Step 7: CI + 本番デプロイ整備
 
 > 目的: 体験を最後まで完走できる状態にする
 
-参照: `03-participant-feature.md` §2(`/fake-end`、`/complete`、`/complete/epilogue`、`/complete/explain`、`/complete/report`)
+参照: `03-participant-feature.md` §2(`/release`、`/complete`、`/complete/epilogue`、`/complete/explain`、`/complete/report`)
 
 ブランチ例: `feat/participant-end-flow`
 
 ### 作業
 
 1. `transitions.ts` に `markEpilogueViewed` を追加、unit テスト
-2. `routes/fake-end.tsx`(タイプライター演出)
+2. `routes/release.tsx`(`/release`、タイプライター演出。URL でネタバレしないよう `fake-end` ではなく `release` を採用)
 3. `routes/complete.tsx`(エピローグ・解説・報告へのリンクハブ)
 4. `routes/complete.epilogue.tsx`(`docs/story.md` のエピローグ全文 + グリッチ演出 + 警告色フラッシュ)
 5. `routes/complete.explain.tsx`(ギミック解説のプレースホルダ。本番テキストは別途確定)
@@ -138,7 +138,7 @@ Step 7: CI + 本番デプロイ整備
 
 ### 完了条件
 
-- `FAKE_END` 到達後、`/fake-end` → `/complete` → `/complete/epilogue` で `epilogue_viewed_at` がセットされる
+- `FAKE_END` 到達後、`/release` → `/complete` → `/complete/epilogue` で `epilogue_viewed_at` がセットされる
 - エピローグ閲覧前は `markEpilogueViewed` が拒否される(unit)
 - 全画面が縦持ちスマホで崩れない(手動確認)
 

@@ -150,7 +150,7 @@ CI で実行するのは unit + integration のみ。
 
 - [ ] `/start/:groupId` で開始 → `/q1` 到達
 - [ ] Q1 サブ問題ランダム順序が固定される(再開で再抽選されない)
-- [ ] 全問正解で `/fake-end` → `/complete` → `/complete/epilogue` まで到達
+- [ ] 全問正解で `/release` → `/complete` → `/complete/epilogue` まで到達
 - [ ] `/operator/login` でログイン成功 → ダッシュボード表示
 - [ ] 新規 ID 発行 → コピーした URL でセッション開始
 - [ ] グループ詳細でステータス補正 + 報告済み付与が反映される

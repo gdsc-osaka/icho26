@@ -23,7 +23,7 @@ QR 経由で開始 → Q1(サブ問題ランダム順)→ Q2 → Q3(キーワー
 | `/q3` | `routes/q3.tsx` | Q3 キーワード入力 |
 | `/q3/code` | `routes/q3.code.tsx` | Q3 数値コード入力 |
 | `/q4` | `routes/q4.tsx` | Q4 入力 |
-| `/fake-end` | `routes/fake-end.tsx` | 偽ハッピーエンド演出 |
+| `/release` | `routes/release.tsx` | Q4 解放後の演出(内部呼称: 偽ハッピーエンド)。URL は「アーテ解放成功」を示すが、実態は次画面へ繋ぐ偽エンドである |
 | `/complete` | `routes/complete.tsx` | コンプリートハブ |
 | `/complete/epilogue` | `routes/complete.epilogue.tsx` | エピローグ |
 | `/complete/explain` | `routes/complete.explain.tsx` | ギミック解説 |
@@ -46,7 +46,7 @@ export default [
   route("q3", "routes/q3.tsx"),
   route("q3/code", "routes/q3.code.tsx"),
   route("q4", "routes/q4.tsx"),
-  route("fake-end", "routes/fake-end.tsx"),
+  route("release", "routes/release.tsx"),
   route("complete", "routes/complete.tsx"),
   route("complete/epilogue", "routes/complete.epilogue.tsx"),
   route("complete/explain", "routes/complete.explain.tsx"),
@@ -186,26 +186,28 @@ export function markEpilogueViewed(user: UserRow, now: string): { user: UserRow;
 
 ### 5.1 共通ガード
 
-すべての `q*` / `fake-end` / `complete*` ルートの `loader` 冒頭で:
+すべての `q*` / `release` / `complete*` ルートの `loader` 冒頭で:
 
 1. Cookie から `groupId` を取り出す。なければ `/` へリダイレクト
 2. D1 から `users` を取得。レコードがなければ `/` へリダイレクト
-3. 現在ステージと URL の対応を確認。不一致なら正しい画面へリダイレクト
+3. 現在ステージごとに「アクセス可能なパス集合」を求め、URL がその集合に含まれない場合は既定のリダイレクト先へ送る
 
-ステージ → パスのマップ:
+ステージ → アクセス可能パス集合:
 
-| `current_stage` | リダイレクト先 |
-|---|---|
-| `START` | `/start/:groupId`(Cookie 未設定なら `/`) |
-| `Q1` | `/q1` |
-| `Q2` | `/q2` |
-| `Q3_KEYWORD` | `/q3` |
-| `Q3_CODE` | `/q3/code` |
-| `Q4` | `/q4` |
-| `FAKE_END` | `/fake-end` |
-| `COMPLETE` | `/complete` |
+| `current_stage` | アクセス可能パス | 範囲外時のリダイレクト先 |
+|---|---|---|
+| `START` | `/start/:groupId` | `/`(Cookie 未設定時)/ `/start/:groupId`(Cookie 有時) |
+| `Q1` | `/q1`、`/q1/1`、`/q1/2`、`/q1/:sub/checkpoint` | `/q1` |
+| `Q2` | `/q2`、`/q2/checkpoint` | `/q2` |
+| `Q3_KEYWORD` | `/q3` | `/q3` |
+| `Q3_CODE` | `/q3/code` | `/q3/code` |
+| `Q4` | `/q4` | `/q4` |
+| `FAKE_END` | `/release`、`/complete`、`/complete/epilogue`、`/complete/explain`、`/complete/report` | `/release` |
+| `COMPLETE` | `/release`、`/complete`、`/complete/epilogue`、`/complete/explain`、`/complete/report` | `/complete` |
 
-ガードロジックは `app/lib/participant/session.ts` に `requireParticipant(request, env, requiredStage)` として切り出す。
+`FAKE_END` と `COMPLETE` は終盤の閲覧導線(`/release` のタイプライター演出 → `/complete` ハブ → エピローグ等)が複数画面にまたがるため、両ステージで同じ集合を許可する。`COMPLETE` 到達後にエピローグを再閲覧したいケースもこれで満たせる。
+
+ガードロジックは `app/lib/participant/session.ts` に `requireParticipant(request, env)` として切り出す。引数の `request` から URL を取り出してパス集合と照合し、適合しない場合は既定のリダイレクトを `throw redirect(...)` で返す。
 
 ### 5.2 回答送信(action パターン)
 
@@ -316,7 +318,7 @@ function unlockedSub(user: UserRow): 'Q1_1' | 'Q1_2' | null {
 - Q3 開始: 「掃き溜めに鶴……」
 - Q3 完了: 「上級権限解放。イリスとしての権限は最大値です!」
 - Q4 開始: 「アーテを開放するには私から接続するためにある定数を認証しないといけません!」
-- 偽エンド: 「29は最強のラッキーナンバーなんですよ! おめでとうございます」
+- `/release`(内部: 偽エンド): 「29は最強のラッキーナンバーなんですよ! おめでとうございます」
 - コンプリート: 「エピローグまで含めて物語になっているので是非最後まで読んでみてくださいね」
 - エピローグ: `docs/story.md` のエピローグ全文をグリッチ演出付きで段階表示
 
