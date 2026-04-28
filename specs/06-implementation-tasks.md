@@ -86,6 +86,15 @@ Step 7: CI + 本番デプロイ整備
 9. `app/routes.ts` に上記ルートを登録
 10. ストーリーテキスト(`docs/story.md` 参照)を Q1 開始・完了で表示
 
+### 前提セットアップ
+
+- `db/seed/checkpoint-codes.sql` は **先行タスク(`feat/seed-checkpoint-codes`)で実装済み**。Step 2 では新規作成しない
+- ローカル動作確認時は以下のコマンドで投入してから checkpoint テストを行う
+
+  ```bash
+  wrangler d1 execute <database-name> --local --file=db/seed/checkpoint-codes.sql
+  ```
+
 ### 完了条件
 
 - ローカルで QR(または直リンク)から `/start/:groupId` を開いて開始できる
@@ -163,7 +172,7 @@ Step 7: CI + 本番デプロイ整備
 7. `routes/operator.tsx`(レイアウト + 認証ガード loader)
 8. `routes/operator.dashboard.tsx`(一覧表示 + 新規 ID 発行)
 9. `routes.ts` に運営ルートを登録
-10. seed スクリプト(運営パスワードハッシュ + checkpoint コード)を `db/seed/` に追加
+10. seed スクリプト(運営パスワードハッシュ)を `db/seed/operator.sql` に追加。`checkpoint_codes` 用 `db/seed/checkpoint-codes.sql` は **先行タスク(`feat/seed-checkpoint-codes`)で実装済みのため Step 5 の対象外**
 
 ### 完了条件
 
