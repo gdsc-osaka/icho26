@@ -9,9 +9,9 @@ directory = "build/client"
 
 [[d1_databases]]
 binding = "DB"
-database_name = ""
-database_id = ""
+database_name = "icho26"
+database_id = "00000000-0000-0000-0000-000000000000"
 
 [[kv_namespaces]]
 binding = "CACHE"
-id = ""
+id = "00000000000000000000000000000000"
