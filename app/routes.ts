@@ -13,7 +13,12 @@ export default [
   route("q1/1", "routes/q1.1.tsx"),
   route("q1/2", "routes/q1.2.tsx"),
   route("q1/:sub/checkpoint", "routes/q1.$sub.checkpoint.tsx"),
-  // Q2 / Q3 / Q4 / release / complete are added in Step 3 / Step 4.
+  route("q2", "routes/q2.tsx"),
+  route("q2/checkpoint", "routes/q2.checkpoint.tsx"),
+  route("q3", "routes/q3.tsx"),
+  route("q3/code", "routes/q3.code.tsx"),
+  route("q4", "routes/q4.tsx"),
+  // /release and /complete* are added in Step 4.
 
   // Operator routes (Step 5)
   route("operator/login", "routes/operator.login.tsx"),

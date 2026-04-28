@@ -3,6 +3,11 @@ import type { UserRow } from "~/lib/participant/types";
 import {
   applyQ1Answer,
   applyQ1Checkpoint,
+  applyQ2Answer,
+  applyQ2Checkpoint,
+  applyQ3Code,
+  applyQ3Keyword,
+  applyQ4Answer,
   startOrResume,
   TransitionError,
   unlockedSub,
@@ -164,5 +169,102 @@ describe("applyQ1Checkpoint", () => {
     expect(() => applyQ1Checkpoint(baseUser, "Q1_2", true, NOW)).toThrow(
       TransitionError,
     );
+  });
+});
+
+describe("applyQ2Answer", () => {
+  it("emits ANSWER_CORRECT without state mutation on correct", () => {
+    const user = makeUser({ currentStage: "Q2", q1Order: "Q1_1_FIRST" });
+    const { user: out, events } = applyQ2Answer(user, true, NOW);
+    expect(out).toBe(user);
+    expect(events).toEqual([{ type: "ANSWER_CORRECT", stage: "Q2" }]);
+  });
+
+  it("rejects when current stage is not Q2", () => {
+    const user = makeUser({ currentStage: "Q1", q1Order: "Q1_1_FIRST" });
+    expect(() => applyQ2Answer(user, true, NOW)).toThrow(TransitionError);
+  });
+});
+
+describe("applyQ2Checkpoint", () => {
+  const baseUser = makeUser({ currentStage: "Q2", q1Order: "Q1_1_FIRST", q1_1Cleared: 1, q1_2Cleared: 1 });
+
+  it("rejects when no correct answer recorded", () => {
+    expect(() => applyQ2Checkpoint(baseUser, false, NOW)).toThrow(TransitionError);
+  });
+
+  it("transitions Q2 → Q3_KEYWORD on success", () => {
+    const { user, events } = applyQ2Checkpoint(baseUser, true, NOW);
+    expect(user.q2Cleared).toBe(1);
+    expect(user.currentStage).toBe("Q3_KEYWORD");
+    expect(events).toEqual([
+      { type: "CHECKPOINT_COMPLETED", stage: "Q2" },
+      { type: "STAGE_TRANSITION", from: "Q2", to: "Q3_KEYWORD" },
+    ]);
+  });
+});
+
+describe("applyQ3Keyword", () => {
+  const baseUser = makeUser({ currentStage: "Q3_KEYWORD", q1Order: "Q1_1_FIRST" });
+
+  it("transitions Q3_KEYWORD → Q3_CODE on correct", () => {
+    const { user, events } = applyQ3Keyword(baseUser, true, NOW);
+    expect(user.currentStage).toBe("Q3_CODE");
+    expect(events).toEqual([
+      { type: "ANSWER_CORRECT", stage: "Q3_KEYWORD" },
+      { type: "STAGE_TRANSITION", from: "Q3_KEYWORD", to: "Q3_CODE" },
+    ]);
+  });
+
+  it("stays on Q3_KEYWORD on incorrect", () => {
+    const { user, events } = applyQ3Keyword(baseUser, false, NOW);
+    expect(user).toBe(baseUser);
+    expect(events).toEqual([{ type: "ANSWER_INCORRECT", stage: "Q3_KEYWORD" }]);
+  });
+
+  it("rejects when current stage is not Q3_KEYWORD", () => {
+    const user = makeUser({ currentStage: "Q2", q1Order: "Q1_1_FIRST" });
+    expect(() => applyQ3Keyword(user, true, NOW)).toThrow(TransitionError);
+  });
+});
+
+describe("applyQ3Code", () => {
+  const baseUser = makeUser({ currentStage: "Q3_CODE", q1Order: "Q1_1_FIRST" });
+
+  it("transitions Q3_CODE → Q4 on correct", () => {
+    const { user, events } = applyQ3Code(baseUser, true, NOW);
+    expect(user.currentStage).toBe("Q4");
+    expect(events).toEqual([
+      { type: "ANSWER_CORRECT", stage: "Q3_CODE" },
+      { type: "STAGE_TRANSITION", from: "Q3_CODE", to: "Q4" },
+    ]);
+  });
+
+  it("stays on Q3_CODE on incorrect", () => {
+    const { events } = applyQ3Code(baseUser, false, NOW);
+    expect(events).toEqual([{ type: "ANSWER_INCORRECT", stage: "Q3_CODE" }]);
+  });
+});
+
+describe("applyQ4Answer", () => {
+  const baseUser = makeUser({ currentStage: "Q4", q1Order: "Q1_1_FIRST" });
+
+  it("transitions Q4 → FAKE_END on correct", () => {
+    const { user, events } = applyQ4Answer(baseUser, true, NOW);
+    expect(user.currentStage).toBe("FAKE_END");
+    expect(events).toEqual([
+      { type: "ANSWER_CORRECT", stage: "Q4" },
+      { type: "STAGE_TRANSITION", from: "Q4", to: "FAKE_END" },
+    ]);
+  });
+
+  it("stays on Q4 on incorrect", () => {
+    const { events } = applyQ4Answer(baseUser, false, NOW);
+    expect(events).toEqual([{ type: "ANSWER_INCORRECT", stage: "Q4" }]);
+  });
+
+  it("rejects when current stage is not Q4", () => {
+    const user = makeUser({ currentStage: "Q3_CODE", q1Order: "Q1_1_FIRST" });
+    expect(() => applyQ4Answer(user, true, NOW)).toThrow(TransitionError);
   });
 });
