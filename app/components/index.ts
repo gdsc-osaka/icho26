@@ -5,3 +5,4 @@ export { ErrorAlert } from "./error-alert";
 export { LoadingOverlay } from "./loading-overlay";
 export { StageHeader } from "./stage-header";
 export { MonospaceLog } from "./monospace-log";
+export { HintChat } from "./hint-chat";

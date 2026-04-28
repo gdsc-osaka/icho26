@@ -3,6 +3,7 @@ import { Form, Link, redirect, useActionData, useLoaderData } from "react-router
 import {
   ErrorAlert,
   GlowButton,
+  HintChat,
   StageHeader,
   SystemPanel,
   TextInput,
@@ -131,6 +132,8 @@ export default function Q1_1() {
       >
         BACK TO HUB
       </Link>
+
+      <HintChat />
     </main>
   );
 }

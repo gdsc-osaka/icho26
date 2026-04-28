@@ -8,6 +8,7 @@ import {
   applyQ3Code,
   applyQ3Keyword,
   applyQ4Answer,
+  markEpilogueViewed,
   startOrResume,
   TransitionError,
   unlockedSub,
@@ -266,5 +267,46 @@ describe("applyQ4Answer", () => {
   it("rejects when current stage is not Q4", () => {
     const user = makeUser({ currentStage: "Q3_CODE", q1Order: "Q1_1_FIRST" });
     expect(() => applyQ4Answer(user, true, NOW)).toThrow(TransitionError);
+  });
+});
+
+describe("markEpilogueViewed", () => {
+  it("transitions FAKE_END → COMPLETE and stamps epilogueViewedAt", () => {
+    const user = makeUser({ currentStage: "FAKE_END", q1Order: "Q1_1_FIRST" });
+    const { user: out, events } = markEpilogueViewed(user, NOW);
+    expect(out.currentStage).toBe("COMPLETE");
+    expect(out.epilogueViewedAt).toBe(NOW);
+    expect(out.completedAt).toBe(NOW);
+    expect(events).toEqual([
+      { type: "EPILOGUE_VIEWED" },
+      { type: "STAGE_TRANSITION", from: "FAKE_END", to: "COMPLETE" },
+    ]);
+  });
+
+  it("is idempotent on COMPLETE (no-op)", () => {
+    const user = makeUser({
+      currentStage: "COMPLETE",
+      q1Order: "Q1_1_FIRST",
+      epilogueViewedAt: "2026-04-28T00:00:00.000Z",
+    });
+    const { user: out, events } = markEpilogueViewed(user, NOW);
+    expect(out).toBe(user);
+    expect(events).toEqual([]);
+  });
+
+  it("rejects before FAKE_END", () => {
+    const user = makeUser({ currentStage: "Q4", q1Order: "Q1_1_FIRST" });
+    expect(() => markEpilogueViewed(user, NOW)).toThrow(TransitionError);
+  });
+
+  it("preserves an earlier completedAt", () => {
+    const earlier = "2026-04-28T00:00:00.000Z";
+    const user = makeUser({
+      currentStage: "FAKE_END",
+      q1Order: "Q1_1_FIRST",
+      completedAt: earlier,
+    });
+    const { user: out } = markEpilogueViewed(user, NOW);
+    expect(out.completedAt).toBe(earlier);
   });
 });

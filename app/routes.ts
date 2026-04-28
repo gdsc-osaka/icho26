@@ -18,7 +18,11 @@ export default [
   route("q3", "routes/q3.tsx"),
   route("q3/code", "routes/q3.code.tsx"),
   route("q4", "routes/q4.tsx"),
-  // /release and /complete* are added in Step 4.
+  route("release", "routes/release.tsx"),
+  route("complete", "routes/complete.tsx"),
+  route("complete/epilogue", "routes/complete.epilogue.tsx"),
+  route("complete/explain", "routes/complete.explain.tsx"),
+  route("complete/report", "routes/complete.report.tsx"),
 
   // Operator routes (Step 5)
   route("operator/login", "routes/operator.login.tsx"),

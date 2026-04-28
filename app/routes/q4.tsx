@@ -3,6 +3,7 @@ import { Form, redirect, useActionData } from "react-router";
 import {
   ErrorAlert,
   GlowButton,
+  HintChat,
   StageHeader,
   SystemPanel,
   TextInput,
@@ -93,6 +94,8 @@ export default function Q4() {
           AUTHENTICATE
         </GlowButton>
       </Form>
+
+      <HintChat />
     </main>
   );
 }
