@@ -162,19 +162,19 @@ AnalyserNode 設定:
 底ノイズ補正:
 
 - 起動直後 `noise_window_ms` をキャリブレーション窓とし、target / 参照帯域それぞれのエネルギー合計の中央値を `noise_mag` / `ref_noise_mag` として保存
-- 評価時は `sig_mag = max(0, target_mag - noise_mag)`
 
-参照帯域による動的減衰:
+参照帯域による動的減衰（既定で無効）:
 
-- 参照帯域の `ref_spike_db = 20 * log10(ref_mag / ref_noise_mag)`
-- `ref_spike_db > REF_GUARD_DB` (= 9 dB) のとき、target に「広帯域ノイズが漏れ込んでいる」とみなし `adjusted_mag = max(0, sig_mag - noise_mag * 10^(REF_THRESHOLD_BOOST_DB/20))` で減衰
-- これにより擦れ音・拍手などの広帯域突発音による誤反応を抑える
+- 参照帯域の `ref_spike_db = 20 * log10(ref_mag / ref_noise_mag)` を計算しデバッグログに出力
+- `ENABLE_REF_ATTENUATION = true` のとき、`ref_spike_db > REF_GUARD_DB` (= 9 dB) なら target を `max(0, target_mag - noise_mag * 10^(REF_THRESHOLD_BOOST_DB/20))` で減衰
+- 既定では無効。理由: スピーカーのスペクトル漏れにより信号源接近時に参照帯域も常に持ち上がってしまい、減衰が常時発動して proximity が 0 に張り付く事象が発生していた。会場検証で擦れ音による誤反応が顕著なら有効化する
 
-接近度マッピング（線形 magnitude）:
+接近度マッピング（dB スケール）:
 
-- 設計レンジ `[LINEAR_RANGE_MIN, LINEAR_RANGE_MAX]` に対し `adjusted_mag` を 0〜100 に線形マッピング
+- `signal_db = 20 * log10(target_mag / noise_mag)`（target_mag / noise_mag が 0 以下なら 0）
+- `signal_db` を `[RANGE_MIN_DB, RANGE_MAX_DB]` (既定 3〜30 dB) に対し 0〜100 に線形マッピング
 - レンジ外はクランプ
-- dB ではなく線形 magnitude にすることで、距離変化による音圧の指数変化に対し proximity の応答が自然になる
+- 線形 magnitude を直接マッピングすると指数応答になり、距離変化に対する proximity の追従が階段状になる。dB 空間でマップすることで距離 vs proximity がほぼ線形になる
 
 平滑化:
 
@@ -184,8 +184,8 @@ AnalyserNode 設定:
 デバッグ出力:
 
 - dev 環境のみ `DEBUG_LOG_INTERVAL_MS` (= 250 ms) 周期で
-  `console.log("[dowsing]", { targetMag, noiseMag, sigMag, refMag, refNoiseMag, spikeDb, adjustedMag, proximity })` を出力
-- 現地でレンジ調整するときの実測値取得に使う
+  `console.log("[dowsing]", { targetMag, noiseMag, signalDb, refMag, refNoiseMag, spikeDb, attenuated, proximity })` を出力
+- `signalDb` が `RANGE_MIN_DB` を上回らない＝ proximity 0 のままなら閾値を下げる、振り切れていれば上げる、で現地調整する
 
 ### 4.4 サブ設問切替
 
@@ -302,20 +302,22 @@ function startDowsing(targetFreqHz: number) {
       analyser,
       targetFreqHz + REF_FREQ_OFFSET_HZ,
     );
-    const sigMag = Math.max(0, targetMag - noiseMag);
     const spikeDb = refSpikeDb(refMag, refNoiseMag);
-    const adjusted = attenuateBySpike(
-      sigMag,
-      noiseMag,
-      spikeDb,
-      REF_GUARD_DB,
-      REF_THRESHOLD_BOOST_DB,
-    );
+    const effectiveTargetMag = ENABLE_REF_ATTENUATION
+      ? attenuateBySpike(
+          targetMag,
+          noiseMag,
+          spikeDb,
+          REF_GUARD_DB,
+          REF_THRESHOLD_BOOST_DB,
+        )
+      : targetMag;
     const raw =
-      clamp(
-        (adjusted - LINEAR_RANGE_MIN) / (LINEAR_RANGE_MAX - LINEAR_RANGE_MIN),
-        0,
-        1,
+      magnitudeRatioToProximity(
+        effectiveTargetMag,
+        noiseMag,
+        RANGE_MIN_DB,
+        RANGE_MAX_DB,
       ) * 100;
     proximity = (1 - EMA_ALPHA) * proximity + EMA_ALPHA * raw;
     publish(proximity);
@@ -360,11 +362,12 @@ const TARGET_FREQ_HZ = FREQ_Q1_2_HZ;
 | `ENERGY_HALF_BINS`         | 5              | 中心 ± この bin 数を狭帯域として線形 magnitude 合計        |
 | `FFT_SIZE`                 | 8192           | AnalyserNode FFTサイズ                                     |
 | `REF_FREQ_OFFSET_HZ`       | 400            | 参照帯域の中心 = target + これ（Hz）                       |
-| `REF_GUARD_DB`             | 9              | 参照帯域がこの dB 以上スパイクしたら動的減衰を発動         |
-| `REF_THRESHOLD_BOOST_DB`   | 6              | 動的減衰量（信号 magnitude から noise×10^(boost/20) を減算）|
+| `REF_GUARD_DB`             | 9              | 参照帯域がこの dB 以上スパイクしたら動的減衰を発動（要 `ENABLE_REF_ATTENUATION`）|
+| `REF_THRESHOLD_BOOST_DB`   | 6              | 動的減衰量（target magnitude から noise×10^(boost/20) を減算）|
+| `ENABLE_REF_ATTENUATION`   | false          | 動的減衰の有効化フラグ。既定 false（誤発動回避） |
 | `NOISE_WINDOW_MS`          | 1500           | キャリブレーション窓長                                     |
-| `LINEAR_RANGE_MIN`         | 0.0            | proximity=0 にマップする線形 magnitude（実体検証で確定）   |
-| `LINEAR_RANGE_MAX`         | 0.05           | proximity=100 にマップする線形 magnitude（暫定）           |
+| `RANGE_MIN_DB`             | 3              | proximity=0 にマップする signal_db（実体検証で確定）       |
+| `RANGE_MAX_DB`             | 30             | proximity=100 にマップする signal_db（実体検証で確定）     |
 | `EMA_ALPHA`                | 0.3            | 接近度EMA係数                                              |
 | `TICK_MS`                  | 60             | 評価ループ周期                                             |
 | `DEBUG_LOG_INTERVAL_MS`    | 250            | dev 環境のデバッグログ throttle 周期                       |

@@ -2,20 +2,21 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import {
   DEBUG_LOG_INTERVAL_MS,
   EMA_ALPHA,
+  ENABLE_REF_ATTENUATION,
   ENERGY_HALF_BINS,
   FFT_SIZE,
-  LINEAR_RANGE_MAX,
-  LINEAR_RANGE_MIN,
   NOISE_WINDOW_MS,
+  RANGE_MAX_DB,
+  RANGE_MIN_DB,
   REF_FREQ_OFFSET_HZ,
   REF_GUARD_DB,
   REF_THRESHOLD_BOOST_DB,
   TICK_MS,
-  clamp,
 } from "./config";
 import {
   attenuateBySpike,
   bandEnergyMagnitude,
+  magnitudeRatioToProximity,
   median,
   refSpikeDb,
 } from "./signal-math";
@@ -34,9 +35,12 @@ type Result = {
 /**
  * マイク入力から targetFreqHz 付近の信号強度を抽出して接近度を返す hook。
  * - getUserMedia + AudioContext + AnalyserNode を内包
- * - 中心 ± ENERGY_HALF_BINS の bin を線形 magnitude で合計し、
- *   参照帯域 (target + REF_FREQ_OFFSET_HZ) のスパイクで動的に減衰
- * - キャリブレーション窓でノイズフロアを学習
+ * - 中心 ± ENERGY_HALF_BINS の bin を線形 magnitude で合計
+ * - キャリブレーション窓でノイズフロア magnitude を学習
+ * - 評価時は `targetMag / noiseMag` を dB に変換して `[RANGE_MIN_DB, RANGE_MAX_DB]` を 0〜100 に線形マップ
+ *   （線形 magnitude 直マップは指数応答になり距離変化に追従しないため dB 空間でマップする）
+ * - 参照帯域 (target + REF_FREQ_OFFSET_HZ) は計測してデバッグログにのみ出力（既定）。
+ *   `ENABLE_REF_ATTENUATION` を true にすると動的減衰を有効化できる
  * - tick_ms 周期の評価ループ + EMA 平滑化
  * - アンマウント時 / stop() 呼び出し時に確実にクリーンアップ
  *
@@ -232,21 +236,28 @@ export function useProximity(targetFreqHz: number): Result {
 
       const targetMag = bandEnergyMagnitude(buf, targetLo, targetHi);
       const refMag = bandEnergyMagnitude(buf, refLo, refHi);
-      const sigMag = Math.max(0, targetMag - noiseMag);
       const spike = refSpikeDb(refMag, refNoiseMag);
-      const adjustedMag = attenuateBySpike(
-        sigMag,
-        noiseMag,
-        spike,
-        REF_GUARD_DB,
-        REF_THRESHOLD_BOOST_DB,
-      );
+
+      // 参照帯域による動的減衰は既定で無効。スピーカーのスペクトル漏れで
+      // 常時誤発動し信号が消える事象が発生していたため。
+      const effectiveTargetMag = ENABLE_REF_ATTENUATION
+        ? attenuateBySpike(
+            targetMag,
+            noiseMag,
+            spike,
+            REF_GUARD_DB,
+            REF_THRESHOLD_BOOST_DB,
+          )
+        : targetMag;
+
+      // dB 空間で proximity を計算。targetMag / noiseMag の比率を取って
+      // [RANGE_MIN_DB, RANGE_MAX_DB] を 0..1 にマップ。
       const raw =
-        clamp(
-          (adjustedMag - LINEAR_RANGE_MIN) /
-            (LINEAR_RANGE_MAX - LINEAR_RANGE_MIN),
-          0,
-          1,
+        magnitudeRatioToProximity(
+          effectiveTargetMag,
+          noiseMag,
+          RANGE_MIN_DB,
+          RANGE_MAX_DB,
         ) * 100;
       proximityRef.current =
         (1 - EMA_ALPHA) * proximityRef.current + EMA_ALPHA * raw;
@@ -254,14 +265,18 @@ export function useProximity(targetFreqHz: number): Result {
 
       if (isDev && now - lastDebugRef.current >= DEBUG_LOG_INTERVAL_MS) {
         lastDebugRef.current = now;
+        const signalDb =
+          noiseMag > 0 && targetMag > 0
+            ? 20 * Math.log10(targetMag / noiseMag)
+            : 0;
         console.log("[dowsing]", {
           targetMag: targetMag.toExponential(3),
           noiseMag: noiseMag.toExponential(3),
-          sigMag: sigMag.toExponential(3),
+          signalDb: signalDb.toFixed(2),
           refMag: refMag.toExponential(3),
           refNoiseMag: refNoiseMag.toExponential(3),
           spikeDb: spike.toFixed(2),
-          adjustedMag: adjustedMag.toExponential(3),
+          attenuated: ENABLE_REF_ATTENUATION,
           proximity: proximityRef.current.toFixed(1),
         });
       }
