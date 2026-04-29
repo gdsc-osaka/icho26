@@ -113,7 +113,10 @@ export default function Q1_1() {
           ANSWER
         </label>
         <div className="flex items-center border-b border-cyan-900 focus-within:border-cyan-400">
-          <Icon name="arrow_forward_ios" className="mr-2 text-sm text-cyan-500" />
+          <Icon
+            name="arrow_forward_ios"
+            className="mr-2 text-sm text-cyan-500"
+          />
           <TextInput
             name="answer"
             inputMode="numeric"

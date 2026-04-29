@@ -91,7 +91,8 @@ export default function Q4() {
 
       <SystemPanel className="my-8 border-l-2 border-cyan-400">
         <p className="text-center font-body leading-relaxed text-on-surface">
-          To connect to ATE through me, a specific constant must be authenticated.
+          To connect to ATE through me, a specific constant must be
+          authenticated.
           <span className="ml-1 font-mono text-cyan-400">
             Search for the constant.
           </span>

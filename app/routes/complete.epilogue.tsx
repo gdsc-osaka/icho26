@@ -79,8 +79,8 @@ export default function Epilogue() {
 
       <div className="my-8 flex flex-col items-center gap-4">
         <p className="glitch flex items-center gap-2 font-mono text-base font-bold uppercase tracking-widest text-error">
-          <Icon name="radio_button_checked" className="animate-ping text-sm" />
-          [ ERROR: ATE HAS BEEN AWAKENED ]
+          <Icon name="radio_button_checked" className="animate-ping text-sm" />[
+          ERROR: ATE HAS BEEN AWAKENED ]
         </p>
         <p className="font-mono text-[10px] uppercase tracking-[0.3em] text-error/60">
           [ ACCESSING WORLD SYSTEM... ]

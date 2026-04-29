@@ -1,10 +1,5 @@
 import { Link } from "react-router";
-import {
-  GlowButton,
-  PageShell,
-  StageHeader,
-  SystemPanel,
-} from "~/components";
+import { GlowButton, PageShell, StageHeader, SystemPanel } from "~/components";
 import { requireParticipant } from "~/lib/participant/session";
 import type { Route } from "./+types/release";
 

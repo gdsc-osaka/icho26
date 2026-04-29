@@ -7,12 +7,10 @@ type Props = ButtonHTMLAttributes<HTMLButtonElement> & {
 };
 
 const VARIANTS: Record<Variant, string> = {
-  primary:
-    "border-cyan-400 text-cyan-400 hover:bg-cyan-500/10 active:scale-95",
+  primary: "border-cyan-400 text-cyan-400 hover:bg-cyan-500/10 active:scale-95",
   ghost:
     "border-cyan-900/50 text-on-surface-variant hover:border-cyan-400 hover:text-cyan-400",
-  danger:
-    "border-error text-error hover:bg-error/10",
+  danger: "border-error text-error hover:bg-error/10",
 };
 
 export function GlowButton({

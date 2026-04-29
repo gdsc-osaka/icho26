@@ -1,10 +1,5 @@
 import { Link } from "react-router";
-import {
-  Icon,
-  PageShell,
-  StageHeader,
-  SystemPanel,
-} from "~/components";
+import { Icon, PageShell, StageHeader, SystemPanel } from "~/components";
 import { requireParticipant } from "~/lib/participant/session";
 import type { Route } from "./+types/complete.explain";
 
