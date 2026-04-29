@@ -30,6 +30,8 @@ export const ANSWER_STAGES = ['Q1_1', 'Q1_2', 'Q2', 'Q3_KEYWORD', 'Q3_CODE', 'Q4
 |---|---|---|
 | `group_id` | text PK | `g_` + UUIDv4(小文字、ハイフン区切り) |
 | `current_stage` | text NOT NULL | `STAGES` のいずれか。初期値 `START` |
+| `group_name` | text NULL | 運営ダッシュボードの ID 発行時に入力するグループ名(社員証印刷に使用)。参加者の `/start/:groupId` 経由で作成された行は NULL |
+| `group_size` | integer NULL | 同上の人数。1 以上の整数。NULL は未登録 |
 | `q1_order` | text NULL | `Q1_ORDERS` のいずれか。Q1 開始時に決定し以降不変 |
 | `q1_1_cleared` | integer NOT NULL DEFAULT 0 | 0/1 |
 | `q1_2_cleared` | integer NOT NULL DEFAULT 0 | 0/1 |

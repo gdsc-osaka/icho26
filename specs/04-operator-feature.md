@@ -163,17 +163,33 @@ type DashboardRow = {
 
 ### action(新規 ID 発行)
 
+- フォーム入力: `group_name` (必須・空白除去後 1 文字以上), `group_size` (必須・1 以上の整数)
+- バリデーション失敗時は `{ ok: false, error }` を返す
 - 新規 `groupId` (`g_` + UUIDv4)を生成
-- `users` に INSERT(`current_stage = 'START'`)
-- 同一画面に再表示(発行された ID と開始 URL を強調表示)
+- `users` に INSERT(`current_stage = 'START'`, `group_name`, `group_size`)
+- 成功時は `{ ok: true, issuedGroupId, groupName, groupSize }` を返し、
+  クライアントは戻り値を検知して LX-D02 へ社員証を自動印刷する
 
 ### UI
 
-- 一覧テーブル(`groupId` / 現在ステージ / 試行回数 / 報告済 / 更新時刻)
+- 一覧テーブル(`groupId` / グループ名 / 人数 / 現在ステージ / 試行回数 / 報告済 / 更新時刻)
 - 各行に「詳細」リンク(`/operator/group/:groupId`)
-- 上部に「新規 ID 発行」ボタン
-- 発行直後はその ID と開始 URL(`https://<domain>/start/<groupId>`)をテキスト + 「コピー」ボタンで表示
-- QR 生成は本実装ではコピーした URL を任意の外部 QR 生成ツールに貼り付ける運用とする(後続で `qrcode` ライブラリ導入予定)
+- 上部に「新規 ID 発行」フォーム(グループ名 + 人数 + 発行ボタン)
+- フォーム上部に `PrinterPanel`(LX-D02 接続状態 / 接続ボタン / フォントロード状況)
+- 発行直後は ID と開始 URL(`https://<domain>/start/<groupId>`) + 印刷ステータスを表示
+
+### 社員証印刷(LX-D02 サーマルプリンタ)
+
+- Web Bluetooth API + `lx-printer` を使用しブラウザから直接印刷する
+- ID 発行時に自動印刷、`/operator/group/:groupId` から再印刷も可能
+- レイアウト(幅 384px・可変高):
+  - 会社名 `ZEUS Inc.`(BDF 16x16 を 2 倍拡大)
+  - グループ名(BDF 16x16)
+  - 人数(BDF 16x16, `人数: N 名`)
+  - QR コード(`https://<origin>/start/<groupId>`)
+- フォントは `public/fonts/b16.bdf` を `bdfparser` で読み込み(ページマウント時に eager fetch + キャッシュ)
+- Web Bluetooth はユーザージェスチャ必須のため、初回のみ「プリンタを接続」ボタンでペアリング。以降は接続を維持して自動印刷
+- プリンタ未接続時は自動印刷をスキップし、詳細画面から再印刷できることを告知
 
 ## 10. グループ詳細(`/operator/group/:groupId`)
 
@@ -210,7 +226,7 @@ type DashboardRow = {
 
 ### mutations.ts
 
-- `createUser(db, groupId, now)` — 新規 ID 発行
+- `createUser(db, groupId, now, opts?)` — 新規 ID 発行(`opts.groupName`, `opts.groupSize` は運営ダッシュボード経由のみ指定。参加者の `/start/:groupId` フォールバック作成では省略)
 - `correctStatus(db, params: { operatorId; groupId; fromStage; toStage; reasonCode; note; now })` — トランザクション内で `users` 更新 + `operator_actions` INSERT + `progress_logs` INSERT
 - `markReported(db, params: { operatorId; groupId; reasonCode; note; now })` — 同上
 - `revokeSession(db, sessionId, now)` — ログアウト
