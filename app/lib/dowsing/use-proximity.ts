@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
+  BAND_HALF_HZ,
   DEBUG_LOG_INTERVAL_MS,
   EMA_ALPHA,
   ENABLE_REF_ATTENUATION,
-  ENERGY_HALF_BINS,
   FFT_SIZE,
   NOISE_WINDOW_MS,
   RANGE_MAX_DB,
@@ -13,13 +13,7 @@ import {
   REF_THRESHOLD_BOOST_DB,
   TICK_MS,
 } from "./config";
-import {
-  attenuateBySpike,
-  bandEnergyMagnitude,
-  magnitudeRatioToProximity,
-  median,
-  refSpikeDb,
-} from "./signal-math";
+import { bandPeakDb, median, peakDbToProximity } from "./signal-math";
 
 export type ProximityState = "idle" | "requesting" | "active" | "unavailable";
 
@@ -35,10 +29,10 @@ type Result = {
 /**
  * マイク入力から targetFreqHz 付近の信号強度を抽出して接近度を返す hook。
  * - getUserMedia + AudioContext + AnalyserNode を内包
- * - 中心 ± ENERGY_HALF_BINS の bin を線形 magnitude で合計
- * - キャリブレーション窓でノイズフロア magnitude を学習
- * - 評価時は `targetMag / noiseMag` を dB に変換して `[RANGE_MIN_DB, RANGE_MAX_DB]` を 0〜100 に線形マップ
- *   （線形 magnitude 直マップは指数応答になり距離変化に追従しないため dB 空間でマップする）
+ * - 中心 ± BAND_HALF_HZ の範囲で「ピーク dB」を採取（PR #26 の実装と同等）
+ *   単一周波数信号はピーク方式の方が周辺ノイズに強く感度が高い
+ * - キャリブレーション窓でピーク dB の中央値をノイズフロアとして学習
+ * - 評価時は `peak_db - noise_db` を `[RANGE_MIN_DB, RANGE_MAX_DB]` に線形マップ
  * - 参照帯域 (target + REF_FREQ_OFFSET_HZ) は計測してデバッグログにのみ出力（既定）。
  *   `ENABLE_REF_ATTENUATION` を true にすると動的減衰を有効化できる
  * - tick_ms 周期の評価ループ + EMA 平滑化
@@ -167,15 +161,16 @@ export function useProximity(targetFreqHz: number): Result {
     const refCenterBin = Math.round(
       (targetFreqHz + REF_FREQ_OFFSET_HZ) / binHz,
     );
+    const halfBins = Math.max(1, Math.round(BAND_HALF_HZ / binHz));
     const bufLen = analyser.frequencyBinCount;
     const buf = new Float32Array(bufLen);
 
-    const targetLo = Math.max(0, targetCenterBin - ENERGY_HALF_BINS);
-    const targetHi = Math.min(bufLen - 1, targetCenterBin + ENERGY_HALF_BINS);
-    const refLo = Math.max(0, refCenterBin - ENERGY_HALF_BINS);
-    const refHi = Math.min(bufLen - 1, refCenterBin + ENERGY_HALF_BINS);
+    const targetLo = Math.max(0, targetCenterBin - halfBins);
+    const targetHi = Math.min(bufLen - 1, targetCenterBin + halfBins);
+    const refLo = Math.max(0, refCenterBin - halfBins);
+    const refHi = Math.min(bufLen - 1, refCenterBin + halfBins);
 
-    // Calibration: collect noise floor over NOISE_WINDOW_MS (target / ref 両方)
+    // Calibration: collect peak-dB samples for noise floor over NOISE_WINDOW_MS
     const calibStart =
       typeof performance !== "undefined" ? performance.now() : Date.now();
     const targetSamples: number[] = [];
@@ -192,8 +187,10 @@ export function useProximity(targetFreqHz: number): Result {
           resolve();
           return;
         }
-        targetSamples.push(bandEnergyMagnitude(buf, targetLo, targetHi));
-        refSamples.push(bandEnergyMagnitude(buf, refLo, refHi));
+        const tPeak = bandPeakDb(buf, targetLo, targetHi);
+        const rPeak = bandPeakDb(buf, refLo, refHi);
+        if (Number.isFinite(tPeak)) targetSamples.push(tPeak);
+        if (Number.isFinite(rPeak)) refSamples.push(rPeak);
         const now =
           typeof performance !== "undefined" ? performance.now() : Date.now();
         if (now - calibStart >= NOISE_WINDOW_MS) {
@@ -207,8 +204,8 @@ export function useProximity(targetFreqHz: number): Result {
 
     if (runIdRef.current !== myRunId || !analyserRef.current) return;
 
-    const noiseMag = median(targetSamples, 0);
-    const refNoiseMag = median(refSamples, 0);
+    const noiseDb = median(targetSamples, -100);
+    const refNoiseDb = median(refSamples, -100);
 
     proximityRef.current = 0;
     lastTickRef.current = 0;
@@ -234,28 +231,21 @@ export function useProximity(targetFreqHz: number): Result {
         return;
       }
 
-      const targetMag = bandEnergyMagnitude(buf, targetLo, targetHi);
-      const refMag = bandEnergyMagnitude(buf, refLo, refHi);
-      const spike = refSpikeDb(refMag, refNoiseMag);
+      const targetPeakDb = bandPeakDb(buf, targetLo, targetHi);
+      const refPeakDb = bandPeakDb(buf, refLo, refHi);
+      const spike = Number.isFinite(refPeakDb) ? refPeakDb - refNoiseDb : 0;
 
-      // 参照帯域による動的減衰は既定で無効。スピーカーのスペクトル漏れで
-      // 常時誤発動し信号が消える事象が発生していたため。
-      const effectiveTargetMag = ENABLE_REF_ATTENUATION
-        ? attenuateBySpike(
-            targetMag,
-            noiseMag,
-            spike,
-            REF_GUARD_DB,
-            REF_THRESHOLD_BOOST_DB,
-          )
-        : targetMag;
+      // 参照帯域による動的減衰は既定で無効（スピーカー漏れで常時誤発動した経緯）。
+      // 有効時は noise_db に boost ぶん上乗せして実効的に閾値を上げる。
+      const effectiveNoiseDb =
+        ENABLE_REF_ATTENUATION && spike > REF_GUARD_DB
+          ? noiseDb + REF_THRESHOLD_BOOST_DB
+          : noiseDb;
 
-      // dB 空間で proximity を計算。targetMag / noiseMag の比率を取って
-      // [RANGE_MIN_DB, RANGE_MAX_DB] を 0..1 にマップ。
       const raw =
-        magnitudeRatioToProximity(
-          effectiveTargetMag,
-          noiseMag,
+        peakDbToProximity(
+          targetPeakDb,
+          effectiveNoiseDb,
           RANGE_MIN_DB,
           RANGE_MAX_DB,
         ) * 100;
@@ -265,16 +255,17 @@ export function useProximity(targetFreqHz: number): Result {
 
       if (isDev && now - lastDebugRef.current >= DEBUG_LOG_INTERVAL_MS) {
         lastDebugRef.current = now;
-        const signalDb =
-          noiseMag > 0 && targetMag > 0
-            ? 20 * Math.log10(targetMag / noiseMag)
-            : 0;
+        const signalDb = Number.isFinite(targetPeakDb)
+          ? Math.max(0, targetPeakDb - effectiveNoiseDb)
+          : 0;
         console.log("[dowsing]", {
-          targetMag: targetMag.toExponential(3),
-          noiseMag: noiseMag.toExponential(3),
+          targetPeakDb: Number.isFinite(targetPeakDb)
+            ? targetPeakDb.toFixed(2)
+            : "-Inf",
+          noiseDb: noiseDb.toFixed(2),
           signalDb: signalDb.toFixed(2),
-          refMag: refMag.toExponential(3),
-          refNoiseMag: refNoiseMag.toExponential(3),
+          refPeakDb: Number.isFinite(refPeakDb) ? refPeakDb.toFixed(2) : "-Inf",
+          refNoiseDb: refNoiseDb.toFixed(2),
           spikeDb: spike.toFixed(2),
           attenuated: ENABLE_REF_ATTENUATION,
           proximity: proximityRef.current.toFixed(1),

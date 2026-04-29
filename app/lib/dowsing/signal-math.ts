@@ -30,6 +30,43 @@ export function bandEnergyMagnitude(
 }
 
 /**
+ * `[lo, hi]` (両端含む) の bin の dB 値の最大値（ピーク）を返す。
+ * 該当する有限値が無ければ `-Infinity` を返す。範囲外は無視。
+ *
+ * 単一周波数の正弦波信号は本質的に 1 bin に集中するため、ピーク方式の方が
+ * エネルギー合計より周辺ノイズに強く、結果的に SN 比が高く出る。
+ */
+export function bandPeakDb(buf: Float32Array, lo: number, hi: number): number {
+  let peak = -Infinity;
+  const start = Math.max(0, lo);
+  const end = Math.min(buf.length - 1, hi);
+  for (let i = start; i <= end; i++) {
+    const v = buf[i];
+    if (v !== undefined && Number.isFinite(v) && v > peak) peak = v;
+  }
+  return peak;
+}
+
+/**
+ * `peakDb - noiseDb` を `[rangeMinDb, rangeMaxDb]` を 0〜1 にマップする。
+ * 非有限値・レンジ無効時は 0 を返す。
+ */
+export function peakDbToProximity(
+  peakDb: number,
+  noiseDb: number,
+  rangeMinDb: number,
+  rangeMaxDb: number,
+): number {
+  if (rangeMaxDb <= rangeMinDb) return 0;
+  if (!Number.isFinite(peakDb) || !Number.isFinite(noiseDb)) return 0;
+  const signalDb = Math.max(0, peakDb - noiseDb);
+  const t = (signalDb - rangeMinDb) / (rangeMaxDb - rangeMinDb);
+  if (t <= 0) return 0;
+  if (t >= 1) return 1;
+  return t;
+}
+
+/**
  * 参照帯域のスパイクを dB に正規化。
  * `refNoiseMag` が 0 / 非正なら 0 を返す。比が非有限なら 0 を返す。
  */

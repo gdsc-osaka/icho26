@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
+  BAND_HALF_HZ,
   EMA_ALPHA,
-  ENERGY_HALF_BINS,
   FFT_SIZE,
   FREQ_Q1_1_HZ,
   FREQ_Q1_2_HZ,
@@ -19,12 +19,9 @@ describe("dowsing config sanity", () => {
     expect(FREQ_Q1_2_HZ).toBe(20000);
   });
 
-  it("Q1-1/Q1-2 are far enough apart for ENERGY_HALF_BINS evaluation at 48kHz", () => {
-    const binHz = 48000 / FFT_SIZE;
-    const halfHz = ENERGY_HALF_BINS * binHz;
-    // 帯域離間が、ENERGY 範囲幅 (2 * halfHz) の 5 倍以上空いていること
+  it("Q1-1/Q1-2 帯域 (±BAND_HALF_HZ) が重ならないこと", () => {
     expect(Math.abs(FREQ_Q1_2_HZ - FREQ_Q1_1_HZ)).toBeGreaterThan(
-      halfHz * 2 * 5,
+      BAND_HALF_HZ * 2 * 2,
     );
   });
 
@@ -34,20 +31,19 @@ describe("dowsing config sanity", () => {
   });
 
   it("reference band does not collide with the other target's band", () => {
-    const binHz = 48000 / FFT_SIZE;
-    const halfHz = ENERGY_HALF_BINS * binHz;
     const refQ11 = FREQ_Q1_1_HZ + REF_FREQ_OFFSET_HZ;
     const refQ12 = FREQ_Q1_2_HZ + REF_FREQ_OFFSET_HZ;
-    expect(Math.abs(refQ11 - FREQ_Q1_2_HZ)).toBeGreaterThan(halfHz * 2);
-    expect(Math.abs(refQ12 - FREQ_Q1_1_HZ)).toBeGreaterThan(halfHz * 2);
+    expect(Math.abs(refQ11 - FREQ_Q1_2_HZ)).toBeGreaterThan(BAND_HALF_HZ * 2);
+    expect(Math.abs(refQ12 - FREQ_Q1_1_HZ)).toBeGreaterThan(BAND_HALF_HZ * 2);
   });
 
   it("FFT size is a power of two", () => {
     expect(Math.log2(FFT_SIZE) % 1).toBe(0);
   });
 
-  it("ENERGY_HALF_BINS resolves to >= 1 bin", () => {
-    expect(ENERGY_HALF_BINS).toBeGreaterThanOrEqual(1);
+  it("BAND_HALF_HZ resolves to >= 1 bin at 48kHz", () => {
+    const binHz = 48000 / FFT_SIZE;
+    expect(Math.round(BAND_HALF_HZ / binHz)).toBeGreaterThanOrEqual(1);
   });
 
   it("EMA alpha is within (0, 1)", () => {
