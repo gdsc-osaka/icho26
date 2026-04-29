@@ -82,6 +82,8 @@ export default function OperatorDashboard() {
   const [font, setFont] = useState<Font | null>(null);
   const [fontError, setFontError] = useState<string | null>(null);
   const lastPrintedRef = useRef<string | null>(null);
+  const lastResetRef = useRef<string | null>(null);
+  const formRef = useRef<HTMLFormElement>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -98,6 +100,16 @@ export default function OperatorDashboard() {
       cancelled = true;
     };
   }, []);
+
+  useEffect(() => {
+    if (!actionData?.ok) return;
+    if (lastResetRef.current === actionData.issuedGroupId) return;
+    lastResetRef.current = actionData.issuedGroupId;
+
+    formRef.current?.reset();
+    const nameInput = formRef.current?.elements.namedItem("group_name");
+    if (nameInput instanceof HTMLInputElement) nameInput.focus();
+  }, [actionData]);
 
   useEffect(() => {
     if (!actionData?.ok) return;
@@ -139,7 +151,7 @@ export default function OperatorDashboard() {
               <ErrorAlert>フォントロード失敗: {fontError}</ErrorAlert>
             )}
 
-            <Form method="post" className="space-y-3">
+            <Form method="post" className="space-y-3" ref={formRef}>
               <input type="hidden" name="_action" value="create-user" />
               <FormField label="社員名 (グループ名)">
                 <TextInput
