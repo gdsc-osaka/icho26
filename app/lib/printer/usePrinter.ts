@@ -2,6 +2,7 @@ import { useCallback, useRef, useState } from "react";
 import type { LXD02Printer, PrinterStatus } from "lx-printer/lx-d02";
 import { useLocalStorageNumber } from "../hooks/useLocalStorageNumber";
 import { renderBadgeToCanvas, type BadgeArgs } from "./badge-renderer";
+import { canvasToPackedBitmap } from "./canvas-pack";
 
 export type PrintState = "idle" | "printing" | "success" | "error";
 
@@ -101,7 +102,12 @@ export function usePrinter(): UsePrinterReturn {
         const printer = await ensurePrinter();
         const canvas = document.createElement("canvas");
         await renderBadgeToCanvas(canvas, args);
-        await printer.print(canvas, { density });
+        // Pack to 1-bpp ourselves to bypass the SDK's Floyd-Steinberg
+        // dithering: the badge is already pure black/white (background +
+        // BDF + integer-scale QR), and thresholding the antialiased
+        // Noto Sans JP name keeps its outline sharper than dithering.
+        const packed = canvasToPackedBitmap(canvas);
+        await printer.print(packed, { density });
         setPrintState("success");
       } catch (err) {
         setPrintState("error");
