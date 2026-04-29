@@ -21,5 +21,5 @@
 INSERT OR REPLACE INTO operator_credentials (
   operator_id, password_hash_b64, password_salt_b64, password_iterations, created_at, updated_at
 ) VALUES (
-  'operator', 'V9JFC+fRGmSNdvleExiq9CSQ1329jWr3e7RSBr1BeIY=', '822lKx8W+2DlFTU+c9u8vA==', 210000, '2026-04-28T19:36:42.720Z', '2026-04-28T19:36:42.720Z'
+  'operator', 'xDTMPpSxSkxkDcjM5mVvCb4ddR05omfw6KFzLifhAdY=', '0PzmygIRz9jLaC+H0FakWA==', 100000, '2026-04-29T09:55:04.846Z', '2026-04-29T09:55:04.846Z'
 );

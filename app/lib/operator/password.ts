@@ -1,7 +1,12 @@
 const KEY_LENGTH_BITS = 256;
 const SALT_LENGTH_BYTES = 16;
 
-export const DEFAULT_ITERATIONS = 210000;
+// Cloudflare Workers' WebCrypto PBKDF2 implementation rejects iteration
+// counts above 100,000 with `NotSupportedError`. The OWASP / NIST guidance
+// of 600,000+ exceeds this ceiling, so we cap at the platform max. This is
+// acceptable for our threat model (single shared operator account, used
+// briefly during a one-off event).
+export const DEFAULT_ITERATIONS = 100000;
 
 export async function hashPassword(
   plain: string,

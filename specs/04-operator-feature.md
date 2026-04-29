@@ -48,7 +48,7 @@ app/lib/operator/
 
 - アルゴリズム: `PBKDF2-SHA256`
 - salt: 16 byte 以上(`crypto.getRandomValues`)
-- iteration: 210000(初期、`operator_credentials.password_iterations` で更新可)
+- iteration: 100000(Cloudflare Workers の WebCrypto PBKDF2 が 100,000 を超える値を `NotSupportedError` で拒否するため、これがプラットフォーム上限。`operator_credentials.password_iterations` で per-row 更新可)
 - key length: 32 byte
 - 比較は一定時間比較(`crypto.subtle.timingSafeEqual` 相当の自前実装、または `===` 比較前にバイト長を一致させる)
 

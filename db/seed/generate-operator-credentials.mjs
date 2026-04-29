@@ -14,7 +14,9 @@
 
 import { webcrypto as crypto } from "node:crypto";
 
-const ITERATIONS = 210000;
+// Capped at Cloudflare Workers' PBKDF2 max (100,000). See
+// app/lib/operator/password.ts for rationale.
+const ITERATIONS = 100000;
 const KEY_LENGTH_BITS = 256;
 const SALT_LENGTH_BYTES = 16;
 
