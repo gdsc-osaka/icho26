@@ -163,7 +163,9 @@ type DashboardRow = {
 
 ### action(新規 ID 発行)
 
-- フォーム入力: `group_name` (必須・空白除去後 1 文字以上), `group_size` (必須・1 以上の整数)
+- フォーム入力:
+  - `group_name` (必須・空白除去後 1 文字以上): 代表者の本名 or ニックネーム。社員証印刷と AI チャットボットの呼び掛けに使う
+  - `group_size` (必須・1 以上の整数)
 - バリデーション失敗時は `{ ok: false, error }` を返す
 - 新規 `groupId` (`g_` + UUIDv4)を生成
 - `users` に INSERT(`current_stage = 'START'`, `group_name`, `group_size`)

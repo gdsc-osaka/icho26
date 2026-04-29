@@ -190,14 +190,17 @@ export default function OperatorDashboard() {
               }}
             >
               <input type="hidden" name="_action" value="create-user" />
-              <FormField label="社員名 (グループ名)">
+              <FormField label="社員名 (代表者の本名 or ニックネーム)">
                 <TextInput
                   name="group_name"
                   required
                   maxLength={32}
-                  placeholder="例: 営業二課"
+                  placeholder="例: たかし、ヤマダ"
                   className="w-full"
                 />
+                <p className="text-text-secondary text-xs font-mono">
+                  AI チャットボットの呼び掛けに使うので、実際の名前やニックネームを入力してください。
+                </p>
               </FormField>
               <FormField label="グループ人数">
                 <TextInput
