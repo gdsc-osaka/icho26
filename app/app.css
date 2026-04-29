@@ -1,22 +1,112 @@
 @import "tailwindcss";
 
 @theme {
-  --color-bg-primary: #111417;
-  --color-bg-surface: #1a1e23;
+  /* === Stitch palette === */
+  --color-surface: #111417;
+  --color-surface-dim: #111417;
+  --color-surface-deep: #05070a;
+  --color-surface-container-lowest: #0c0e12;
+  --color-surface-container-low: #191c1f;
+  --color-surface-container: #1d2023;
+  --color-surface-container-high: #282a2e;
+  --color-surface-container-highest: #323539;
+  --color-surface-bright: #37393d;
+
+  --color-on-surface: #e1e2e7;
+  --color-on-surface-variant: #b9cacb;
+  --color-outline: #849495;
+  --color-outline-variant: #3b494b;
+
+  --color-primary: #dbfcff;
+  --color-primary-container: #00f0ff;
+  --color-primary-fixed: #7df4ff;
+  --color-primary-fixed-dim: #00dbe9;
+  --color-on-primary: #00363a;
+  --color-on-primary-container: #006970;
+  --color-on-primary-fixed: #002022;
+  --color-on-primary-fixed-variant: #004f54;
+
+  --color-error: #ffb4ab;
+  --color-error-container: #93000a;
+  --color-on-error: #690005;
+  --color-on-error-container: #ffdad6;
+
+  /* === Legacy aliases (kept so existing classes keep working) === */
+  --color-bg-primary: #05070a;
+  --color-bg-surface: #1d2023;
   --color-accent: #00f0ff;
   --color-accent-dim: #00f0ff33;
-  --color-danger: #ff4d4d;
-  --color-text-primary: #e8eaed;
-  --color-text-secondary: #9aa0a6;
+  --color-danger: #ffb4ab;
+  --color-text-primary: #e1e2e7;
+  --color-text-secondary: #b9cacb;
 
+  /* === Fonts === */
   --font-display: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
-  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+  --font-body: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Space Grotesk", "JetBrains Mono", ui-monospace, monospace;
 }
 
 html,
 body {
-  background-color: var(--color-bg-primary);
-  color: var(--color-text-primary);
+  background-color: var(--color-surface-deep);
+  background-image: radial-gradient(
+    circle at 50% 50%,
+    rgba(0, 240, 255, 0.05) 0%,
+    transparent 70%
+  );
+  color: var(--color-on-surface);
   color-scheme: dark;
-  font-family: var(--font-display);
+  font-family: var(--font-body);
+  min-height: 100dvh;
+}
+
+/* Material Symbols default settings */
+.material-symbols-outlined {
+  font-variation-settings:
+    "FILL" 0,
+    "wght" 400,
+    "GRAD" 0,
+    "opsz" 48;
+}
+
+/* Reusable visual atoms */
+@layer utilities {
+  .iris-glow {
+    filter: drop-shadow(0 0 15px rgba(0, 240, 255, 0.4));
+  }
+  .scanline-bg {
+    background: linear-gradient(
+      to bottom,
+      transparent 50%,
+      rgba(0, 240, 255, 0.05) 51%,
+      transparent 100%
+    );
+    background-size: 100% 4px;
+  }
+  .text-glow-cyan {
+    text-shadow: 0 0 8px rgba(34, 211, 238, 0.8);
+  }
+  .corner-bracket {
+    position: relative;
+  }
+  .corner-bracket::before,
+  .corner-bracket::after {
+    content: "";
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    pointer-events: none;
+  }
+  .corner-bracket::before {
+    top: -1px;
+    left: -1px;
+    border-top: 1px solid #00f0ff;
+    border-left: 1px solid #00f0ff;
+  }
+  .corner-bracket::after {
+    bottom: -1px;
+    right: -1px;
+    border-bottom: 1px solid #00f0ff;
+    border-right: 1px solid #00f0ff;
+  }
 }

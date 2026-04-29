@@ -1,18 +1,14 @@
 import { useState } from "react";
+import { Icon } from "./icon";
 
 type ViewState = "idle" | "confirm" | "hint";
 
 const FALLBACK_HINT = "イリスは現在復旧中です... もう少しお待ちください。";
 
 type Props = {
-  /** 設問ごとに固定で表示するヒント本文。 */
   hint?: string;
 };
 
-/**
- * 左下のヒントボタン → 閲覧確認モーダル → Iris の定型ヒント。
- * ヒント本文は設問ごとに props で固定値を渡す。
- */
 export function HintChat({ hint = FALLBACK_HINT }: Props) {
   const [view, setView] = useState<ViewState>("idle");
   const close = () => setView("idle");
@@ -23,31 +19,37 @@ export function HintChat({ hint = FALLBACK_HINT }: Props) {
         type="button"
         aria-label="ヒントを開く"
         onClick={() => setView("confirm")}
-        className="fixed bottom-4 left-4 z-40 rounded-full bg-bg-surface border border-accent text-accent font-mono text-xs px-4 py-3 shadow-[0_0_12px_var(--color-accent-dim)] hover:shadow-[0_0_20px_var(--color-accent)] transition-shadow"
+        className="fixed bottom-6 left-4 z-40 flex items-center gap-2 border border-cyan-400 bg-[#05070A]/80 px-4 py-2 font-mono text-xs uppercase tracking-widest text-cyan-400 shadow-[0_0_12px_rgba(0,240,255,0.25)] backdrop-blur hover:bg-cyan-500/10"
       >
-        ? HINT
+        <Icon name="help" className="text-sm" />
+        HINT
       </button>
 
       {view !== "idle" && (
         <div
           role="dialog"
           aria-modal="true"
-          className="fixed inset-0 z-50 flex items-end justify-center bg-bg-primary/60 backdrop-blur-sm sm:items-center"
+          className="fixed inset-0 z-50 flex items-end justify-center bg-[#05070A]/70 backdrop-blur-sm sm:items-center"
           onClick={close}
         >
           <div
-            className="w-full max-w-md bg-bg-surface border-t border-accent-dim p-4 space-y-3 max-h-[70vh] overflow-y-auto sm:border sm:rounded"
+            className="relative w-full max-w-md border border-cyan-900/70 bg-[#05070A]/95 p-5 sm:rounded"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between">
-              <p className="font-display text-accent text-sm">
-                {view === "confirm" ? "IRIS / CONFIRM" : "IRIS / HINT"}
+            <span className="pointer-events-none absolute -top-px -left-px h-2 w-2 border-t border-l border-cyan-400" />
+            <span className="pointer-events-none absolute -top-px -right-px h-2 w-2 border-t border-r border-cyan-400" />
+            <span className="pointer-events-none absolute -bottom-px -left-px h-2 w-2 border-b border-l border-cyan-400" />
+            <span className="pointer-events-none absolute -bottom-px -right-px h-2 w-2 border-b border-r border-cyan-400" />
+
+            <div className="mb-3 flex items-center justify-between">
+              <p className="font-display text-xs font-bold uppercase tracking-widest text-cyan-400">
+                IRIS // {view === "confirm" ? "CONFIRM" : "HINT"}
               </p>
               <button
                 type="button"
                 aria-label="閉じる"
                 onClick={close}
-                className="text-text-secondary text-xs font-mono hover:text-accent"
+                className="font-mono text-xs uppercase text-on-surface-variant hover:text-cyan-400"
               >
                 CLOSE
               </button>
@@ -59,7 +61,7 @@ export function HintChat({ hint = FALLBACK_HINT }: Props) {
               <HintBody hint={hint} />
             )}
 
-            <p className="font-mono text-[10px] text-text-secondary leading-relaxed pt-2 border-t border-accent-dim/40">
+            <p className="mt-3 border-t border-cyan-900/50 pt-2 font-mono text-[10px] leading-relaxed text-cyan-900">
               ヒントは設問ごとに固定で提供されます。
             </p>
           </div>
@@ -78,22 +80,22 @@ function ConfirmBody({
 }) {
   return (
     <div className="space-y-3">
-      <p className="font-mono text-sm text-text-primary leading-relaxed">
-        <span className="text-text-secondary text-xs mr-2">iris&gt;</span>
+      <p className="font-mono text-sm leading-relaxed text-on-surface">
+        <span className="mr-2 text-cyan-500">iris&gt;</span>
         ヒントを表示しますか? 自力で挑戦したい場合はキャンセルしてください。
       </p>
       <div className="flex gap-2 pt-1">
         <button
           type="button"
           onClick={onCancel}
-          className="flex-1 font-mono text-xs px-3 py-2 border border-accent-dim text-text-secondary hover:text-accent hover:border-accent transition-colors"
+          className="flex-1 border border-cyan-900/60 px-3 py-2 font-mono text-xs uppercase tracking-widest text-on-surface-variant hover:border-cyan-400 hover:text-cyan-400"
         >
           CANCEL
         </button>
         <button
           type="button"
           onClick={onConfirm}
-          className="flex-1 font-mono text-xs px-3 py-2 border border-accent text-accent bg-accent/10 hover:bg-accent/20 transition-colors"
+          className="flex-1 border border-cyan-400 bg-cyan-500/10 px-3 py-2 font-mono text-xs uppercase tracking-widest text-cyan-400 hover:bg-cyan-500/20"
         >
           SHOW HINT
         </button>
@@ -105,8 +107,8 @@ function ConfirmBody({
 function HintBody({ hint }: { hint: string }) {
   return (
     <div className="space-y-2">
-      <div className="text-sm font-mono leading-relaxed text-text-primary whitespace-pre-wrap">
-        <span className="text-text-secondary text-xs mr-2">iris&gt;</span>
+      <div className="whitespace-pre-wrap font-mono text-sm leading-relaxed text-on-surface">
+        <span className="mr-2 text-cyan-500">iris&gt;</span>
         {hint}
       </div>
     </div>

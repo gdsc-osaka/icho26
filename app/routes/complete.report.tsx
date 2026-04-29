@@ -1,5 +1,5 @@
 import { Link, useLoaderData } from "react-router";
-import { MonospaceLog, StageHeader, SystemPanel } from "~/components";
+import { Icon, MonospaceLog, PageShell, SystemPanel } from "~/components";
 import { requireParticipant } from "~/lib/participant/session";
 import type { Route } from "./+types/complete.report";
 
@@ -15,33 +15,50 @@ export async function loader({ request, context }: Route.LoaderArgs) {
 export default function Report() {
   const { groupId, reported } = useLoaderData<typeof loader>();
   return (
-    <main className="mx-auto max-w-md space-y-6 px-6 py-12">
-      <SystemPanel>
-        <StageHeader title="STAFF REPORT">
-          <p>この画面をスタッフに見せて、景品を受け取ってください。</p>
-        </StageHeader>
-      </SystemPanel>
+    <PageShell sessionId="ID: X-99">
+      <section className="relative flex flex-col items-center py-8">
+        <div className="pointer-events-none absolute inset-0 flex items-center justify-center opacity-10">
+          <Icon name="verified_user" className="text-[180px] text-cyan-400" />
+        </div>
+        <div className="relative z-10 space-y-3 text-center">
+          <p className="font-mono text-[11px] uppercase tracking-[0.4em] text-cyan-400">
+            STATUS
+          </p>
+          <SystemPanel className="inline-block px-12 py-6">
+            <h2 className="font-display text-3xl font-black uppercase tracking-widest text-cyan-400 drop-shadow-[0_0_15px_rgba(0,240,255,0.7)]">
+              {reported ? "REPORTED" : "CLEARED"}
+            </h2>
+          </SystemPanel>
+          <p className="font-mono text-sm uppercase tracking-widest text-cyan-400/80">
+            {reported ? "報告完了" : "認証済み: オペレーション完了"}
+          </p>
+        </div>
+      </section>
 
-      <SystemPanel className="border-accent">
-        <div className="space-y-3 text-center">
-          <p className="font-mono text-text-secondary text-xs">GROUP ID</p>
+      <SystemPanel className="my-8">
+        <div className="border-b border-cyan-500/20 pb-4">
+          <p className="font-mono text-[10px] uppercase tracking-widest text-cyan-900">
+            GROUP ID
+          </p>
           <MonospaceLog>{groupId}</MonospaceLog>
-          <p
-            className={`font-mono text-sm ${
-              reported ? "text-accent" : "text-text-secondary"
-            }`}
-          >
-            {reported ? "[ REPORTED ]" : "[ AWAITING STAFF ]"}
+        </div>
+
+        <div className="mt-4 border-l-4 border-cyan-400 bg-cyan-500/5 p-4">
+          <p className="text-base leading-relaxed text-on-surface">
+            この画面をスタッフに提示してください。
+          </p>
+          <p className="mt-2 font-mono text-[10px] uppercase tracking-widest text-cyan-400">
+            Please show this screen to a staff member.
           </p>
         </div>
       </SystemPanel>
 
       <Link
         to="/complete"
-        className="block text-center font-mono text-xs text-accent underline"
+        className="inline-flex items-center gap-2 self-center font-mono text-xs uppercase tracking-widest text-cyan-400"
       >
-        BACK TO COMPLETE HUB
+        <Icon name="arrow_back" className="text-sm" /> BACK TO COMPLETE HUB
       </Link>
-    </main>
+    </PageShell>
   );
 }
