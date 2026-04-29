@@ -7,6 +7,14 @@ compatibility_flags = ["nodejs_compat"]
 [assets]
 directory = "build/client"
 
+# `virtual:react-router/server-build` is provided by the @react-router/dev
+# vite plugin during dev/build but is not a real module. Workers Builds runs
+# `wrangler deploy` which bundles workers/app.ts via esbuild — esbuild needs
+# this alias to resolve the import to the SSR bundle produced by `react-router
+# build`. Required for both `wrangler deploy` and Workers Builds.
+[alias]
+"virtual:react-router/server-build" = "./build/server/index.js"
+
 [[d1_databases]]
 binding = "DB"
 database_name = "icho26"
