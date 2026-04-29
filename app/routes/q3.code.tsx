@@ -96,7 +96,7 @@ export default function Q3Code() {
         </GlowButton>
       </Form>
 
-      <HintChat />
+      <HintChat hint="STAGE 03 / NUMERIC CODE は無理数を有効数字 3 桁に丸めた値です。よく『黄金』にまつわる定数を計算で求めてみてください。例: 1.23 のように小数点込みで入力します。" />
     </main>
   );
 }

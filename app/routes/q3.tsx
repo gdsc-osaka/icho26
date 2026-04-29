@@ -98,7 +98,7 @@ export default function Q3Keyword() {
         </GlowButton>
       </Form>
 
-      <HintChat />
+      <HintChat hint="STAGE 03 のキーワードはことわざ『掃き溜めに鶴』に由来します。会場のゴミ箱付近に隠されたメモを探し、ローマ字(ヘボン式・半角小文字)で入力してください。" />
     </main>
   );
 }

@@ -140,7 +140,7 @@ export default function Q1_1() {
         BACK TO HUB
       </Link>
 
-      <HintChat />
+      <HintChat hint="DECRYPTION 1-1 は連立方程式の解です。会場で配布された資料の式を整理し、求まった数値そのものを半角で入力してください。単位記号は不要です。" />
     </main>
   );
 }

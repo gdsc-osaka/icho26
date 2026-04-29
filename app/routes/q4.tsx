@@ -97,7 +97,7 @@ export default function Q4() {
         </GlowButton>
       </Form>
 
-      <HintChat />
+      <HintChat hint="STAGE 04 は『イリスのラッキーナンバー』が定数です。今日のイベント名や日付に強く結び付いた、二桁の数字を半角で入力してください。" />
     </main>
   );
 }
