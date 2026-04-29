@@ -27,3 +27,6 @@ terraform/*.tfplan
 
 # Stitch wireframe HTML cache
 /.stitch-wireframes/
+
+# Reference / mockup images (keep outside repo)
+/img/
