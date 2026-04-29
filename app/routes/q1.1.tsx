@@ -7,6 +7,7 @@ import {
   useLoaderData,
 } from "react-router";
 import {
+  DowsingCard,
   ErrorAlert,
   GlowButton,
   HintChat,
@@ -16,6 +17,7 @@ import {
   SystemPanel,
   TextInput,
 } from "~/components";
+import { FREQ_Q1_1_HZ } from "~/lib/dowsing/config";
 import { isCorrect } from "~/lib/participant/judge";
 import { applyTransition } from "~/lib/participant/mutations";
 import { normalize } from "~/lib/participant/normalize";
@@ -155,7 +157,7 @@ function CheckpointPrompt() {
         </p>
       </StageHeader>
 
-      <div className="my-8 flex flex-col items-center gap-3">
+      <div className="my-6 flex flex-col items-center gap-3">
         <Icon
           name="qr_code_scanner"
           className="text-6xl text-cyan-400 drop-shadow-[0_0_20px_rgba(0,240,255,0.4)]"
@@ -164,6 +166,8 @@ function CheckpointPrompt() {
           AWAITING PHYSICAL VERIFICATION
         </p>
       </div>
+
+      <DowsingCard targetFreqHz={FREQ_Q1_1_HZ} label="DOWSING Q1-1" />
 
       <Link
         to="/q1"
