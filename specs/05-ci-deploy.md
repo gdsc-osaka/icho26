@@ -2,151 +2,182 @@
 
 依存: `00-architecture.md`, `01-data-model.md`
 
-このドキュメントは Terraform による Cloudflare リソース管理、GitHub Actions による CI、`wrangler deploy` による本番反映を定義する。
+このドキュメントは Cloudflare リソース管理(Terraform)、PR 時の CI(GitHub Actions)、本番デプロイ(Cloudflare Workers Builds)を定義する。
 
 ## 1. リソース構成
 
-| リソース | 名前(例) | 管理 |
+| リソース | 名前 | 管理 |
 |---|---|---|
-| Cloudflare Worker | `icho26` | コード = `wrangler deploy` / 設定 = `wrangler.toml` |
-| D1 Database | `icho26-prod` | **Terraform** で作成、ID を `wrangler.toml` に記述 |
-| KV Namespace | `icho26-cache` | **Terraform** で作成、ID を `wrangler.toml` に記述 |
+| Cloudflare Worker | `icho26` | コード = Workers Builds(GitHub 連携)で自動 deploy / 設定 = `wrangler.toml` |
+| D1 Database | `icho26` | Terraform で管理。実 ID は `wrangler.toml` にコミット |
+| KV Namespace | `icho26-cache` | Terraform で管理。実 ID は `wrangler.toml` にコミット |
 
-`wrangler.toml` の `database_id` / `id` は Terraform の `output` から取得した実値を記述する(秘匿情報ではないので公開コミット可)。
+`wrangler.toml` の `database_id` / `id` は秘匿情報ではないので公開コミット可。
 
-## 1.1 Terraform でのインフラ管理
+## 2. Terraform でのインフラ管理
 
-### 管理対象
+### 2.1 管理対象
 
 - Cloudflare D1 Database
 - Cloudflare Workers KV Namespace
 - 必要に応じて: Worker のカスタムドメインルーティング(独自ドメイン運用時)
 
-Worker のコード自体は `wrangler deploy` で管理し、Terraform では扱わない。コード変更のたびに `terraform apply` を走らせる必要がない設計とする。
+Worker 自体のコード・バインディングは Workers Builds + `wrangler.toml` で管理し、Terraform では扱わない。コード変更のたびに `terraform apply` を走らせる必要がない設計とする。
 
-### ディレクトリ
+### 2.2 ディレクトリ
 
 ```
 terraform/
-├── main.tf         # provider + リソース定義
-├── outputs.tf      # D1/KV ID を出力(wrangler.toml にコピーする値)
-├── variables.tf    # account_id 等の入力変数
+├── main.tf               # provider + リソース定義
+├── outputs.tf            # D1/KV ID を出力(参照用)
+├── variables.tf          # account_id 等の入力変数
+├── terraform.tfvars.example  # 入力変数の例(account_id のみ)
 └── .terraform.lock.hcl
 ```
 
-### プロバイダ
+`terraform.tfvars`(実値が入る)と `terraform.tfstate` は **`.gitignore` 対象**。
+
+### 2.3 プロバイダ
 
 - `cloudflare/cloudflare ~> 4.x`
 - 認証は `CLOUDFLARE_API_TOKEN`(環境変数 `TF_VAR_cloudflare_api_token`)
 
-### 状態管理
+API Token の権限要件:
+- Account / D1 — Edit
+- Account / Workers KV Storage — Edit
+- Account / Account Settings — Read
+
+### 2.4 状態管理
 
 - 単一環境(prod のみ)前提のため、リモートバックエンドは採用しない
-- `terraform.tfstate` はローカルに保持し、`.gitignore` で Git から除外する
-- 構築時の `terraform apply` は GDGoC Osaka 運営メンバーが手動で実行する
-- 既存リソースを再構築する必要が出た場合は `terraform import` で取り込む
+- `terraform.tfstate` はローカルに保持し、`.gitignore` で Git から除外
+- 構築・追加変更時の `terraform apply` は GDGoC Osaka 運営メンバーが手動で実行
 
-### 適用フロー(初回構築)
+### 2.5 既存リソースの取り込み(初回のみ)
 
-1. `terraform/` で `terraform init`
-2. `terraform plan` で差分確認
-3. `terraform apply` で D1 / KV を作成
-4. `terraform output` で表示される ID を `wrangler.toml` に転記
-5. `wrangler.toml` をコミット
-6. 以降のコード変更は `wrangler deploy`(`05.4` に従う)
+D1 と KV namespace は CLI(`wrangler d1 create` / `wrangler kv namespace create`)で先行作成済み。Terraform は `terraform import` で既存リソースを state に取り込んだあと管理を引き継ぐ:
 
-リソース追加・変更は同様の手順で都度実施する。
+```sh
+cd terraform
+terraform init
+terraform import cloudflare_d1_database.icho26 <ACCOUNT_ID>/<D1_ID>
+terraform import cloudflare_workers_kv_namespace.cache <ACCOUNT_ID>/<KV_ID>
+terraform plan   # 差分が出ないことを確認
+```
 
-### CI 連携
+新規環境を立てる場合は `terraform apply` で作成 → 出力された ID を `wrangler.toml` に転記。
+
+### 2.6 CI 連携
 
 Terraform は CI で自動化しない。理由:
 
-- 変更頻度が極めて低い(初回構築 + 数回の追加程度)
-- 状態ファイルがローカル保持のため、CI から扱うと runners 間で整合性が取れない
+- 変更頻度が極めて低い
+- 状態ファイルがローカル保持のため CI runners と整合が取れない
 - 手動 apply で十分追える規模
 
-将来的に頻度が上がった場合は R2 バックエンド + GitHub Actions 自動 apply への移行を検討する。
+将来的に頻度が上がった場合は R2 バックエンド + GHA 自動 apply への移行を検討する。
 
-## 2. シークレット
-
-GitHub Actions と Cloudflare Workers の両方で必要なシークレット:
+## 3. シークレット
 
 | 名前 | 場所 | 用途 |
 |---|---|---|
-| `CLOUDFLARE_API_TOKEN` | GitHub Actions Secrets | `wrangler deploy` の認証 |
-| `CLOUDFLARE_ACCOUNT_ID` | GitHub Actions Secrets / `wrangler.toml` | Cloudflare アカウント識別 |
-| `SESSION_SIGNING_KEY` | Cloudflare Workers Secret(`wrangler secret put`) | 将来 Cookie 署名導入時用に確保 |
+| `CLOUDFLARE_API_TOKEN` | **ローカル `.env` のみ**(コミット不可) | Terraform 実行時の `TF_VAR_cloudflare_api_token` |
+| `SESSION_SIGNING_KEY` | Cloudflare Workers Secret(`wrangler secret put`) | 将来 Cookie 署名導入時用 |
 
-ローカル開発用は `.dev.vars` に同名で持つ(既存の `.dev.vars` 参照)。
+GitHub Secrets には何も登録しない。Workers Builds は GitHub App 経由で Cloudflare に認証されるため Token 不要、CI(下記 §5)も Cloudflare API を叩かないため不要。
 
-## 3. ブランチ戦略
+ローカル開発用の値は `.dev.vars` に保持する(既存)。
+
+## 4. ブランチ戦略
 
 `CLAUDE.md` の規約に従う:
 
 - `main` を deployable に保つ
 - 作業は `feat/` / `fix/` / `chore/` プレフィックスのブランチで行い、PR 経由で squash merge
-- 本番デプロイは `main` への merge をトリガーとする
+- 本番デプロイは `main` への merge を Workers Builds が検知して自動実行
 
-## 4. GitHub Actions ワークフロー
+## 5. CI ワークフロー(`.github/workflows/ci.yml`)
 
-### 4.1 `ci.yml`(PR 時)
-
-PR が open / synchronize された時に実行する。
+PR の open / synchronize で実行する静的検査のみ。Cloudflare API には触れない。
 
 ステップ:
+
 1. `actions/checkout@v4`
-2. Node.js セットアップ(`actions/setup-node@v4`、`package.json` の `engines` に従う)
-3. `pnpm install --frozen-lockfile`
-4. `pnpm typecheck`
-5. `pnpm test`(Vitest)
-6. `pnpm build`(react-router build がエラーなく通ることの確認)
+2. `pnpm/action-setup@v4`(`package.json` の `packageManager` に従う)
+3. `actions/setup-node@v4`(Node 22、pnpm キャッシュ有効)
+4. `pnpm install --frozen-lockfile`(postinstall で `wrangler types` も自動実行)
+5. `pnpm lint`
+6. `pnpm format:check`
+7. `pnpm typecheck`
+8. `pnpm test`
 
-Wrangler の認証情報はこの段階では不要。
+すべて成功すれば PR の status check が green。`pnpm build` は Workers Builds 側の preview deploy に任せる(二重ビルドを避ける)。
 
-### 4.2 `deploy.yml`(main push 時)
+## 6. 本番デプロイ(Workers Builds)
 
-`main` ブランチへの push をトリガーとする。`workflow_dispatch` も併せて許可する(手動実行用)。
+main への push を検知して Cloudflare Workers Builds が自動デプロイする。PR ごとに preview deploy も生成される。
 
-ステップ:
-1. CI と同じ build まで実行
-2. D1 マイグレーション適用: `wrangler d1 migrations apply icho26-prod --remote`
-3. Worker デプロイ: `wrangler deploy`
-4. デプロイ後の smoke check(`curl https://<domain>/` で 200)
+### 6.1 初回セットアップ(GUI、一度だけ)
 
-`CLOUDFLARE_API_TOKEN` と `CLOUDFLARE_ACCOUNT_ID` を環境変数として渡す。
+1. Cloudflare dashboard → Workers & Pages → 対象 Worker → Settings → "Connect to Git"
+2. GitHub アカウント連携(Cloudflare GitHub App をリポジトリに認可)
+3. Repository: `gdsc-osaka/icho26`、Branch: `main`
+4. Build configuration:
+   - Build command: `pnpm install && pnpm build`
+   - Deploy command: `pnpm wrangler deploy`(Cloudflare 側のデフォルト)
+   - Root directory: `/`
+5. PR preview deployments を有効化
 
-ロールバックは Cloudflare ダッシュボードの Versions 画面から直前バージョンを再公開する手動操作で行う。
+### 6.2 Worker entry
 
-## 5. データベースマイグレーション運用
+`wrangler.toml` の `main = "workers/app.ts"` が Worker entry。`workers/app.ts` は SSR バンドル(`virtual:react-router/server-build`、wrangler では `[alias]` で `./build/server/index.js` に解決)を `createRequestHandler` でラップしたもの。
 
-- ローカル: `wrangler d1 migrations apply icho26-prod --local`
-- 本番: `deploy.yml` の中で `--remote` 付きで実行
-- スキーマ変更は `pnpm db:generate` で生成し、`db/migrations/` にコミットする
-- 既存マイグレーションファイルは編集せず、連番で新規ファイルを追加する
-- 破壊的変更は禁止。カラム追加・テーブル追加で対応する
+### 6.3 ロールバック
 
-## 6. シード投入
+Cloudflare dashboard → Workers & Pages → Versions から直前バージョンを再公開する手動操作。
 
-初回デプロイ時のみ手動実行する:
+## 7. データベースマイグレーション運用
 
-1. 運営パスワードハッシュ生成スクリプト(`db/seed/operator.ts`)で `operator_credentials` の 1 行を作成
-2. `wrangler d1 execute icho26-prod --remote --file=db/seed/operator.sql` 等で投入
-3. checkpoint コードも同様に手動投入
+- ローカル: `pnpm wrangler d1 migrations apply icho26 --local`
+- 本番: `pnpm wrangler d1 migrations apply icho26 --remote`(初回 + スキーマ変更時に **手動実行**)
+- スキーマ変更は `pnpm db:generate` で migration を生成し `db/migrations/` にコミット
+- 既存 migration ファイルは編集せず連番で追加
+- 破壊的変更は禁止(カラム追加・テーブル追加で対応)
 
-スクリプトの正確な形は実装時に決める。本ドキュメントは「自動化しない、手順を残す」方針のみ示す。
+Workers Builds の build pipeline には migration apply を含めない(誤適用リスクを避ける)。
 
-## 7. テスト構成
+## 8. シード投入
 
-- **unit**: `tests/lib/**/*.test.ts`
-  - `participant/normalize` の正規化ルール
-  - `participant/transitions` の各状態遷移
-  - `operator/password` の hash / verify 往復
-- **integration**: 必要に応じて Vitest + Miniflare で loader / action を直接呼ぶ
-- **e2e**: 自動化しない。`pnpm dev` でのローカル手動確認をリリース前チェックとする
+初回デプロイ時のみ手動実行する。
 
-CI で実行するのは unit + integration のみ。
+### 8.1 運営パスワード
 
-## 8. 受け入れチェック(手動、リリース前)
+```sh
+node db/seed/generate-operator-credentials.mjs '<chosen-password>' \
+  | pnpm wrangler d1 execute icho26 --remote --command -
+```
+
+パスワードは out-of-band で運営メンバーに共有する(コミットしない)。
+
+### 8.2 checkpoint コード
+
+開発用ダミー(`cp_q*_dev`)はそのまま本番に流さない。本番は推測困難な値に差し替えてから `db/seed/checkpoint-codes.sql` 相当を作成し remote に投入する。
+
+```sh
+pnpm wrangler d1 execute icho26 --remote --file=db/seed/checkpoint-codes-prod.sql
+```
+
+(本番ファイルはコミットしない、または明確に分けて取り扱う)
+
+## 9. テスト構成
+
+- **unit**: `tests/lib/**/*.test.ts`(normalize / transitions / password 等)
+- **integration**: 必要に応じて Vitest + Miniflare で loader / action を直接呼ぶ(未実装、`docs/openissues.md` 参照)
+- **e2e**: 自動化しない。`pnpm dev` 手動確認 + Workers Builds の PR preview deploy で確認
+
+CI で実行するのは lint / format / typecheck / unit + integration test。
+
+## 10. 受け入れチェック(手動、リリース前)
 
 - [ ] `/start/:groupId` で開始 → `/q1` 到達
 - [ ] Q1 サブ問題ランダム順序が固定される(再開で再抽選されない)
@@ -156,8 +187,8 @@ CI で実行するのは unit + integration のみ。
 - [ ] グループ詳細でステータス補正 + 報告済み付与が反映される
 - [ ] モバイル実機(縦持ち)で主要画面が崩れない
 
-## 9. 監視 / ロギング
+## 11. 監視 / ロギング
 
 - 詳細な監視基盤は構築しない
-- 障害発生時は Cloudflare ダッシュボードの Workers Logs を直接確認する
-- 必要に応じて `console.error` を活用し、エラー時に request id とコンテキストを出力する
+- 障害発生時は Cloudflare dashboard の Workers Logs を直接確認
+- 必要に応じて `console.error` で request id とコンテキストを出力

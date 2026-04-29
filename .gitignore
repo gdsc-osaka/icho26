@@ -16,3 +16,11 @@ worker-configuration.d.ts
 
 # Claude Code (per-user overrides)
 .claude/settings.local.json
+
+# Terraform
+terraform/.terraform/
+terraform/.terraform.lock.hcl
+terraform/terraform.tfstate
+terraform/terraform.tfstate.backup
+terraform/terraform.tfvars
+terraform/*.tfplan
