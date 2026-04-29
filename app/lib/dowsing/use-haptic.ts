@@ -15,7 +15,10 @@ function isAndroidWithVibrate(): boolean {
  */
 export function useHaptic(active: boolean, proximity: number) {
   const proximityRef = useRef(proximity);
-  proximityRef.current = proximity;
+
+  useEffect(() => {
+    proximityRef.current = proximity;
+  }, [proximity]);
 
   useEffect(() => {
     if (!active) return;
