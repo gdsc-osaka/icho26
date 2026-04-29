@@ -15,9 +15,11 @@ export const FREQ_Q1_2_HZ = 20000;
 // FFT
 export const FFT_SIZE = 8192;
 
-// 中心周波数 ± ENERGY_HALF_BINS の bin を「狭帯域」として線形 magnitude で合計する。
-// 48 kHz サンプリング × FFT 8192 → 約 5.86 Hz/bin、 ±5 bin ≒ ±29 Hz。
-export const ENERGY_HALF_BINS = 5;
+// 狭帯域抽出: 中心周波数 ± BAND_HALF_HZ の範囲内で「最大 dB 値」を採取する（ピーク方式）。
+// PR #26 当時の実装と同等。エネルギー合計（線形 magnitude 和）方式は周辺 bin のノイズで
+// 感度が低下したため、純粋な単一周波数信号にはピーク方式の方が反応が良い。
+// 48 kHz サンプリング × FFT 8192 → 約 5.86 Hz/bin。±100 Hz ≒ ±17 bin で評価。
+export const BAND_HALF_HZ = 100;
 
 // 参照帯域: 対象周波数の +400 Hz を「環境ノイズ監視窓」として常時計測する。
 // Q1-1 → 19,000 Hz、Q1-2 → 20,400 Hz。可聴域 (〜18 kHz) には落ちない。
@@ -36,11 +38,10 @@ export const NOISE_WINDOW_MS = 1500;
 export const TICK_MS = 60;
 
 // 接近度マッピング（dB スケール）。
-// targetMag を noiseMag との比に変換した dB 値を proximity 0〜100 に線形マッピングする。
-// 線形 magnitude を直接マップすると指数応答になり、距離変化に対する反応が階段状になるため
-// dB 空間で比例マップする。
-export const RANGE_MIN_DB = 3; // proximity=0 にマップする signal_db
-export const RANGE_MAX_DB = 30; // proximity=100 にマップする signal_db
+// signal_db = peak_db_of_band - noise_db を proximity 0〜100 に線形マッピング。
+// PR #26 と同じ 6〜36 dB レンジ（実機検証で良好だった値）。
+export const RANGE_MIN_DB = 6; // proximity=0 にマップする signal_db
+export const RANGE_MAX_DB = 36; // proximity=100 にマップする signal_db
 
 // 時間平滑化
 export const EMA_ALPHA = 0.3;

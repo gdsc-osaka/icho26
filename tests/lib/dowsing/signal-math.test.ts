@@ -2,9 +2,11 @@ import { describe, expect, it } from "vitest";
 import {
   attenuateBySpike,
   bandEnergyMagnitude,
+  bandPeakDb,
   dbToMagnitude,
   magnitudeRatioToProximity,
   median,
+  peakDbToProximity,
   refSpikeDb,
 } from "~/lib/dowsing/signal-math";
 
@@ -87,6 +89,51 @@ describe("attenuateBySpike", () => {
   it("clamps to 0 when subtraction would go negative", () => {
     const result = attenuateBySpike(0.05, 1.0, 20, 9, 6);
     expect(result).toBe(0);
+  });
+});
+
+describe("bandPeakDb", () => {
+  it("returns max dB within [lo, hi]", () => {
+    const buf = new Float32Array([-80, -40, -20, -50, -30]);
+    expect(bandPeakDb(buf, 1, 3)).toBe(-20);
+  });
+  it("ignores -Infinity", () => {
+    const buf = new Float32Array([-Infinity, -50, -40]);
+    expect(bandPeakDb(buf, 0, 2)).toBe(-40);
+  });
+  it("clamps to buffer bounds", () => {
+    const buf = new Float32Array([-10, -50, -30]);
+    expect(bandPeakDb(buf, -5, 100)).toBe(-10);
+  });
+  it("returns -Infinity when no finite value in range", () => {
+    const buf = new Float32Array([-Infinity, -Infinity]);
+    expect(bandPeakDb(buf, 0, 1)).toBe(-Infinity);
+  });
+});
+
+describe("peakDbToProximity", () => {
+  it("returns 0 when signal_db <= rangeMin", () => {
+    // peak - noise = 5dB, rangeMin = 6 → t < 0
+    expect(peakDbToProximity(-50, -55, 6, 36)).toBe(0);
+  });
+  it("returns 1 when signal_db >= rangeMax", () => {
+    // peak - noise = 40dB, rangeMax = 36 → t > 1
+    expect(peakDbToProximity(-20, -60, 6, 36)).toBe(1);
+  });
+  it("maps midpoint", () => {
+    // peak - noise = 21dB, midpoint of [6, 36] is 21
+    expect(peakDbToProximity(-30, -51, 6, 36)).toBeCloseTo(0.5, 6);
+  });
+  it("returns 0 when peakDb is -Infinity", () => {
+    expect(peakDbToProximity(-Infinity, -60, 6, 36)).toBe(0);
+  });
+  it("returns 0 when range is invalid", () => {
+    expect(peakDbToProximity(-30, -60, 36, 36)).toBe(0);
+    expect(peakDbToProximity(-30, -60, 36, 6)).toBe(0);
+  });
+  it("clamps signal_db at 0 (peak below noise still yields 0)", () => {
+    // peak - noise = -10dB → max(0, -10) = 0 → t = -6/30 < 0 → 0
+    expect(peakDbToProximity(-70, -60, 6, 36)).toBe(0);
   });
 });
 
