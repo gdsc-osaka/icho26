@@ -1,6 +1,12 @@
 import { drizzle } from "drizzle-orm/d1";
 import { Form, redirect, useLoaderData } from "react-router";
-import { GlowButton, StageHeader, SystemPanel } from "~/components";
+import {
+  GlowButton,
+  Icon,
+  PageShell,
+  StageHeader,
+  SystemPanel,
+} from "~/components";
 import { applyTransition } from "~/lib/participant/mutations";
 import {
   findUserByGroupId,
@@ -60,25 +66,35 @@ export async function action({ request, context }: Route.ActionArgs) {
 export default function Q2Checkpoint() {
   const data = useLoaderData<typeof loader>();
   return (
-    <main className="mx-auto max-w-md space-y-6 px-6 py-12">
-      <SystemPanel>
-        <StageHeader title="CHECKPOINT VERIFICATION">
-          <p>
-            位置認証を行います。下のボタンを押してチェックポイントを完了してください。
-          </p>
-        </StageHeader>
-      </SystemPanel>
+    <PageShell sessionId="ID: X-99">
+      <StageHeader title="CHECKPOINT VERIFICATION" eyebrow="PHYSICAL AUTH">
+        <p>
+          位置認証を行います。下のボタンを押してチェックポイントを完了してください。
+        </p>
+      </StageHeader>
 
-      <Form method="post" className="space-y-4">
+      <div className="my-10 flex flex-col items-center gap-4">
+        <Icon
+          name="location_on"
+          filled
+          className="text-6xl text-cyan-400 drop-shadow-[0_0_20px_rgba(0,240,255,0.6)]"
+        />
+        <SystemPanel>
+          <p className="text-center font-mono text-xs uppercase tracking-widest text-on-surface-variant">
+            STAGE 02 / CODE
+          </p>
+          <p className="mt-1 text-center font-display text-xl tracking-[0.3em] text-cyan-400">
+            {data.code}
+          </p>
+        </SystemPanel>
+      </div>
+
+      <Form method="post">
         <input type="hidden" name="code" value={data.code} />
         <GlowButton type="submit" className="w-full">
           VERIFY CHECKPOINT
         </GlowButton>
       </Form>
-
-      <p className="text-center font-mono text-xs text-text-secondary">
-        Q2 / CODE: {data.code}
-      </p>
-    </main>
+    </PageShell>
   );
 }

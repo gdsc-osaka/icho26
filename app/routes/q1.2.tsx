@@ -10,6 +10,8 @@ import {
   ErrorAlert,
   GlowButton,
   HintChat,
+  Icon,
+  PageShell,
   StageHeader,
   SystemPanel,
   TextInput,
@@ -85,62 +87,81 @@ export default function Q1_2() {
 
   if (showCheckpointPrompt) {
     return (
-      <main className="mx-auto max-w-md space-y-6 px-6 py-12">
-        <SystemPanel>
-          <StageHeader title="DECRYPTION 1-2 — UNLOCKED">
-            <p>
-              解答を受領しました。会場のチェックポイントに向かい、設置された QR
-              をスキャンして物理認証を完了してください。
-            </p>
-          </StageHeader>
-        </SystemPanel>
-        <p className="text-center font-mono text-sm text-text-secondary">
-          □ AWAITING PHYSICAL VERIFICATION
-        </p>
+      <PageShell sessionId="ID: X-99">
+        <StageHeader title="DECRYPTION 1-2 — UNLOCKED" eyebrow="STATUS">
+          <p>
+            解答を受領しました。会場のチェックポイントに向かい、設置された QR
+            をスキャンして物理認証を完了してください。
+          </p>
+        </StageHeader>
+
+        <div className="my-8 flex flex-col items-center gap-3">
+          <Icon
+            name="qr_code_scanner"
+            className="text-6xl text-cyan-400 drop-shadow-[0_0_20px_rgba(0,240,255,0.4)]"
+          />
+          <p className="font-mono text-sm uppercase tracking-widest text-cyan-400">
+            AWAITING PHYSICAL VERIFICATION
+          </p>
+        </div>
+
         <Link
           to="/q1"
-          className="block text-center font-mono text-xs text-accent underline"
+          className="mt-4 inline-flex items-center gap-2 self-center font-mono text-xs uppercase tracking-widest text-cyan-400"
         >
-          BACK TO HUB
+          <Icon name="arrow_back" className="text-sm" /> BACK TO HUB
         </Link>
-      </main>
+      </PageShell>
     );
   }
 
   const errorMessage = actionData?.ok === false ? actionData.message : null;
 
   return (
-    <main className="mx-auto max-w-md space-y-6 px-6 py-12">
-      <SystemPanel>
-        <StageHeader title="DECRYPTION 1-2">
-          <p>パズルを解いて、求めた値を入力してください。</p>
-        </StageHeader>
+    <PageShell sessionId="ID: X-99">
+      <StageHeader title="DECRYPTION 1-2" eyebrow="MODULE: AREA SCAN">
+        <p>パズルを解いて、求めた値を入力してください。</p>
+      </StageHeader>
+
+      <SystemPanel className="my-8 text-center">
+        <p className="mb-3 font-mono text-[10px] uppercase tracking-widest text-cyan-500/60">
+          PATTERN MATCHING
+        </p>
+        <p className="font-mono leading-relaxed text-cyan-300/80">
+          3×3 グリッドと予約状況を照合し、座標を特定してください。
+        </p>
       </SystemPanel>
 
       <Form method="post" className="space-y-4">
-        <TextInput
-          name="answer"
-          inputMode="text"
-          autoComplete="off"
-          autoFocus
-          placeholder="ANSWER"
-          className="w-full"
-          required
-        />
+        <label className="block font-mono text-[10px] uppercase tracking-widest text-cyan-900">
+          COORDINATE
+        </label>
+        <div className="flex items-center border-b border-cyan-900 focus-within:border-cyan-400">
+          <Icon name="arrow_forward_ios" className="mr-2 text-sm text-cyan-500" />
+          <TextInput
+            name="answer"
+            inputMode="text"
+            autoComplete="off"
+            autoFocus
+            placeholder="ENTER VALUE"
+            required
+            className="border-0 focus:ring-0"
+          />
+        </div>
         {errorMessage && <ErrorAlert>{errorMessage}</ErrorAlert>}
         <GlowButton type="submit" className="w-full">
-          SUBMIT
+          SUBMIT_SEQUENCE
         </GlowButton>
       </Form>
 
       <Link
         to="/q1"
-        className="block text-center font-mono text-xs text-text-secondary underline"
+        className="mt-8 inline-flex items-center gap-2 self-center font-mono text-xs uppercase tracking-widest text-cyan-900 hover:text-cyan-400"
       >
-        BACK TO HUB
+        <Icon name="arrow_back" className="text-sm" /> BACK TO HUB
       </Link>
 
       <HintChat hint="DECRYPTION 1-2 はパズルから読み取れる一桁の数値が答えです。配布資料に散らばったヒントを順に組み合わせてみてください。" />
-    </main>
+    </PageShell>
   );
 }
