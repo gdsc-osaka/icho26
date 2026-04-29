@@ -7,6 +7,9 @@
 /.react-router/
 /build/
 
+# wrangler deploy --dry-run output
+/dist/
+
 # Cloudflare
 .wrangler/
 worker-configuration.d.ts

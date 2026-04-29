@@ -10,6 +10,7 @@ export default [
   {
     ignores: [
       "build/**",
+      "dist/**",
       ".react-router/**",
       ".wrangler/**",
       "node_modules/**",
