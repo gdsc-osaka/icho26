@@ -6,7 +6,9 @@ describe("isCorrect", () => {
   it.each([
     ["Q1_1", "42", true],
     ["Q1_1", "43", false],
-    ["Q1_2", "7", true],
+    ["Q1_2", "2,3", true],
+    ["Q1_2", "3,2", false],
+    ["Q1_2", "2", false],
     ["Q2", "coffeecup", true],
     ["Q3_KEYWORD", "hakidamenitsuru", true],
     ["Q3_CODE", "2.24", true],

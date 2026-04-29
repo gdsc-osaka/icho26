@@ -48,8 +48,11 @@ export async function action({ request, context }: Route.ActionArgs) {
   if (!groupId) throw redirect("/");
 
   const formData = await request.formData();
-  const raw = String(formData.get("answer") ?? "");
-  const normalized = normalize(raw);
+  const rawRow = String(formData.get("row") ?? "");
+  const rawCol = String(formData.get("col") ?? "");
+  const raw = `${rawRow},${rawCol}`;
+  // 行と列をそれぞれ正規化してから連結することで、全角カンマ等の表記揺れを回避する
+  const normalized = `${normalize(rawRow)},${normalize(rawCol)}`;
   const correct = isCorrect("Q1_2", normalized);
 
   const db = drizzle(env.DB);
@@ -127,33 +130,78 @@ export default function Q1_2() {
         <p>パズルを解いて、求めた値を入力してください。</p>
       </StageHeader>
 
-      <SystemPanel className="my-8 text-center">
-        <p className="mb-3 font-mono text-[10px] uppercase tracking-widest text-cyan-500/60">
-          PATTERN MATCHING
-        </p>
-        <p className="font-mono leading-relaxed text-cyan-300/80">
-          3×3 グリッドと予約状況を照合し、座標を特定してください。
-        </p>
+      <SystemPanel className="my-6">
+        <div className="flex items-start gap-3">
+          <Icon
+            name="terminal"
+            className="mt-0.5 text-cyan-400 drop-shadow-[0_0_6px_rgba(0,240,255,0.5)]"
+          />
+          <div className="space-y-2">
+            <p className="font-mono text-[10px] uppercase tracking-widest text-cyan-400">
+              [MESSAGE_INCOMING]
+            </p>
+            <p className="font-mono text-sm leading-relaxed text-on-surface">
+              [SCAN_LOG]
+              周辺座席の予約パターンを検知しました。壁の掲示板（4×6座席表）と照合し、ターゲット『？』の座標を特定してください。
+            </p>
+          </div>
+        </div>
+      </SystemPanel>
+
+      <SystemPanel className="my-6">
+        <img
+          src="/q1-2-pattern.png"
+          alt="LOCAL_SCAN_PATTERN_BETA: 3x3 grid showing reserved and empty seats with a target '?' cell"
+          className="mx-auto block w-full max-w-sm"
+        />
       </SystemPanel>
 
       <Form method="post" className="space-y-4">
-        <label className="block font-mono text-[10px] uppercase tracking-widest text-cyan-900">
-          COORDINATE
-        </label>
-        <div className="flex items-center border-b border-cyan-900 focus-within:border-cyan-400">
-          <Icon
-            name="arrow_forward_ios"
-            className="mr-2 text-sm text-cyan-500"
-          />
-          <TextInput
-            name="answer"
-            inputMode="text"
-            autoComplete="off"
-            autoFocus
-            placeholder="ENTER VALUE"
-            required
-            className="border-0 focus:ring-0"
-          />
+        <p className="font-mono text-[10px] uppercase tracking-widest text-cyan-900">
+          TARGET COORDINATE
+        </p>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label
+              htmlFor="q1-2-row"
+              className="block font-mono text-[10px] uppercase tracking-widest text-cyan-500/70"
+            >
+              ROW (行)
+            </label>
+            <div className="mt-1 flex items-center border-b border-cyan-900 focus-within:border-cyan-400">
+              <Icon name="table_rows" className="mr-2 text-sm text-cyan-500" />
+              <TextInput
+                id="q1-2-row"
+                name="row"
+                inputMode="numeric"
+                autoComplete="off"
+                autoFocus
+                placeholder="0"
+                required
+                className="border-0 focus:ring-0"
+              />
+            </div>
+          </div>
+          <div>
+            <label
+              htmlFor="q1-2-col"
+              className="block font-mono text-[10px] uppercase tracking-widest text-cyan-500/70"
+            >
+              COLUMN (列)
+            </label>
+            <div className="mt-1 flex items-center border-b border-cyan-900 focus-within:border-cyan-400">
+              <Icon name="view_column" className="mr-2 text-sm text-cyan-500" />
+              <TextInput
+                id="q1-2-col"
+                name="col"
+                inputMode="numeric"
+                autoComplete="off"
+                placeholder="0"
+                required
+                className="border-0 focus:ring-0"
+              />
+            </div>
+          </div>
         </div>
         {errorMessage && <ErrorAlert>{errorMessage}</ErrorAlert>}
         <GlowButton type="submit" className="w-full">
@@ -168,7 +216,7 @@ export default function Q1_2() {
         <Icon name="arrow_back" className="text-sm" /> BACK TO HUB
       </Link>
 
-      <HintChat hint="DECRYPTION 1-2 はパズルから読み取れる一桁の数値が答えです。配布資料に散らばったヒントを順に組み合わせてみてください。" />
+      <HintChat hint="DECRYPTION 1-2 は壁の 4×6 座席表と画面のローカルパターンを重ね合わせ、ターゲット『？』の座標を行・列として入力する設問です。両方の値が一致したときのみ次に進めます。" />
     </PageShell>
   );
 }
