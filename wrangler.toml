@@ -1,18 +1,26 @@
 #:schema node_modules/wrangler/config-schema.json
 name = "icho26"
-main = "build/server/index.js"
+main = "workers/app.ts"
 compatibility_date = "2025-04-01"
 compatibility_flags = ["nodejs_compat"]
 
 [assets]
 directory = "build/client"
 
+# `virtual:react-router/server-build` is provided by the @react-router/dev
+# vite plugin during dev/build but is not a real module. Workers Builds runs
+# `wrangler deploy` which bundles workers/app.ts via esbuild — esbuild needs
+# this alias to resolve the import to the SSR bundle produced by `react-router
+# build`. Required for both `wrangler deploy` and Workers Builds.
+[alias]
+"virtual:react-router/server-build" = "./build/server/index.js"
+
 [[d1_databases]]
 binding = "DB"
 database_name = "icho26"
-database_id = "00000000-0000-0000-0000-000000000000"
+database_id = "af8b2329-102f-48bb-a292-58915e158bc1"
 migrations_dir = "db/migrations"
 
 [[kv_namespaces]]
 binding = "CACHE"
-id = "00000000000000000000000000000000"
+id = "a26f1fb966d747a7ad7592324a61241a"
