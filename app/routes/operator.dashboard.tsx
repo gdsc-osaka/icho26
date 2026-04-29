@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { drizzle } from "drizzle-orm/d1";
 import { Form, Link, useActionData, useLoaderData } from "react-router";
 import type { Font } from "bdfparser";
@@ -106,6 +106,38 @@ export default function OperatorDashboard() {
       cancelled = true;
     };
   }, []);
+
+  // Pre-warm the lx-printer dynamic import so the user-gesture click on
+  // either the form's submit or the re-print button can call requestDevice()
+  // within transient activation without waiting on a fresh module fetch.
+  useEffect(() => {
+    void import("lx-printer/lx-d02");
+  }, []);
+
+  const handleReprint = useCallback(() => {
+    if (!actionData?.ok || !font) return;
+    const issued = actionData;
+    const startUrl = `${window.location.origin}/start/${issued.issuedGroupId}`;
+    const print = () =>
+      printer.printBadge(
+        {
+          companyName: COMPANY_NAME,
+          groupName: issued.groupName,
+          groupSize: issued.groupSize,
+          qrUrl: startUrl,
+        },
+        font,
+      );
+    if (printer.status.isConnected) {
+      void print().catch(() => {});
+    } else {
+      // Synchronously kick off connect on this user gesture, then chain print.
+      void printer
+        .connect()
+        .then(print)
+        .catch(() => {});
+    }
+  }, [actionData, font, printer]);
 
   useEffect(() => {
     if (!actionData?.ok) return;
@@ -230,6 +262,8 @@ export default function OperatorDashboard() {
                 printerConnected={printer.status.isConnected}
                 autoPrintEnabled={autoPrintEnabled}
                 isConnecting={printer.isConnecting}
+                fontReady={font !== null}
+                onReprint={handleReprint}
               />
             )}
           </div>
@@ -328,6 +362,8 @@ function IssuedIdCard({
   printerConnected,
   autoPrintEnabled,
   isConnecting,
+  fontReady,
+  onReprint,
 }: {
   groupId: string;
   groupName: string;
@@ -336,7 +372,11 @@ function IssuedIdCard({
   printerConnected: boolean;
   autoPrintEnabled: boolean;
   isConnecting: boolean;
+  fontReady: boolean;
+  onReprint: () => void;
 }) {
+  const reprintDisabled =
+    !fontReady || isConnecting || printState === "printing";
   const startUrl = `/start/${groupId}`;
   return (
     <div className="bg-bg-primary rounded p-3 font-mono text-sm space-y-2">
@@ -380,9 +420,18 @@ function IssuedIdCard({
       )}
       {autoPrintEnabled && printerConnected && printState === "error" && (
         <p className="text-danger text-xs">
-          印刷に失敗しました。詳細画面から再印刷してください。
+          印刷に失敗しました。下記のボタンか詳細画面から再印刷してください。
         </p>
       )}
+      <div className="pt-1">
+        <GlowButton
+          type="button"
+          onClick={onReprint}
+          disabled={reprintDisabled}
+        >
+          {printState === "printing" ? "印刷中..." : "このグループを再印刷"}
+        </GlowButton>
+      </div>
     </div>
   );
 }
