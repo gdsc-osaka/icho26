@@ -90,7 +90,7 @@ Index: `idx_progress_logs_group`(`group_id`)
 | `operator_id` | text PK | 常に `"operator"` |
 | `password_hash_b64` | text NOT NULL | PBKDF2-SHA256 ハッシュの Base64 |
 | `password_salt_b64` | text NOT NULL | salt(16 byte 以上)の Base64 |
-| `password_iterations` | integer NOT NULL | 初期 210000 |
+| `password_iterations` | integer NOT NULL | 100000(Cloudflare Workers PBKDF2 の上限) |
 | `created_at` | text NOT NULL | |
 | `updated_at` | text NOT NULL | |
 
