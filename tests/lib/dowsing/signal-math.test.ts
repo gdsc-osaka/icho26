@@ -3,6 +3,7 @@ import {
   attenuateBySpike,
   bandEnergyMagnitude,
   dbToMagnitude,
+  magnitudeRatioToProximity,
   median,
   refSpikeDb,
 } from "~/lib/dowsing/signal-math";
@@ -86,6 +87,32 @@ describe("attenuateBySpike", () => {
   it("clamps to 0 when subtraction would go negative", () => {
     const result = attenuateBySpike(0.05, 1.0, 20, 9, 6);
     expect(result).toBe(0);
+  });
+});
+
+describe("magnitudeRatioToProximity", () => {
+  it("returns 0 when noiseMag is 0", () => {
+    expect(magnitudeRatioToProximity(1, 0, 3, 30)).toBe(0);
+  });
+  it("returns 0 when targetMag is 0", () => {
+    expect(magnitudeRatioToProximity(0, 1, 3, 30)).toBe(0);
+  });
+  it("returns 0 when ratio in dB is below rangeMin", () => {
+    // ratio 1 => 0 dB, < 3 dB
+    expect(magnitudeRatioToProximity(1, 1, 3, 30)).toBe(0);
+  });
+  it("returns 1 when ratio in dB is above rangeMax", () => {
+    // ratio 1000 => 60 dB, > 30 dB
+    expect(magnitudeRatioToProximity(1000, 1, 3, 30)).toBe(1);
+  });
+  it("maps midpoint linearly between rangeMin and rangeMax", () => {
+    // midpoint of [3, 30] dB is 16.5 dB => ratio = 10^(16.5/20) ≈ 6.6834
+    const t = magnitudeRatioToProximity(6.6834, 1, 3, 30);
+    expect(t).toBeCloseTo(0.5, 2);
+  });
+  it("returns 0 when range is invalid (max <= min)", () => {
+    expect(magnitudeRatioToProximity(10, 1, 30, 30)).toBe(0);
+    expect(magnitudeRatioToProximity(10, 1, 30, 3)).toBe(0);
   });
 });
 

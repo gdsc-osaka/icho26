@@ -19,12 +19,15 @@ export const FFT_SIZE = 8192;
 // 48 kHz サンプリング × FFT 8192 → 約 5.86 Hz/bin、 ±5 bin ≒ ±29 Hz。
 export const ENERGY_HALF_BINS = 5;
 
-// 参照帯域: 対象周波数の +400 Hz を「環境ノイズ監視窓」として常時計測し、
-// そこが急上昇したら誤検知防止のため信号側を減衰させる。
+// 参照帯域: 対象周波数の +400 Hz を「環境ノイズ監視窓」として常時計測する。
 // Q1-1 → 19,000 Hz、Q1-2 → 20,400 Hz。可聴域 (〜18 kHz) には落ちない。
+// 計測値はデバッグログにのみ出力する（後段の動的減衰は spec/dowsing-spec.md
+// §4.3 で定義されているが、スピーカーのスペクトル漏れで常時誤発動するため
+// 既定では無効。ENABLE_REF_ATTENUATION を true にすると有効化できる）。
 export const REF_FREQ_OFFSET_HZ = 400;
-export const REF_GUARD_DB = 9; // 参照帯域がこの dB 以上スパイクしたら閾値を持ち上げる
-export const REF_THRESHOLD_BOOST_DB = 6; // 持ち上げ量
+export const REF_GUARD_DB = 9;
+export const REF_THRESHOLD_BOOST_DB = 6;
+export const ENABLE_REF_ATTENUATION = false;
 
 // キャリブレーション
 export const NOISE_WINDOW_MS = 1500;
@@ -32,10 +35,12 @@ export const NOISE_WINDOW_MS = 1500;
 // 評価周期
 export const TICK_MS = 60;
 
-// 線形 magnitude マッピング（dB → 10^(dB/20)）。
-// proximity = clamp((sigMag - LINEAR_RANGE_MIN) / (MAX - MIN)) * 100
-export const LINEAR_RANGE_MIN = 0.0; // proximity=0
-export const LINEAR_RANGE_MAX = 0.05; // proximity=100（暫定値、実体検証で確定）
+// 接近度マッピング（dB スケール）。
+// targetMag を noiseMag との比に変換した dB 値を proximity 0〜100 に線形マッピングする。
+// 線形 magnitude を直接マップすると指数応答になり、距離変化に対する反応が階段状になるため
+// dB 空間で比例マップする。
+export const RANGE_MIN_DB = 3; // proximity=0 にマップする signal_db
+export const RANGE_MAX_DB = 30; // proximity=100 にマップする signal_db
 
 // 時間平滑化
 export const EMA_ALPHA = 0.3;

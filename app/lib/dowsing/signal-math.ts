@@ -57,6 +57,29 @@ export function attenuateBySpike(
   return Math.max(0, sigMag - noiseMag * boost);
 }
 
+/**
+ * `targetMag / noiseMag` を dB 値に変換し、`[rangeMinDb, rangeMaxDb]` を 0〜1 にマップする。
+ * - `noiseMag` が 0 / 非正なら 0 を返す
+ * - 比が非有限・0 以下なら 0 を返す
+ * - `rangeMaxDb <= rangeMinDb` の場合は 0 を返す（保護）
+ */
+export function magnitudeRatioToProximity(
+  targetMag: number,
+  noiseMag: number,
+  rangeMinDb: number,
+  rangeMaxDb: number,
+): number {
+  if (noiseMag <= 0) return 0;
+  if (rangeMaxDb <= rangeMinDb) return 0;
+  const ratio = targetMag / noiseMag;
+  if (!Number.isFinite(ratio) || ratio <= 0) return 0;
+  const db = 20 * Math.log10(ratio);
+  const t = (db - rangeMinDb) / (rangeMaxDb - rangeMinDb);
+  if (t <= 0) return 0;
+  if (t >= 1) return 1;
+  return t;
+}
+
 /** 配列の中央値。空配列なら fallback を返す。 */
 export function median(values: number[], fallback: number): number {
   if (values.length === 0) return fallback;

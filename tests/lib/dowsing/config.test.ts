@@ -5,8 +5,8 @@ import {
   FFT_SIZE,
   FREQ_Q1_1_HZ,
   FREQ_Q1_2_HZ,
-  LINEAR_RANGE_MAX,
-  LINEAR_RANGE_MIN,
+  RANGE_MAX_DB,
+  RANGE_MIN_DB,
   REF_FREQ_OFFSET_HZ,
   REF_GUARD_DB,
   REF_THRESHOLD_BOOST_DB,
@@ -55,9 +55,9 @@ describe("dowsing config sanity", () => {
     expect(EMA_ALPHA).toBeLessThan(1);
   });
 
-  it("linear magnitude range is monotonically increasing and non-negative", () => {
-    expect(LINEAR_RANGE_MIN).toBeGreaterThanOrEqual(0);
-    expect(LINEAR_RANGE_MAX).toBeGreaterThan(LINEAR_RANGE_MIN);
+  it("dB proximity range is monotonically increasing and positive", () => {
+    expect(RANGE_MIN_DB).toBeGreaterThan(0);
+    expect(RANGE_MAX_DB).toBeGreaterThan(RANGE_MIN_DB);
   });
 
   it("reference guard / boost dB are positive", () => {
