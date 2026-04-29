@@ -1,11 +1,14 @@
+import { useEffect, useState } from "react";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { Form, useActionData, useLoaderData } from "react-router";
+import type { Font } from "bdfparser";
 import * as schema from "../../db/schema";
 import { STAGES, type Stage } from "../../db/schema";
 import {
   ErrorAlert,
   GlowButton,
+  PrinterPanel,
   StageHeader,
   SystemPanel,
   TextInput,
@@ -13,7 +16,11 @@ import {
 import { correctStatus, markReported } from "~/lib/operator/mutations";
 import { getUserDetail, type UserDetail } from "~/lib/operator/queries";
 import { requireOperatorSession } from "~/lib/operator/session";
+import { loadBdfFont } from "~/lib/printer/bdf-font";
+import { usePrinter } from "~/lib/printer/usePrinter";
 import type { Route } from "./+types/operator.group.$groupId";
+
+const COMPANY_NAME = "ZEUS Inc.";
 
 export function meta({ params }: Route.MetaArgs) {
   return [{ title: `Group ${params.groupId} | icho26` }];
@@ -128,6 +135,8 @@ export default function OperatorGroupDetail() {
         )}
 
         <UserSummary user={data.user} />
+
+        <ReprintPanel user={data.user} />
 
         <div className="grid md:grid-cols-2 gap-6">
           <StatusCorrectionForm
@@ -444,5 +453,70 @@ function EmptyRow({ text }: { text: string }) {
     <p className="text-center text-text-secondary font-mono text-sm py-4">
       {text}
     </p>
+  );
+}
+
+function ReprintPanel({ user }: { user: UserDetail["user"] }) {
+  const printer = usePrinter();
+  const [font, setFont] = useState<Font | null>(null);
+  const [fontError, setFontError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    loadBdfFont()
+      .then((f) => {
+        if (!cancelled) setFont(f);
+      })
+      .catch((err: unknown) => {
+        if (!cancelled) {
+          setFontError(err instanceof Error ? err.message : String(err));
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const canPrint =
+    font !== null &&
+    printer.status.isConnected &&
+    user.groupName !== null &&
+    user.groupSize !== null &&
+    printer.printState !== "printing";
+
+  const handleReprint = () => {
+    if (!font || user.groupName === null || user.groupSize === null) return;
+    const startUrl = `${window.location.origin}/start/${user.groupId}`;
+    void printer.printBadge(
+      {
+        companyName: COMPANY_NAME,
+        groupName: user.groupName,
+        groupSize: user.groupSize,
+        qrUrl: startUrl,
+      },
+      font,
+    );
+  };
+
+  return (
+    <SystemPanel>
+      <div className="space-y-3">
+        <h2 className="font-display text-lg text-text-primary">社員証 再印刷</h2>
+        <PrinterPanel printer={printer} fontReady={font !== null} />
+        {fontError && <ErrorAlert>フォントロード失敗: {fontError}</ErrorAlert>}
+        {(user.groupName === null || user.groupSize === null) && (
+          <p className="text-text-secondary font-mono text-xs">
+            このグループには社員名/人数が未登録のため再印刷できません (旧 ID)。
+          </p>
+        )}
+        <GlowButton
+          type="button"
+          onClick={handleReprint}
+          disabled={!canPrint}
+        >
+          再印刷
+        </GlowButton>
+      </div>
+    </SystemPanel>
   );
 }
