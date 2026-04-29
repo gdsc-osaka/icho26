@@ -4,12 +4,15 @@ import { Form, useActionData, useLoaderData } from "react-router";
 import * as schema from "../../db/schema";
 import { STAGES, type Stage } from "../../db/schema";
 import {
+  BackgroundFX,
   ErrorAlert,
   GlowButton,
+  Icon,
   PrinterPanel,
   StageHeader,
   SystemPanel,
   TextInput,
+  TopBar,
 } from "~/components";
 import { correctStatus, markReported } from "~/lib/operator/mutations";
 import { getUserDetail, type UserDetail } from "~/lib/operator/queries";
@@ -46,10 +49,6 @@ export async function action({
   const db = drizzle(env.DB, { schema });
   const session = await requireOperatorSession(request, db);
 
-  // Validate group existence before any mutation. Without this check
-  // an INSERT into operator_actions would orphan an audit row whose
-  // group_id never resolved to a user, because actions run before
-  // their loader's 404 is raised in React Router v7.
   const existing = await db
     .select({ groupId: schema.users.groupId })
     .from(schema.users)
@@ -116,12 +115,14 @@ export default function OperatorGroupDetail() {
   const actionData = useActionData<typeof action>();
 
   return (
-    <main className="min-h-screen bg-bg-primary p-4 md:p-6">
-      <div className="max-w-6xl mx-auto space-y-6">
-        <StageHeader title="GROUP DETAIL">{data.user.groupId}</StageHeader>
+    <>
+      <TopBar sessionId="OPERATOR" rightIcon="admin_panel_settings" />
+      <BackgroundFX />
+      <main className="relative z-10 mx-auto max-w-6xl space-y-6 px-4 pt-20 pb-12 md:px-6">
+        <StageHeader title="GROUP DETAIL" eyebrow={data.user.groupId} />
 
         {actionData?.ok && (
-          <div className="bg-accent/10 border border-accent text-accent px-4 py-2 rounded font-mono text-sm">
+          <div className="border border-cyan-400 bg-cyan-500/10 px-4 py-2 font-mono text-sm text-cyan-400">
             {actionData.intent === "status-correction"
               ? "ステータスを補正しました"
               : "報告済みとしてマークしました"}
@@ -135,7 +136,7 @@ export default function OperatorGroupDetail() {
 
         <ReprintPanel user={data.user} />
 
-        <div className="grid md:grid-cols-2 gap-6">
+        <div className="grid gap-6 md:grid-cols-2">
           <StatusCorrectionForm
             currentStage={data.user.currentStage as Stage}
           />
@@ -143,23 +144,26 @@ export default function OperatorGroupDetail() {
             <MarkReportedForm />
           ) : (
             <SystemPanel>
-              <h2 className="font-display text-lg text-text-primary">
-                報告済み
-              </h2>
-              <p className="font-mono text-sm text-text-secondary mt-2">
+              <div className="flex items-center gap-2 text-cyan-400">
+                <Icon name="task_alt" filled className="text-sm" />
+                <h2 className="font-mono text-[10px] uppercase tracking-widest">
+                  REPORTED
+                </h2>
+              </div>
+              <p className="mt-2 font-mono text-sm text-on-surface-variant">
                 {data.user.reportedAt}
               </p>
             </SystemPanel>
           )}
         </div>
 
-        <LogSection title="試行ログ">
+        <LogSection title="試行ログ" icon="history">
           {data.attempts.length === 0 ? (
             <EmptyRow text="no attempts" />
           ) : (
             <table className="w-full text-left text-sm">
-              <thead className="font-mono text-text-secondary">
-                <tr className="border-b border-accent-dim">
+              <thead className="font-mono text-on-surface-variant">
+                <tr className="border-b border-cyan-900/50">
                   <th className="py-2 pr-4">created_at</th>
                   <th className="py-2 pr-4">stage</th>
                   <th className="py-2 pr-4">raw</th>
@@ -169,21 +173,28 @@ export default function OperatorGroupDetail() {
               </thead>
               <tbody>
                 {data.attempts.map((a) => (
-                  <tr key={a.id} className="border-b border-accent-dim/30">
-                    <td className="py-2 pr-4 font-mono text-text-secondary text-xs">
+                  <tr
+                    key={a.id}
+                    className="border-b border-cyan-900/30 hover:bg-cyan-950/10"
+                  >
+                    <td className="py-2 pr-4 font-mono text-xs text-on-surface-variant">
                       {a.createdAt}
                     </td>
-                    <td className="py-2 pr-4 font-mono text-accent">
+                    <td className="py-2 pr-4 font-mono text-cyan-400">
                       {a.stage}
                     </td>
-                    <td className="py-2 pr-4 font-mono break-all">
+                    <td className="break-all py-2 pr-4 font-mono">
                       {a.rawInput}
                     </td>
-                    <td className="py-2 pr-4 font-mono break-all">
+                    <td className="break-all py-2 pr-4 font-mono">
                       {a.normalizedInput}
                     </td>
                     <td className="py-2 pr-4 font-mono">
-                      {a.correct ? "✓" : "✗"}
+                      {a.correct ? (
+                        <span className="text-cyan-400">✓</span>
+                      ) : (
+                        <span className="text-error">✗</span>
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -192,13 +203,13 @@ export default function OperatorGroupDetail() {
           )}
         </LogSection>
 
-        <LogSection title="進行ログ">
+        <LogSection title="進行ログ" icon="track_changes">
           {data.progress.length === 0 ? (
             <EmptyRow text="no progress events" />
           ) : (
             <table className="w-full text-left text-sm">
-              <thead className="font-mono text-text-secondary">
-                <tr className="border-b border-accent-dim">
+              <thead className="font-mono text-on-surface-variant">
+                <tr className="border-b border-cyan-900/50">
                   <th className="py-2 pr-4">created_at</th>
                   <th className="py-2 pr-4">event_type</th>
                   <th className="py-2 pr-4">from</th>
@@ -208,18 +219,21 @@ export default function OperatorGroupDetail() {
               </thead>
               <tbody>
                 {data.progress.map((p) => (
-                  <tr key={p.id} className="border-b border-accent-dim/30">
-                    <td className="py-2 pr-4 font-mono text-text-secondary text-xs">
+                  <tr
+                    key={p.id}
+                    className="border-b border-cyan-900/30 hover:bg-cyan-950/10"
+                  >
+                    <td className="py-2 pr-4 font-mono text-xs text-on-surface-variant">
                       {p.createdAt}
                     </td>
-                    <td className="py-2 pr-4 font-mono text-accent">
+                    <td className="py-2 pr-4 font-mono text-cyan-400">
                       {p.eventType}
                     </td>
                     <td className="py-2 pr-4 font-mono">
                       {p.fromStage ?? "—"}
                     </td>
                     <td className="py-2 pr-4 font-mono">{p.toStage ?? "—"}</td>
-                    <td className="py-2 pr-4 font-mono break-all text-xs">
+                    <td className="break-all py-2 pr-4 font-mono text-xs">
                       {p.detail ?? ""}
                     </td>
                   </tr>
@@ -229,13 +243,13 @@ export default function OperatorGroupDetail() {
           )}
         </LogSection>
 
-        <LogSection title="運営介入ログ">
+        <LogSection title="運営介入ログ" icon="security">
           {data.actions.length === 0 ? (
             <EmptyRow text="no operator actions" />
           ) : (
             <table className="w-full text-left text-sm">
-              <thead className="font-mono text-text-secondary">
-                <tr className="border-b border-accent-dim">
+              <thead className="font-mono text-on-surface-variant">
+                <tr className="border-b border-cyan-900/50">
                   <th className="py-2 pr-4">created_at</th>
                   <th className="py-2 pr-4">action_type</th>
                   <th className="py-2 pr-4">from</th>
@@ -246,11 +260,14 @@ export default function OperatorGroupDetail() {
               </thead>
               <tbody>
                 {data.actions.map((a) => (
-                  <tr key={a.id} className="border-b border-accent-dim/30">
-                    <td className="py-2 pr-4 font-mono text-text-secondary text-xs">
+                  <tr
+                    key={a.id}
+                    className="border-b border-cyan-900/30 hover:bg-cyan-950/10"
+                  >
+                    <td className="py-2 pr-4 font-mono text-xs text-on-surface-variant">
                       {a.createdAt}
                     </td>
-                    <td className="py-2 pr-4 font-mono text-accent">
+                    <td className="py-2 pr-4 font-mono text-cyan-400">
                       {a.actionType}
                     </td>
                     <td className="py-2 pr-4 font-mono">
@@ -258,7 +275,7 @@ export default function OperatorGroupDetail() {
                     </td>
                     <td className="py-2 pr-4 font-mono">{a.toStage ?? "—"}</td>
                     <td className="py-2 pr-4 font-mono">{a.reasonCode}</td>
-                    <td className="py-2 pr-4 font-mono break-all text-xs">
+                    <td className="break-all py-2 pr-4 font-mono text-xs">
                       {a.note ?? ""}
                     </td>
                   </tr>
@@ -267,15 +284,15 @@ export default function OperatorGroupDetail() {
             </table>
           )}
         </LogSection>
-      </div>
-    </main>
+      </main>
+    </>
   );
 }
 
 function UserSummary({ user }: { user: UserDetail["user"] }) {
   return (
     <SystemPanel>
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 font-mono text-sm">
+      <div className="grid grid-cols-2 gap-4 font-mono text-sm md:grid-cols-4">
         <SummaryField
           label="current_stage"
           value={user.currentStage}
@@ -310,11 +327,11 @@ function SummaryField({
 }) {
   return (
     <div>
-      <div className="text-text-secondary text-xs">{label}</div>
+      <div className="text-[10px] uppercase tracking-widest text-cyan-900">
+        {label}
+      </div>
       <div
-        className={`break-all ${
-          highlight ? "text-accent" : "text-text-primary"
-        }`}
+        className={`break-all ${highlight ? "text-cyan-400" : "text-on-surface"}`}
       >
         {value}
       </div>
@@ -326,21 +343,24 @@ function StatusCorrectionForm({ currentStage }: { currentStage: Stage }) {
   return (
     <SystemPanel>
       <div className="space-y-4">
-        <h2 className="font-display text-lg text-text-primary">
-          ステータス補正
-        </h2>
+        <div className="flex items-center gap-2 text-cyan-400">
+          <Icon name="tune" className="text-sm" />
+          <h2 className="font-mono text-[10px] uppercase tracking-widest">
+            STATUS CORRECTION
+          </h2>
+        </div>
         <Form method="post" className="space-y-3">
           <input type="hidden" name="_action" value="status-correction" />
           <input type="hidden" name="from_stage" value={currentStage} />
           <FormField label="from (現在)">
-            <div className="font-mono text-accent">{currentStage}</div>
+            <div className="font-mono text-cyan-400">{currentStage}</div>
           </FormField>
           <FormField label="to_stage">
             <select
               name="to_stage"
               required
               defaultValue={currentStage}
-              className="bg-bg-primary border border-text-secondary rounded px-3 py-2 text-text-primary font-mono focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent w-full"
+              className="w-full border border-cyan-900/60 bg-[#05070A]/80 px-3 py-2 font-mono text-on-surface focus:border-cyan-400 focus:outline-none focus:ring-1 focus:ring-cyan-400/40"
             >
               {STAGES.map((s) => (
                 <option key={s} value={s}>
@@ -354,14 +374,13 @@ function StatusCorrectionForm({ currentStage }: { currentStage: Stage }) {
               name="reason_code"
               required
               placeholder="例: NFC_FAILED, MANUAL_OVERRIDE"
-              className="w-full"
             />
           </FormField>
           <FormField label="note (任意)">
             <textarea
               name="note"
               rows={3}
-              className="bg-bg-primary border border-text-secondary rounded px-3 py-2 text-text-primary font-mono focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent w-full"
+              className="w-full border border-cyan-900/60 bg-[#05070A]/80 px-3 py-2 font-mono text-on-surface focus:border-cyan-400 focus:outline-none focus:ring-1 focus:ring-cyan-400/40"
             />
           </FormField>
           <GlowButton type="submit">補正を適用</GlowButton>
@@ -375,8 +394,13 @@ function MarkReportedForm() {
   return (
     <SystemPanel>
       <div className="space-y-4">
-        <h2 className="font-display text-lg text-text-primary">報告済み付与</h2>
-        <p className="text-text-secondary text-sm">
+        <div className="flex items-center gap-2 text-cyan-400">
+          <Icon name="assignment_turned_in" className="text-sm" />
+          <h2 className="font-mono text-[10px] uppercase tracking-widest">
+            MARK REPORTED
+          </h2>
+        </div>
+        <p className="text-sm text-on-surface-variant">
           来場者が偽エンドに到達してスタッフに提示した後、ここで報告済みとしてマークします。
         </p>
         <Form
@@ -394,14 +418,13 @@ function MarkReportedForm() {
               name="reason_code"
               required
               placeholder="例: REWARD_HANDED"
-              className="w-full"
             />
           </FormField>
           <FormField label="note (任意)">
             <textarea
               name="note"
               rows={3}
-              className="bg-bg-primary border border-text-secondary rounded px-3 py-2 text-text-primary font-mono focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent w-full"
+              className="w-full border border-cyan-900/60 bg-[#05070A]/80 px-3 py-2 font-mono text-on-surface focus:border-cyan-400 focus:outline-none focus:ring-1 focus:ring-cyan-400/40"
             />
           </FormField>
           <GlowButton type="submit">報告済みにする</GlowButton>
@@ -420,7 +443,7 @@ function FormField({
 }) {
   return (
     <div className="space-y-1">
-      <label className="block text-text-secondary text-xs font-mono">
+      <label className="block font-mono text-[10px] uppercase tracking-widest text-cyan-900">
         {label}
       </label>
       {children}
@@ -430,15 +453,22 @@ function FormField({
 
 function LogSection({
   title,
+  icon,
   children,
 }: {
   title: string;
+  icon: string;
   children: React.ReactNode;
 }) {
   return (
     <SystemPanel>
       <div className="space-y-3">
-        <h2 className="font-display text-lg text-text-primary">{title}</h2>
+        <div className="flex items-center gap-2 text-cyan-400">
+          <Icon name={icon} className="text-sm" />
+          <h2 className="font-mono text-[10px] uppercase tracking-widest">
+            {title}
+          </h2>
+        </div>
         <div className="overflow-x-auto">{children}</div>
       </div>
     </SystemPanel>
@@ -447,7 +477,7 @@ function LogSection({
 
 function EmptyRow({ text }: { text: string }) {
   return (
-    <p className="text-center text-text-secondary font-mono text-sm py-4">
+    <p className="py-4 text-center font-mono text-sm text-on-surface-variant">
       {text}
     </p>
   );
@@ -489,11 +519,16 @@ function ReprintPanel({ user }: { user: UserDetail["user"] }) {
   return (
     <SystemPanel>
       <div className="space-y-3">
-        <h2 className="font-display text-lg text-text-primary">社員証 再印刷</h2>
+        <div className="flex items-center gap-2 text-cyan-400">
+          <Icon name="print" className="text-sm" />
+          <h2 className="font-mono text-[10px] uppercase tracking-widest">
+            REPRINT BADGE
+          </h2>
+        </div>
         <PrinterPanel printer={printer} fontReady={font !== null} />
         {fontError && <ErrorAlert>フォントロード失敗: {fontError}</ErrorAlert>}
         {!hasMetadata && (
-          <p className="text-text-secondary font-mono text-xs">
+          <p className="font-mono text-xs text-on-surface-variant">
             このグループには社員名/人数が未登録のため再印刷できません (旧 ID)。
           </p>
         )}

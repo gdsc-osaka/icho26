@@ -15,7 +15,7 @@ const DENSITY_LEVELS = Array.from(
   (_, i) => MIN_DENSITY + i,
 );
 
-export function PrinterPanel({ printer, fontReady }: Props) {
+export function PrinterPanel({ printer, fontReady }: Readonly<Props>) {
   const {
     status,
     isConnecting,
@@ -26,24 +26,26 @@ export function PrinterPanel({ printer, fontReady }: Props) {
     setDensity,
   } = printer;
   return (
-    <div className="bg-bg-primary rounded p-3 font-mono text-sm space-y-2 border border-accent-dim">
-      <div className="flex items-center justify-between gap-2 flex-wrap">
+    <div className="space-y-2 border border-cyan-900/60 bg-[#05070A]/80 p-3 font-mono text-sm">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-3">
           <span
-            className={`inline-block w-2 h-2 rounded-full ${
-              status.isConnected ? "bg-accent" : "bg-text-secondary"
+            className={`inline-block h-2 w-2 rounded-full ${
+              status.isConnected ? "bg-cyan-400" : "bg-on-surface-variant"
             }`}
             aria-hidden
           />
-          <span className="text-text-primary">
+          <span className="text-on-surface">
             LX-D02:{" "}
             <span
-              className={status.isConnected ? "text-accent" : "text-text-secondary"}
+              className={
+                status.isConnected ? "text-cyan-400" : "text-on-surface-variant"
+              }
             >
               {status.isConnected ? "接続済み" : "未接続"}
             </span>
             {status.battery !== undefined && (
-              <span className="text-text-secondary ml-2">
+              <span className="ml-2 text-on-surface-variant">
                 bat {status.battery}%
               </span>
             )}
@@ -61,8 +63,10 @@ export function PrinterPanel({ printer, fontReady }: Props) {
           </GlowButton>
         )}
       </div>
-      <div className="flex items-center gap-2 flex-wrap">
-        <span className="text-text-secondary text-xs">印刷濃度</span>
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-xs uppercase tracking-widest text-cyan-900">
+          DENSITY
+        </span>
         <div className="flex gap-1" role="radiogroup" aria-label="印刷濃度">
           {DENSITY_LEVELS.map((level) => {
             const selected = level === density;
@@ -73,10 +77,10 @@ export function PrinterPanel({ printer, fontReady }: Props) {
                 role="radio"
                 aria-checked={selected}
                 onClick={() => setDensity(level)}
-                className={`w-7 h-7 rounded font-mono text-xs border transition-colors ${
+                className={`h-7 w-7 border font-mono text-xs transition-colors ${
                   selected
-                    ? "bg-accent text-bg-primary border-accent"
-                    : "bg-bg-primary text-text-secondary border-accent-dim hover:text-text-primary hover:border-accent"
+                    ? "border-cyan-400 bg-cyan-400 text-surface-deep"
+                    : "border-cyan-900/60 bg-[#05070A]/80 text-on-surface-variant hover:border-cyan-400 hover:text-on-surface"
                 }`}
               >
                 {level}
@@ -84,32 +88,30 @@ export function PrinterPanel({ printer, fontReady }: Props) {
             );
           })}
         </div>
-        <span className="text-text-secondary text-xs">
+        <span className="text-xs text-on-surface-variant">
           (濃いほど印刷時間が伸びます)
         </span>
       </div>
       {!fontReady && (
-        <p className="text-text-secondary text-xs">
+        <p className="text-xs text-on-surface-variant">
           フォント (b16.bdf) をロード中…
         </p>
       )}
       {status.isOutOfPaper && (
-        <p className="text-danger text-xs">用紙切れです</p>
+        <p className="text-xs text-error">用紙切れです</p>
       )}
-      {status.isOverheat && (
-        <p className="text-danger text-xs">ヘッド温度警告</p>
-      )}
+      {status.isOverheat && <p className="text-xs text-error">ヘッド温度警告</p>}
       {printState === "printing" && (
-        <p className="text-accent text-xs">印刷中...</p>
+        <p className="text-xs text-cyan-400">印刷中...</p>
       )}
       {printState === "success" && (
-        <p className="text-accent text-xs">印刷完了</p>
+        <p className="text-xs text-cyan-400">印刷完了</p>
       )}
       {printState === "error" && errorMessage && (
-        <p className="text-danger text-xs break-all">印刷失敗: {errorMessage}</p>
+        <p className="break-all text-xs text-error">印刷失敗: {errorMessage}</p>
       )}
       {printState !== "error" && errorMessage && !status.isConnected && (
-        <p className="text-danger text-xs break-all">{errorMessage}</p>
+        <p className="break-all text-xs text-error">{errorMessage}</p>
       )}
     </div>
   );

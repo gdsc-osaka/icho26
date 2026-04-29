@@ -4,6 +4,8 @@ import {
   ErrorAlert,
   GlowButton,
   HintChat,
+  Icon,
+  PageShell,
   StageHeader,
   SystemPanel,
   TextInput,
@@ -70,14 +72,26 @@ export default function Q3Code() {
   const errorMessage = actionData?.ok === false ? actionData.message : null;
 
   return (
-    <main className="mx-auto max-w-md space-y-6 px-6 py-12">
-      <SystemPanel>
-        <StageHeader title="Q3 — NUMERIC CODE">
-          <p>アプリのさらなる上級権限を解放するには数字のコードが必要です。</p>
-          <p className="mt-3 font-mono text-text-primary">
-            有効数字 3 桁で入力してください(例: 1.23)。
-          </p>
-        </StageHeader>
+    <PageShell sessionId="ID: X-99">
+      <StageHeader title="STAGE 03" eyebrow="PRIVILEGE ESCALATION">
+        <p>アプリのさらなる上級権限を解放するには数字のコードが必要です。</p>
+      </StageHeader>
+
+      <SystemPanel className="my-8">
+        <div className="mb-3 flex items-center justify-between border-b border-outline-variant/50 pb-2">
+          <div className="flex items-center gap-2 text-cyan-400">
+            <Icon name="lock_open" className="text-sm" />
+            <span className="font-mono text-[10px] uppercase tracking-widest">
+              PHASE_02 / NUMERIC CODE
+            </span>
+          </div>
+          <span className="font-mono text-[10px] text-on-surface-variant">
+            REQ: 3-DIGIT-DECIMAL
+          </span>
+        </div>
+        <p className="font-mono text-sm leading-relaxed text-on-surface-variant">
+          有効数字 3 桁で入力してください(例: 1.23)。
+        </p>
       </SystemPanel>
 
       <Form method="post" className="space-y-4">
@@ -87,16 +101,16 @@ export default function Q3Code() {
           autoComplete="off"
           autoFocus
           placeholder="0.00"
-          className="w-full"
           required
+          className="text-center text-3xl font-bold tracking-[0.4em]"
         />
         {errorMessage && <ErrorAlert>{errorMessage}</ErrorAlert>}
         <GlowButton type="submit" className="w-full">
-          SUBMIT
+          EXECUTE_DECRYPT
         </GlowButton>
       </Form>
 
-      <HintChat />
-    </main>
+      <HintChat hint="STAGE 03 / NUMERIC CODE は無理数を有効数字 3 桁に丸めた値です。よく『黄金』にまつわる定数を計算で求めてみてください。例: 1.23 のように小数点込みで入力します。" />
+    </PageShell>
   );
 }

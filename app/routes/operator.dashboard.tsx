@@ -3,12 +3,15 @@ import { drizzle } from "drizzle-orm/d1";
 import { Form, Link, useActionData, useLoaderData } from "react-router";
 import * as schema from "../../db/schema";
 import {
+  BackgroundFX,
   ErrorAlert,
   GlowButton,
+  Icon,
   PrinterPanel,
   StageHeader,
   SystemPanel,
   TextInput,
+  TopBar,
 } from "~/components";
 import { listUsers } from "~/lib/operator/queries";
 import { requireOperatorSession } from "~/lib/operator/session";
@@ -143,32 +146,41 @@ export default function OperatorDashboard() {
   }, [actionData, font, printer, autoPrintEnabled]);
 
   return (
-    <main className="min-h-screen bg-bg-primary p-4 md:p-6">
-      <div className="max-w-6xl mx-auto space-y-6">
-        <header className="flex items-center justify-between gap-4 flex-wrap">
-          <StageHeader title="OPERATOR DASHBOARD">進捗一覧</StageHeader>
+    <>
+      <TopBar sessionId="OPERATOR" rightIcon="admin_panel_settings" />
+      <BackgroundFX />
+      <main className="relative z-10 mx-auto max-w-6xl space-y-6 px-4 pt-20 pb-12 md:px-6">
+        <header className="flex flex-wrap items-center justify-between gap-4">
+          <StageHeader title="OPERATOR DASHBOARD" eyebrow="進捗一覧 / GROUPS" />
           <Form method="post" action="/operator/login?action=logout">
-            <GlowButton type="submit">LOGOUT</GlowButton>
+            <GlowButton type="submit">
+              <span className="inline-flex items-center gap-2">
+                <Icon name="logout" className="text-sm" /> LOGOUT
+              </span>
+            </GlowButton>
           </Form>
         </header>
 
         <SystemPanel>
           <div className="space-y-4">
-            <h2 className="font-display text-lg text-text-primary">
-              新規 ID 発行
-            </h2>
+            <div className="flex items-center gap-2 text-cyan-400">
+              <Icon name="add_box" className="text-sm" />
+              <h2 className="font-mono text-[10px] uppercase tracking-widest">
+                NEW ID ISSUE
+              </h2>
+            </div>
 
             <PrinterPanel printer={printer} fontReady={font !== null} />
             {fontError && (
               <ErrorAlert>フォントロード失敗: {fontError}</ErrorAlert>
             )}
 
-            <label className="flex items-center gap-2 font-mono text-sm text-text-primary cursor-pointer select-none">
+            <label className="flex cursor-pointer select-none items-center gap-2 font-mono text-sm text-on-surface">
               <input
                 type="checkbox"
                 checked={autoPrintEnabled}
                 onChange={(e) => setAutoPrintEnabled(e.target.checked)}
-                className="w-4 h-4 accent-accent"
+                className="h-4 w-4 accent-cyan-400"
               />
               発行時に自動印刷する
             </label>
@@ -198,7 +210,7 @@ export default function OperatorDashboard() {
                   placeholder="例: たかし、ヤマダ"
                   className="w-full"
                 />
-                <p className="text-text-secondary text-xs font-mono">
+                <p className="font-mono text-xs text-on-surface-variant">
                   AI チャットボットの呼び掛けに使うので、実際の名前やニックネームを入力してください。
                 </p>
               </FormField>
@@ -217,12 +229,12 @@ export default function OperatorDashboard() {
                 <ErrorAlert>{actionData.error}</ErrorAlert>
               )}
               {autoPrintEnabled && !printer.status.isConnected && (
-                <p className="text-text-secondary text-xs font-mono">
+                <p className="font-mono text-xs text-on-surface-variant">
                   ※ 発行時にプリンタ未接続の場合、Bluetooth デバイス選択ダイアログが表示されます。
                 </p>
               )}
               {!autoPrintEnabled && (
-                <p className="text-text-secondary text-xs font-mono">
+                <p className="font-mono text-xs text-on-surface-variant">
                   ※ 自動印刷オフ。詳細画面から手動で印刷してください。
                 </p>
               )}
@@ -248,8 +260,8 @@ export default function OperatorDashboard() {
         <SystemPanel>
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
-              <thead className="font-mono text-text-secondary">
-                <tr className="border-b border-accent-dim">
+              <thead className="font-mono text-on-surface-variant">
+                <tr className="border-b border-cyan-900/50">
                   <th className="py-2 pr-4">groupId</th>
                   <th className="py-2 pr-4">グループ名</th>
                   <th className="py-2 pr-4">人数</th>
@@ -265,41 +277,44 @@ export default function OperatorDashboard() {
                   <tr>
                     <td
                       colSpan={8}
-                      className="py-4 text-center text-text-secondary font-mono"
+                      className="py-4 text-center font-mono text-on-surface-variant"
                     >
                       no groups yet
                     </td>
                   </tr>
                 )}
                 {users.map((u) => (
-                  <tr key={u.groupId} className="border-b border-accent-dim/30">
-                    <td className="py-2 pr-4 font-mono text-text-primary break-all">
+                  <tr
+                    key={u.groupId}
+                    className="border-b border-cyan-900/30 hover:bg-cyan-950/10"
+                  >
+                    <td className="break-all py-2 pr-4 font-mono text-on-surface">
                       {u.groupId}
                     </td>
-                    <td className="py-2 pr-4 font-mono text-text-primary">
+                    <td className="py-2 pr-4 font-mono text-on-surface">
                       {u.groupName ?? "—"}
                     </td>
-                    <td className="py-2 pr-4 font-mono text-text-primary">
+                    <td className="py-2 pr-4 font-mono text-on-surface">
                       {u.groupSize ?? "—"}
                     </td>
-                    <td className="py-2 pr-4 font-mono text-accent">
+                    <td className="py-2 pr-4 font-mono text-cyan-400">
                       {u.currentStage}
                     </td>
-                    <td className="py-2 pr-4 font-mono text-text-primary">
+                    <td className="py-2 pr-4 font-mono text-on-surface">
                       {u.attemptCountTotal}
                     </td>
-                    <td className="py-2 pr-4 font-mono text-text-primary">
+                    <td className="py-2 pr-4 font-mono text-on-surface">
                       {u.reportedAt ? "✓" : "—"}
                     </td>
-                    <td className="py-2 pr-4 font-mono text-text-secondary text-xs">
+                    <td className="py-2 pr-4 font-mono text-xs text-on-surface-variant">
                       {u.updatedAt}
                     </td>
                     <td className="py-2">
                       <Link
                         to={`/operator/group/${u.groupId}`}
-                        className="text-accent hover:underline font-mono"
+                        className="font-mono text-cyan-400 hover:underline"
                       >
-                        詳細
+                        詳細 →
                       </Link>
                     </td>
                   </tr>
@@ -308,8 +323,8 @@ export default function OperatorDashboard() {
             </table>
           </div>
         </SystemPanel>
-      </div>
-    </main>
+      </main>
+    </>
   );
 }
 
@@ -322,7 +337,7 @@ function FormField({
 }) {
   return (
     <div className="space-y-1">
-      <label className="block text-text-secondary text-xs font-mono">
+      <label className="block font-mono text-[10px] uppercase tracking-widest text-cyan-900">
         {label}
       </label>
       {children}
@@ -355,47 +370,58 @@ function IssuedIdCard({
     !fontReady || isConnecting || printState === "printing";
   const startUrl = `/start/${groupId}`;
   return (
-    <div className="bg-bg-primary rounded p-3 font-mono text-sm space-y-2">
-      <div className="text-accent">発行済み</div>
-      <div className="space-y-1">
-        <div className="text-text-secondary text-xs">groupId</div>
-        <div className="text-text-primary break-all">{groupId}</div>
+    <div className="space-y-2 border border-cyan-400/40 bg-[#05070A]/80 p-3 font-mono text-sm">
+      <div className="flex items-center gap-2 text-cyan-400">
+        <Icon name="check_circle" filled className="text-sm" />
+        <span className="text-[10px] uppercase tracking-widest">ISSUED</span>
       </div>
       <div className="grid grid-cols-2 gap-2">
         <div>
-          <div className="text-text-secondary text-xs">グループ名</div>
-          <div className="text-text-primary">{groupName}</div>
+          <div className="text-[10px] uppercase tracking-widest text-cyan-900">
+            グループ名
+          </div>
+          <div className="text-on-surface">{groupName}</div>
         </div>
         <div>
-          <div className="text-text-secondary text-xs">人数</div>
-          <div className="text-text-primary">{groupSize}</div>
+          <div className="text-[10px] uppercase tracking-widest text-cyan-900">
+            人数
+          </div>
+          <div className="text-on-surface">{groupSize}</div>
         </div>
       </div>
       <div className="space-y-1">
-        <div className="text-text-secondary text-xs">開始 URL(相対)</div>
-        <div className="text-text-primary break-all">{startUrl}</div>
+        <div className="text-[10px] uppercase tracking-widest text-cyan-900">
+          groupId
+        </div>
+        <div className="break-all text-on-surface">{groupId}</div>
+      </div>
+      <div className="space-y-1">
+        <div className="text-[10px] uppercase tracking-widest text-cyan-900">
+          開始 URL(相対)
+        </div>
+        <div className="break-all text-on-surface">{startUrl}</div>
       </div>
       {!autoPrintEnabled && (
-        <p className="text-text-secondary text-xs">
-          自動印刷オフ。詳細画面から手動で印刷してください。
+        <p className="text-xs text-on-surface-variant">
+          自動印刷オフ。下記のボタンか詳細画面から手動で印刷してください。
         </p>
       )}
       {autoPrintEnabled && isConnecting && (
-        <p className="text-accent text-xs">プリンタを接続中...</p>
+        <p className="text-xs text-cyan-400">プリンタを接続中...</p>
       )}
       {autoPrintEnabled && !printerConnected && !isConnecting && (
-        <p className="text-text-secondary text-xs">
-          プリンタが接続されていません。詳細画面から再印刷できます。
+        <p className="text-xs text-on-surface-variant">
+          プリンタが接続されていません。下記のボタンか詳細画面から再印刷できます。
         </p>
       )}
       {autoPrintEnabled && printerConnected && printState === "printing" && (
-        <p className="text-accent text-xs">社員証を印刷中...</p>
+        <p className="text-xs text-cyan-400">社員証を印刷中...</p>
       )}
       {autoPrintEnabled && printerConnected && printState === "success" && (
-        <p className="text-accent text-xs">社員証を印刷しました</p>
+        <p className="text-xs text-cyan-400">社員証を印刷しました</p>
       )}
       {autoPrintEnabled && printerConnected && printState === "error" && (
-        <p className="text-danger text-xs">
+        <p className="text-xs text-error">
           印刷に失敗しました。下記のボタンか詳細画面から再印刷してください。
         </p>
       )}

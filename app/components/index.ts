@@ -7,3 +7,7 @@ export { StageHeader } from "./stage-header";
 export { MonospaceLog } from "./monospace-log";
 export { HintChat } from "./hint-chat";
 export { PrinterPanel } from "./printer-panel";
+export { Icon } from "./icon";
+export { TopBar } from "./top-bar";
+export { BackgroundFX } from "./background-fx";
+export { PageShell } from "./page-shell";

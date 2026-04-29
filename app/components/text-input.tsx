@@ -7,7 +7,7 @@ export function TextInput({ className = "", ...rest }: Props) {
     <input
       type="text"
       {...rest}
-      className={`bg-bg-primary border border-text-secondary rounded px-3 py-2 text-text-primary font-mono focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent ${className}`}
+      className={`w-full bg-[#05070A]/80 border border-cyan-900/60 px-4 py-3 font-mono text-base tracking-wider text-on-surface placeholder:text-cyan-900 focus:border-cyan-400 focus:outline-none focus:ring-1 focus:ring-cyan-400/40 ${className}`}
     />
   );
 }
