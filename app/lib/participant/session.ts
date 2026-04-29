@@ -8,7 +8,8 @@ export type { AppEnv };
 
 const COOKIE_NAME = "group_session";
 const COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24; // 24 hours
-const GROUP_ID_PATTERN = /^g_[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+const GROUP_ID_PATTERN =
+  /^g_[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 
 /* ----------------------------- Cookie helpers ----------------------------- */
 

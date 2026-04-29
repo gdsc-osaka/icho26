@@ -1,5 +1,11 @@
 import { drizzle } from "drizzle-orm/d1";
-import { Form, Link, redirect, useActionData, useLoaderData } from "react-router";
+import {
+  Form,
+  Link,
+  redirect,
+  useActionData,
+  useLoaderData,
+} from "react-router";
 import {
   ErrorAlert,
   GlowButton,
@@ -18,7 +24,6 @@ import {
 import {
   getGroupIdFromRequest,
   requireParticipant,
-  type AppEnv,
 } from "~/lib/participant/session";
 import { applyQ1Answer, unlockedSub } from "~/lib/participant/transitions";
 import type { Route } from "./+types/q1.2";
@@ -67,7 +72,10 @@ export async function action({ request, context }: Route.ActionArgs) {
 
   return correct
     ? ({ ok: true } as const)
-    : ({ ok: false, message: "認証失敗。入力値を再確認してください。" } as const);
+    : ({
+        ok: false,
+        message: "認証失敗。入力値を再確認してください。",
+      } as const);
 }
 
 export default function Q1_2() {
@@ -99,8 +107,7 @@ export default function Q1_2() {
     );
   }
 
-  const errorMessage =
-    actionData?.ok === false ? actionData.message : null;
+  const errorMessage = actionData?.ok === false ? actionData.message : null;
 
   return (
     <main className="mx-auto max-w-md space-y-6 px-6 py-12">

@@ -89,10 +89,7 @@ export default function OperatorDashboard() {
                   </tr>
                 )}
                 {users.map((u) => (
-                  <tr
-                    key={u.groupId}
-                    className="border-b border-accent-dim/30"
-                  >
+                  <tr key={u.groupId} className="border-b border-accent-dim/30">
                     <td className="py-2 pr-4 font-mono text-text-primary break-all">
                       {u.groupId}
                     </td>

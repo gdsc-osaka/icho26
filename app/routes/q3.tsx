@@ -72,9 +72,7 @@ export default function Q3Keyword() {
     <main className="mx-auto max-w-md space-y-6 px-6 py-12">
       <SystemPanel>
         <StageHeader title="Q3 — INDOOR PROBE">
-          <p>
-            掃き溜めに鶴……ごみの中にも素敵なものがあることを表す言葉です。
-          </p>
+          <p>掃き溜めに鶴……ごみの中にも素敵なものがあることを表す言葉です。</p>
           <p className="mt-3">
             佐藤さんはよく部屋の隅のゴミ箱にメモを捨てていました。確認してみてください。
           </p>

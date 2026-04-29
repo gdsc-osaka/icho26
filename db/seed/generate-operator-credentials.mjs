@@ -37,7 +37,12 @@ async function main() {
     ["deriveBits"],
   );
   const derived = await crypto.subtle.deriveBits(
-    { name: "PBKDF2", salt: saltBytes, iterations: ITERATIONS, hash: "SHA-256" },
+    {
+      name: "PBKDF2",
+      salt: saltBytes,
+      iterations: ITERATIONS,
+      hash: "SHA-256",
+    },
     key,
     KEY_LENGTH_BITS,
   );

@@ -1,9 +1,5 @@
 import { Link, useLoaderData } from "react-router";
-import {
-  MonospaceLog,
-  StageHeader,
-  SystemPanel,
-} from "~/components";
+import { MonospaceLog, StageHeader, SystemPanel } from "~/components";
 import { requireParticipant } from "~/lib/participant/session";
 import type { Route } from "./+types/complete.report";
 

@@ -1,10 +1,6 @@
 import { drizzle } from "drizzle-orm/d1";
 import { Form, redirect, useLoaderData } from "react-router";
-import {
-  GlowButton,
-  StageHeader,
-  SystemPanel,
-} from "~/components";
+import { GlowButton, StageHeader, SystemPanel } from "~/components";
 import { applyTransition } from "~/lib/participant/mutations";
 import {
   findUserByGroupId,
@@ -14,7 +10,6 @@ import {
 import {
   getGroupIdFromRequest,
   requireParticipant,
-  type AppEnv,
 } from "~/lib/participant/session";
 import { applyQ1Checkpoint, unlockedSub } from "~/lib/participant/transitions";
 import type { SubQuestion } from "~/lib/participant/types";

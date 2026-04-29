@@ -10,3 +10,6 @@
 # Cloudflare
 .wrangler/
 worker-configuration.d.ts
+
+# Claude Code (per-user overrides)
+.claude/settings.local.json

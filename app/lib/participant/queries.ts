@@ -1,10 +1,6 @@
 import { and, eq } from "drizzle-orm";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
-import {
-  attemptLogs,
-  checkpointCodes,
-  users,
-} from "../../../db/schema";
+import { attemptLogs, checkpointCodes, users } from "../../../db/schema";
 import type { AnswerStage, SubQuestion, UserRow } from "./types";
 
 export async function findUserByGroupId(

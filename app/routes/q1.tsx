@@ -1,6 +1,6 @@
 import { Link, useLoaderData } from "react-router";
 import { HintChat, StageHeader, SystemPanel } from "~/components";
-import { requireParticipant, type AppEnv } from "~/lib/participant/session";
+import { requireParticipant } from "~/lib/participant/session";
 import { unlockedSub } from "~/lib/participant/transitions";
 import type { Route } from "./+types/q1";
 

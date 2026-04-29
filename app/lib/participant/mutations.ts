@@ -1,11 +1,7 @@
 import { eq } from "drizzle-orm";
 import type { BatchItem } from "drizzle-orm/batch";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
-import {
-  attemptLogs,
-  progressLogs,
-  users,
-} from "../../../db/schema";
+import { attemptLogs, progressLogs, users } from "../../../db/schema";
 import type {
   AttemptLogRow,
   ProgressEvent,
@@ -109,12 +105,16 @@ export async function applyTransition(
   ];
   if (progressRows.length > 0) {
     stmts.push(
-      db.insert(progressLogs).values(progressRows) as unknown as BatchItem<"sqlite">,
+      db
+        .insert(progressLogs)
+        .values(progressRows) as unknown as BatchItem<"sqlite">,
     );
   }
   if (attemptLog) {
     stmts.push(
-      db.insert(attemptLogs).values(attemptLog) as unknown as BatchItem<"sqlite">,
+      db
+        .insert(attemptLogs)
+        .values(attemptLog) as unknown as BatchItem<"sqlite">,
     );
   }
 
