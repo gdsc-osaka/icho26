@@ -1,4 +1,8 @@
-import type { UsePrinterReturn } from "~/lib/printer/usePrinter";
+import {
+  MAX_DENSITY,
+  MIN_DENSITY,
+  type UsePrinterReturn,
+} from "~/lib/printer/usePrinter";
 import { GlowButton } from "./glow-button";
 
 type Props = {
@@ -6,8 +10,21 @@ type Props = {
   fontReady: boolean;
 };
 
+const DENSITY_LEVELS = Array.from(
+  { length: MAX_DENSITY - MIN_DENSITY + 1 },
+  (_, i) => MIN_DENSITY + i,
+);
+
 export function PrinterPanel({ printer, fontReady }: Props) {
-  const { status, isConnecting, errorMessage, printState, connect } = printer;
+  const {
+    status,
+    isConnecting,
+    errorMessage,
+    printState,
+    density,
+    connect,
+    setDensity,
+  } = printer;
   return (
     <div className="bg-bg-primary rounded p-3 font-mono text-sm space-y-2 border border-accent-dim">
       <div className="flex items-center justify-between gap-2 flex-wrap">
@@ -43,6 +60,33 @@ export function PrinterPanel({ printer, fontReady }: Props) {
             {isConnecting ? "接続中..." : "プリンタを接続"}
           </GlowButton>
         )}
+      </div>
+      <div className="flex items-center gap-2 flex-wrap">
+        <span className="text-text-secondary text-xs">印刷濃度</span>
+        <div className="flex gap-1" role="radiogroup" aria-label="印刷濃度">
+          {DENSITY_LEVELS.map((level) => {
+            const selected = level === density;
+            return (
+              <button
+                key={level}
+                type="button"
+                role="radio"
+                aria-checked={selected}
+                onClick={() => setDensity(level)}
+                className={`w-7 h-7 rounded font-mono text-xs border transition-colors ${
+                  selected
+                    ? "bg-accent text-bg-primary border-accent"
+                    : "bg-bg-primary text-text-secondary border-accent-dim hover:text-text-primary hover:border-accent"
+                }`}
+              >
+                {level}
+              </button>
+            );
+          })}
+        </div>
+        <span className="text-text-secondary text-xs">
+          (濃いほど印刷時間が伸びます)
+        </span>
       </div>
       {!fontReady && (
         <p className="text-text-secondary text-xs">
