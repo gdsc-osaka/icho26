@@ -163,17 +163,43 @@ type DashboardRow = {
 
 ### action(新規 ID 発行)
 
+- フォーム入力:
+  - `group_name` (必須・空白除去後 1 文字以上): 代表者の本名 or ニックネーム。社員証印刷と AI チャットボットの呼び掛けに使う
+  - `group_size` (必須・1 以上の整数)
+- バリデーション失敗時は `{ ok: false, error }` を返す
 - 新規 `groupId` (`g_` + UUIDv4)を生成
-- `users` に INSERT(`current_stage = 'START'`)
-- 同一画面に再表示(発行された ID と開始 URL を強調表示)
+- `users` に INSERT(`current_stage = 'START'`, `group_name`, `group_size`)
+- 成功時は `{ ok: true, issuedGroupId, groupName, groupSize }` を返し、
+  クライアントは戻り値を検知して LX-D02 へ社員証を自動印刷する
 
 ### UI
 
-- 一覧テーブル(`groupId` / 現在ステージ / 試行回数 / 報告済 / 更新時刻)
+- 一覧テーブル(`groupId` / グループ名 / 人数 / 現在ステージ / 試行回数 / 報告済 / 更新時刻)
 - 各行に「詳細」リンク(`/operator/group/:groupId`)
-- 上部に「新規 ID 発行」ボタン
-- 発行直後はその ID と開始 URL(`https://<domain>/start/<groupId>`)をテキスト + 「コピー」ボタンで表示
-- QR 生成は本実装ではコピーした URL を任意の外部 QR 生成ツールに貼り付ける運用とする(後続で `qrcode` ライブラリ導入予定)
+- 上部に「新規 ID 発行」フォーム(グループ名 + 人数 + 発行ボタン)
+- フォーム上部に `PrinterPanel`(LX-D02 接続状態 / 接続ボタン / フォントロード状況)
+- 発行直後は ID と開始 URL(`https://<domain>/start/<groupId>`) + 印刷ステータスを表示
+
+### 社員証印刷(LX-D02 サーマルプリンタ)
+
+- Web Bluetooth API + `lx-printer` を使用しブラウザから直接印刷する
+- ID 発行時に自動印刷、`/operator/group/:groupId` から再印刷も可能
+- 背景: `public/images/background.png` (384×600 px, 白黒二値, NEXUS DYNAMICS スタッフカード)
+- レイアウト(絶対座標, Y は文字行の上端):
+
+  | 要素 | 位置 | フォント | 備考 |
+  |---|---|---|---|
+  | 名前 | 中央 x=192, y=136 | Noto Sans JP Medium 28px | Canvas native text。384px に収まらない場合 28→24→20px に自動縮小 |
+  | QR | 中心 (192, 324) | — | Level M, 最大 232px 以内・整数倍。奇数サイズで中心 1px ずれ許容 |
+  | 人数 | 中央 x=60, y=492 | `b24-datetime.bdf` 24px | 数字のみ |
+  | 受付日時 | 左 x=126, y=492 | `b24-datetime.bdf` 24px | `YYYY/MM/DD hh:mm:ss` 固定長 19 文字 |
+  | groupId | 左 x=48, y=548 | `b16-uuidex.bdf` 16px | `g_<UUID>` 38 文字。サブセット (`0-9 a-g _ -`) |
+
+- フォントは `public/fonts/b16-uuidex.bdf` (3 KB) と `public/fonts/b24-datetime.bdf` (3 KB) を `bdfparser` で読み込み
+- Noto Sans JP は `app/root.tsx` の Google Fonts `<link>` で読み込み、`document.fonts.load()` で利用可否を待つ
+- 上記アセット (背景 + 2 BDF + Noto Sans JP) は `PrinterProvider` マウント時に並列で eager fetch + キャッシュ。初回印刷を高速化
+- 印刷濃度は 1〜7 で UI 切替 (デフォルト 4)。`localStorage` に永続化
+- Web Bluetooth はユーザージェスチャ必須のため、初回のみ「プリンタを接続」ボタンでペアリング。以降は接続を維持して自動印刷。未接続でフォーム送信した場合はクリックジェスチャで `requestDevice()` を発火
 
 ## 10. グループ詳細(`/operator/group/:groupId`)
 
@@ -210,7 +236,7 @@ type DashboardRow = {
 
 ### mutations.ts
 
-- `createUser(db, groupId, now)` — 新規 ID 発行
+- `createUser(db, groupId, now, opts?)` — 新規 ID 発行(`opts.groupName`, `opts.groupSize` は運営ダッシュボード経由のみ指定。参加者の `/start/:groupId` フォールバック作成では省略)
 - `correctStatus(db, params: { operatorId; groupId; fromStage; toStage; reasonCode; note; now })` — トランザクション内で `users` 更新 + `operator_actions` INSERT + `progress_logs` INSERT
 - `markReported(db, params: { operatorId; groupId; reasonCode; note; now })` — 同上
 - `revokeSession(db, sessionId, now)` — ログアウト

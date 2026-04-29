@@ -6,6 +6,8 @@ import type { Stage } from "../../../db/schema";
 export type DashboardRow = {
   groupId: string;
   currentStage: Stage;
+  groupName: string | null;
+  groupSize: number | null;
   attemptCountTotal: number;
   reportedAt: string | null;
   startedAt: string | null;
@@ -19,6 +21,8 @@ export async function listUsers(
     .select({
       groupId: schema.users.groupId,
       currentStage: schema.users.currentStage,
+      groupName: schema.users.groupName,
+      groupSize: schema.users.groupSize,
       reportedAt: schema.users.reportedAt,
       startedAt: schema.users.startedAt,
       updatedAt: schema.users.updatedAt,
@@ -39,6 +43,8 @@ export async function listUsers(
   return userRows.map((u) => ({
     groupId: u.groupId,
     currentStage: u.currentStage as Stage,
+    groupName: u.groupName,
+    groupSize: u.groupSize,
     attemptCountTotal: countMap.get(u.groupId) ?? 0,
     reportedAt: u.reportedAt,
     startedAt: u.startedAt,

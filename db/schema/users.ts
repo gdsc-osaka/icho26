@@ -5,6 +5,8 @@ export const users = sqliteTable(
   {
     groupId: text("group_id").primaryKey(),
     currentStage: text("current_stage").notNull(),
+    groupName: text("group_name"),
+    groupSize: integer("group_size"),
     q1Order: text("q1_order"),
     q1_1Cleared: integer("q1_1_cleared").notNull().default(0),
     q1_2Cleared: integer("q1_2_cleared").notNull().default(0),

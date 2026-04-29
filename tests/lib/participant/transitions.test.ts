@@ -20,6 +20,8 @@ function makeUser(overrides: Partial<UserRow> = {}): UserRow {
   return {
     groupId: "g_00000000-0000-4000-8000-000000000000",
     currentStage: "START",
+    groupName: null,
+    groupSize: null,
     q1Order: null,
     q1_1Cleared: 0,
     q1_2Cleared: 0,

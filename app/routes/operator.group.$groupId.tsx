@@ -8,6 +8,7 @@ import {
   ErrorAlert,
   GlowButton,
   Icon,
+  PrinterPanel,
   StageHeader,
   SystemPanel,
   TextInput,
@@ -16,6 +17,7 @@ import {
 import { correctStatus, markReported } from "~/lib/operator/mutations";
 import { getUserDetail, type UserDetail } from "~/lib/operator/queries";
 import { requireOperatorSession } from "~/lib/operator/session";
+import { usePrinterContext } from "~/lib/printer/printer-context";
 import type { Route } from "./+types/operator.group.$groupId";
 
 export function meta({ params }: Route.MetaArgs) {
@@ -129,6 +131,8 @@ export default function OperatorGroupDetail() {
         )}
 
         <UserSummary user={data.user} />
+
+        <ReprintPanel user={data.user} />
 
         <div className="grid gap-6 md:grid-cols-2">
           <StatusCorrectionForm
@@ -474,5 +478,62 @@ function EmptyRow({ text }: { text: string }) {
     <p className="py-4 text-center font-mono text-sm text-on-surface-variant">
       {text}
     </p>
+  );
+}
+
+function ReprintPanel({ user }: { user: UserDetail["user"] }) {
+  const { printer, assetsReady, assetError } = usePrinterContext();
+
+  const hasMetadata = user.groupName !== null && user.groupSize !== null;
+  const canPrint =
+    assetsReady &&
+    hasMetadata &&
+    !printer.isConnecting &&
+    printer.printState !== "printing";
+
+  const handleReprint = () => {
+    if (user.groupName === null || user.groupSize === null) return;
+    const startUrl = `${window.location.origin}/start/${user.groupId}`;
+    const print = () =>
+      printer.printBadge({
+        groupName: user.groupName as string,
+        groupSize: user.groupSize as number,
+        groupId: user.groupId,
+        issuedAt: new Date(user.createdAt),
+        qrUrl: startUrl,
+      });
+    if (printer.status.isConnected) {
+      void print().catch(() => {});
+    } else {
+      void printer
+        .connect()
+        .then(print)
+        .catch(() => {});
+    }
+  };
+
+  return (
+    <SystemPanel>
+      <div className="space-y-3">
+        <div className="flex items-center gap-2 text-cyan-400">
+          <Icon name="print" className="text-sm" />
+          <h2 className="font-mono text-[10px] uppercase tracking-widest">
+            REPRINT BADGE
+          </h2>
+        </div>
+        <PrinterPanel printer={printer} assetsReady={assetsReady} />
+        {assetError && (
+          <ErrorAlert>アセットロード失敗: {assetError}</ErrorAlert>
+        )}
+        {!hasMetadata && (
+          <p className="font-mono text-xs text-on-surface-variant">
+            このグループには社員名/人数が未登録のため再印刷できません (旧 ID)。
+          </p>
+        )}
+        <GlowButton type="button" onClick={handleReprint} disabled={!canPrint}>
+          {printer.printState === "printing" ? "印刷中..." : "再印刷"}
+        </GlowButton>
+      </div>
+    </SystemPanel>
   );
 }

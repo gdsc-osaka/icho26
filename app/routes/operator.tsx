@@ -2,6 +2,7 @@ import { drizzle } from "drizzle-orm/d1";
 import { Outlet } from "react-router";
 import * as schema from "../../db/schema";
 import { requireOperatorSession } from "~/lib/operator/session";
+import { PrinterProvider } from "~/lib/printer/printer-provider";
 import type { Route } from "./+types/operator";
 
 export async function loader({ request, context }: Route.LoaderArgs) {
@@ -12,5 +13,9 @@ export async function loader({ request, context }: Route.LoaderArgs) {
 }
 
 export default function OperatorLayout() {
-  return <Outlet />;
+  return (
+    <PrinterProvider>
+      <Outlet />
+    </PrinterProvider>
+  );
 }
