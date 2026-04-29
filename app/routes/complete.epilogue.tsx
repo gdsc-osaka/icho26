@@ -1,12 +1,6 @@
 import { drizzle } from "drizzle-orm/d1";
 import { Form, Link, redirect, useLoaderData } from "react-router";
-import {
-  GlowButton,
-  Icon,
-  PageShell,
-  StageHeader,
-  SystemPanel,
-} from "~/components";
+import { GlowButton, Icon, PageShell, SystemPanel } from "~/components";
 import { applyTransition } from "~/lib/participant/mutations";
 import { findUserByGroupId } from "~/lib/participant/queries";
 import {

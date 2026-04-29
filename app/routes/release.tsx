@@ -1,7 +1,6 @@
 import { Link } from "react-router";
 import {
   GlowButton,
-  Icon,
   PageShell,
   StageHeader,
   SystemPanel,

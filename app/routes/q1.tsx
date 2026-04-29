@@ -1,11 +1,5 @@
 import { Link, useLoaderData } from "react-router";
-import {
-  HintChat,
-  Icon,
-  PageShell,
-  StageHeader,
-  SystemPanel,
-} from "~/components";
+import { HintChat, Icon, PageShell, SystemPanel } from "~/components";
 import { requireParticipant } from "~/lib/participant/session";
 import { unlockedSub } from "~/lib/participant/transitions";
 import type { Route } from "./+types/q1";
