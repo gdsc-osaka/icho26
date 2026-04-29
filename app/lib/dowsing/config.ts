@@ -41,7 +41,7 @@ export const TICK_MS = 60;
 // signal_db = peak_db_of_band - noise_db を proximity 0〜100 に線形マッピング。
 // PR #26 と同じ 6〜36 dB レンジ（実機検証で良好だった値）。
 export const RANGE_MIN_DB = 6; // proximity=0 にマップする signal_db
-export const RANGE_MAX_DB = 36; // proximity=100 にマップする signal_db
+export const RANGE_MAX_DB = 25; // proximity=100 にマップする signal_db
 
 // 時間平滑化
 export const EMA_ALPHA = 0.3;
