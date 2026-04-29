@@ -1,45 +1,36 @@
+/**
+ * Absolute layout of the LX-D02 staff badge. The Y coordinates are the
+ * top of each text row (not the baseline) so they match the design doc.
+ */
+
 export const BADGE_WIDTH = 384;
+export const BADGE_HEIGHT = 600;
 
-export type LayoutInput = {
-  companyNameHeight: number;
-  groupNameHeight: number;
-  groupSizeHeight: number;
-  qrSize: number;
-  paddingTop?: number;
-  paddingBottom?: number;
-  gap?: number;
-};
-
-export type Section = { y: number; height: number };
-
-export type BadgeLayout = {
-  totalHeight: number;
-  companyName: Section;
-  groupName: Section;
-  groupSize: Section;
-  qr: Section;
-};
-
-export function planBadge(input: LayoutInput): BadgeLayout {
-  const paddingTop = input.paddingTop ?? 16;
-  const paddingBottom = input.paddingBottom ?? 24;
-  const gap = input.gap ?? 12;
-
-  let cursor = paddingTop;
-  const companyName: Section = { y: cursor, height: input.companyNameHeight };
-  cursor += input.companyNameHeight + gap;
-  const groupName: Section = { y: cursor, height: input.groupNameHeight };
-  cursor += input.groupNameHeight + gap;
-  const groupSize: Section = { y: cursor, height: input.groupSizeHeight };
-  cursor += input.groupSizeHeight + gap;
-  const qr: Section = { y: cursor, height: input.qrSize };
-  cursor += input.qrSize + paddingBottom;
-
-  return {
-    totalHeight: cursor,
-    companyName,
-    groupName,
-    groupSize,
-    qr,
-  };
-}
+export const BADGE_LAYOUT = {
+  name: {
+    centerX: 192,
+    topY: 136,
+    /** Pixel font size cascade for auto-shrink when the name overflows. */
+    fontSizes: [28, 24, 20] as const,
+    /** Inner side padding (per side) used to bound the name's max width. */
+    horizontalPadding: 12,
+  },
+  qr: {
+    centerX: 192,
+    centerY: 324,
+    /** Maximum side length (px) for the rendered QR (modules + quiet zone). */
+    maxSize: 232,
+  },
+  groupSize: {
+    centerX: 60,
+    topY: 492,
+  },
+  issuedAt: {
+    leftX: 126,
+    topY: 492,
+  },
+  groupId: {
+    leftX: 48,
+    topY: 548,
+  },
+} as const;

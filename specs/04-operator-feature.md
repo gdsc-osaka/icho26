@@ -184,14 +184,22 @@ type DashboardRow = {
 
 - Web Bluetooth API + `lx-printer` を使用しブラウザから直接印刷する
 - ID 発行時に自動印刷、`/operator/group/:groupId` から再印刷も可能
-- レイアウト(幅 384px・可変高):
-  - 会社名 `ZEUS Inc.`(BDF 16x16 を 2 倍拡大)
-  - グループ名(BDF 16x16)
-  - 人数(BDF 16x16, `人数: N 名`)
-  - QR コード(`https://<origin>/start/<groupId>`)
-- フォントは `public/fonts/b16.bdf` を `bdfparser` で読み込み(ページマウント時に eager fetch + キャッシュ)
-- Web Bluetooth はユーザージェスチャ必須のため、初回のみ「プリンタを接続」ボタンでペアリング。以降は接続を維持して自動印刷
-- プリンタ未接続時は自動印刷をスキップし、詳細画面から再印刷できることを告知
+- 背景: `public/images/background.png` (384×600 px, 白黒二値, NEXUS DYNAMICS スタッフカード)
+- レイアウト(絶対座標, Y は文字行の上端):
+
+  | 要素 | 位置 | フォント | 備考 |
+  |---|---|---|---|
+  | 名前 | 中央 x=192, y=136 | Noto Sans JP Medium 28px | Canvas native text。384px に収まらない場合 28→24→20px に自動縮小 |
+  | QR | 中心 (192, 324) | — | Level M, 最大 232px 以内・整数倍。奇数サイズで中心 1px ずれ許容 |
+  | 人数 | 中央 x=60, y=492 | `b24-datetime.bdf` 24px | 数字のみ |
+  | 受付日時 | 左 x=126, y=492 | `b24-datetime.bdf` 24px | `YYYY/MM/DD hh:mm:ss` 固定長 19 文字 |
+  | groupId | 左 x=48, y=548 | `b16-uuidex.bdf` 16px | `g_<UUID>` 38 文字。サブセット (`0-9 a-g _ -`) |
+
+- フォントは `public/fonts/b16-uuidex.bdf` (3 KB) と `public/fonts/b24-datetime.bdf` (3 KB) を `bdfparser` で読み込み
+- Noto Sans JP は `app/root.tsx` の Google Fonts `<link>` で読み込み、`document.fonts.load()` で利用可否を待つ
+- 上記アセット (背景 + 2 BDF + Noto Sans JP) は `PrinterProvider` マウント時に並列で eager fetch + キャッシュ。初回印刷を高速化
+- 印刷濃度は 1〜7 で UI 切替 (デフォルト 4)。`localStorage` に永続化
+- Web Bluetooth はユーザージェスチャ必須のため、初回のみ「プリンタを接続」ボタンでペアリング。以降は接続を維持して自動印刷。未接続でフォーム送信した場合はクリックジェスチャで `requestDevice()` を発火
 
 ## 10. グループ詳細(`/operator/group/:groupId`)
 

@@ -7,7 +7,7 @@ import { GlowButton } from "./glow-button";
 
 type Props = {
   printer: UsePrinterReturn;
-  fontReady: boolean;
+  assetsReady: boolean;
 };
 
 const DENSITY_LEVELS = Array.from(
@@ -15,7 +15,7 @@ const DENSITY_LEVELS = Array.from(
   (_, i) => MIN_DENSITY + i,
 );
 
-export function PrinterPanel({ printer, fontReady }: Readonly<Props>) {
+export function PrinterPanel({ printer, assetsReady }: Readonly<Props>) {
   const {
     status,
     isConnecting,
@@ -92,9 +92,9 @@ export function PrinterPanel({ printer, fontReady }: Readonly<Props>) {
           (濃いほど印刷時間が伸びます)
         </span>
       </div>
-      {!fontReady && (
+      {!assetsReady && (
         <p className="text-xs text-on-surface-variant">
-          フォント (b16.bdf) をロード中…
+          社員証アセット (背景・フォント) をロード中…
         </p>
       )}
       {status.isOutOfPaper && (

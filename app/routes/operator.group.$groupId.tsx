@@ -20,8 +20,6 @@ import { requireOperatorSession } from "~/lib/operator/session";
 import { usePrinterContext } from "~/lib/printer/printer-context";
 import type { Route } from "./+types/operator.group.$groupId";
 
-const COMPANY_NAME = "ZEUS Inc.";
-
 export function meta({ params }: Route.MetaArgs) {
   return [{ title: `Group ${params.groupId} | icho26` }];
 }
@@ -484,28 +482,26 @@ function EmptyRow({ text }: { text: string }) {
 }
 
 function ReprintPanel({ user }: { user: UserDetail["user"] }) {
-  const { printer, font, fontError } = usePrinterContext();
+  const { printer, assetsReady, assetError } = usePrinterContext();
 
   const hasMetadata = user.groupName !== null && user.groupSize !== null;
   const canPrint =
-    font !== null &&
+    assetsReady &&
     hasMetadata &&
     !printer.isConnecting &&
     printer.printState !== "printing";
 
   const handleReprint = () => {
-    if (!font || user.groupName === null || user.groupSize === null) return;
+    if (user.groupName === null || user.groupSize === null) return;
     const startUrl = `${window.location.origin}/start/${user.groupId}`;
     const print = () =>
-      printer.printBadge(
-        {
-          companyName: COMPANY_NAME,
-          groupName: user.groupName as string,
-          groupSize: user.groupSize as number,
-          qrUrl: startUrl,
-        },
-        font,
-      );
+      printer.printBadge({
+        groupName: user.groupName as string,
+        groupSize: user.groupSize as number,
+        groupId: user.groupId,
+        issuedAt: new Date(user.createdAt),
+        qrUrl: startUrl,
+      });
     if (printer.status.isConnected) {
       void print().catch(() => {});
     } else {
@@ -525,8 +521,10 @@ function ReprintPanel({ user }: { user: UserDetail["user"] }) {
             REPRINT BADGE
           </h2>
         </div>
-        <PrinterPanel printer={printer} fontReady={font !== null} />
-        {fontError && <ErrorAlert>フォントロード失敗: {fontError}</ErrorAlert>}
+        <PrinterPanel printer={printer} assetsReady={assetsReady} />
+        {assetError && (
+          <ErrorAlert>アセットロード失敗: {assetError}</ErrorAlert>
+        )}
         {!hasMetadata && (
           <p className="font-mono text-xs text-on-surface-variant">
             このグループには社員名/人数が未登録のため再印刷できません (旧 ID)。

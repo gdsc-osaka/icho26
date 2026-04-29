@@ -1,11 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
-import type { Font } from "bdfparser";
-import { loadBdfFont } from "./bdf-font";
+import { loadBackground } from "./background";
+import { loadFontDateTime, loadFontUuidex } from "./bdf-font";
 import { PrinterContext } from "./printer-context";
 import { usePrinter } from "./usePrinter";
+import { ensureNotoSansJp } from "./web-font";
 
 /**
- * Owns the LXD02Printer instance and BDF font for the operator section.
+ * Owns the LXD02Printer instance and badge assets (background image,
+ * BDF subsets, Noto Sans JP) for the operator section.
  *
  * Mounting this above the `<Outlet />` in `routes/operator.tsx` keeps the
  * Bluetooth connection alive across navigation between sibling operator
@@ -16,18 +18,26 @@ export function PrinterProvider({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   const printer = usePrinter();
-  const [font, setFont] = useState<Font | null>(null);
-  const [fontError, setFontError] = useState<string | null>(null);
+  const [assetsReady, setAssetsReady] = useState(false);
+  const [assetError, setAssetError] = useState<string | null>(null);
 
+  // Pre-warm the badge assets in parallel so the first print does not
+  // block on font / image fetches and Web Bluetooth's transient
+  // activation window stays intact when the operator clicks "ID を発行".
   useEffect(() => {
     let cancelled = false;
-    loadBdfFont()
-      .then((f) => {
-        if (!cancelled) setFont(f);
+    Promise.all([
+      loadBackground(),
+      loadFontUuidex(),
+      loadFontDateTime(),
+      ensureNotoSansJp(),
+    ])
+      .then(() => {
+        if (!cancelled) setAssetsReady(true);
       })
       .catch((err: unknown) => {
         if (!cancelled) {
-          setFontError(err instanceof Error ? err.message : String(err));
+          setAssetError(err instanceof Error ? err.message : String(err));
         }
       });
     return () => {
@@ -65,6 +75,7 @@ export function PrinterProvider({
       disconnect();
     };
   }, [disconnect]);
+
   const value = useMemo(
     () => ({
       printer: {
@@ -78,8 +89,8 @@ export function PrinterProvider({
         setDensity,
         printBadge,
       },
-      font,
-      fontError,
+      assetsReady,
+      assetError,
     }),
     [
       status,
@@ -91,8 +102,8 @@ export function PrinterProvider({
       disconnect,
       setDensity,
       printBadge,
-      font,
-      fontError,
+      assetsReady,
+      assetError,
     ],
   );
 

@@ -1,6 +1,5 @@
 import { useCallback, useRef, useState } from "react";
 import type { LXD02Printer, PrinterStatus } from "lx-printer/lx-d02";
-import type { Font } from "bdfparser";
 import { useLocalStorageNumber } from "../hooks/useLocalStorageNumber";
 import { renderBadgeToCanvas, type BadgeArgs } from "./badge-renderer";
 
@@ -20,7 +19,7 @@ export type UsePrinterReturn = {
   connect: () => Promise<void>;
   disconnect: () => void;
   setDensity: (next: number) => void;
-  printBadge: (args: BadgeArgs, font: Font) => Promise<void>;
+  printBadge: (args: BadgeArgs) => Promise<void>;
 };
 
 const initialStatus: PrinterStatus = {
@@ -95,13 +94,13 @@ export function usePrinter(): UsePrinterReturn {
   );
 
   const printBadge = useCallback(
-    async (args: BadgeArgs, font: Font) => {
+    async (args: BadgeArgs) => {
       setErrorMessage(null);
       setPrintState("printing");
       try {
         const printer = await ensurePrinter();
         const canvas = document.createElement("canvas");
-        await renderBadgeToCanvas(canvas, args, font);
+        await renderBadgeToCanvas(canvas, args);
         await printer.print(canvas, { density });
         setPrintState("success");
       } catch (err) {

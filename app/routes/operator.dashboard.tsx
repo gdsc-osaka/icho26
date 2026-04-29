@@ -20,7 +20,6 @@ import { useLocalStorageBoolean } from "~/lib/hooks/useLocalStorageBoolean";
 import { usePrinterContext } from "~/lib/printer/printer-context";
 import type { Route } from "./+types/operator.dashboard";
 
-const COMPANY_NAME = "ZEUS Inc.";
 const AUTO_PRINT_STORAGE_KEY = "operator.autoPrint";
 
 export function meta() {
@@ -40,6 +39,7 @@ type ActionResult =
       issuedGroupId: string;
       groupName: string;
       groupSize: number;
+      issuedAt: string;
     }
   | { ok: false; error: string };
 
@@ -67,11 +67,18 @@ export async function action({
     }
 
     const groupId = `g_${crypto.randomUUID()}`;
-    await createUser(db, groupId, new Date().toISOString(), {
+    const issuedAt = new Date().toISOString();
+    await createUser(db, groupId, issuedAt, {
       groupName,
       groupSize,
     });
-    return { ok: true, issuedGroupId: groupId, groupName, groupSize };
+    return {
+      ok: true,
+      issuedGroupId: groupId,
+      groupName,
+      groupSize,
+      issuedAt,
+    };
   }
 
   return null;
@@ -81,7 +88,7 @@ export default function OperatorDashboard() {
   const { users } = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
 
-  const { printer, font, fontError } = usePrinterContext();
+  const { printer, assetsReady, assetError } = usePrinterContext();
   const [autoPrintEnabled, setAutoPrintEnabled] = useLocalStorageBoolean(
     AUTO_PRINT_STORAGE_KEY,
     true,
@@ -91,19 +98,17 @@ export default function OperatorDashboard() {
   const formRef = useRef<HTMLFormElement>(null);
 
   const handleReprint = useCallback(() => {
-    if (!actionData?.ok || !font) return;
+    if (!actionData?.ok) return;
     const issued = actionData;
     const startUrl = `${window.location.origin}/start/${issued.issuedGroupId}`;
     const print = () =>
-      printer.printBadge(
-        {
-          companyName: COMPANY_NAME,
-          groupName: issued.groupName,
-          groupSize: issued.groupSize,
-          qrUrl: startUrl,
-        },
-        font,
-      );
+      printer.printBadge({
+        groupName: issued.groupName,
+        groupSize: issued.groupSize,
+        groupId: issued.issuedGroupId,
+        issuedAt: new Date(issued.issuedAt),
+        qrUrl: startUrl,
+      });
     if (printer.status.isConnected) {
       void print().catch(() => {});
     } else {
@@ -113,7 +118,7 @@ export default function OperatorDashboard() {
         .then(print)
         .catch(() => {});
     }
-  }, [actionData, font, printer]);
+  }, [actionData, printer]);
 
   useEffect(() => {
     if (!actionData?.ok) return;
@@ -128,7 +133,7 @@ export default function OperatorDashboard() {
   useEffect(() => {
     if (!actionData?.ok) return;
     if (!autoPrintEnabled) return;
-    if (!font) return;
+    if (!assetsReady) return;
     if (!printer.status.isConnected) return;
     if (lastPrintedRef.current === actionData.issuedGroupId) return;
 
@@ -140,19 +145,17 @@ export default function OperatorDashboard() {
     lastPrintedRef.current = actionData.issuedGroupId;
     const startUrl = `${window.location.origin}/start/${actionData.issuedGroupId}`;
     void printer
-      .printBadge(
-        {
-          companyName: COMPANY_NAME,
-          groupName: actionData.groupName,
-          groupSize: actionData.groupSize,
-          qrUrl: startUrl,
-        },
-        font,
-      )
+      .printBadge({
+        groupName: actionData.groupName,
+        groupSize: actionData.groupSize,
+        groupId: actionData.issuedGroupId,
+        issuedAt: new Date(actionData.issuedAt),
+        qrUrl: startUrl,
+      })
       .catch(() => {
         // Error is already surfaced via printer.errorMessage / printState.
       });
-  }, [actionData, font, printer, autoPrintEnabled]);
+  }, [actionData, assetsReady, printer, autoPrintEnabled]);
 
   return (
     <>
@@ -179,9 +182,9 @@ export default function OperatorDashboard() {
               </h2>
             </div>
 
-            <PrinterPanel printer={printer} fontReady={font !== null} />
-            {fontError && (
-              <ErrorAlert>フォントロード失敗: {fontError}</ErrorAlert>
+            <PrinterPanel printer={printer} assetsReady={assetsReady} />
+            {assetError && (
+              <ErrorAlert>アセットロード失敗: {assetError}</ErrorAlert>
             )}
 
             <label className="flex cursor-pointer select-none items-center gap-2 font-mono text-sm text-on-surface">
@@ -261,7 +264,7 @@ export default function OperatorDashboard() {
                 printerConnected={printer.status.isConnected}
                 autoPrintEnabled={autoPrintEnabled}
                 isConnecting={printer.isConnecting}
-                fontReady={font !== null}
+                assetsReady={assetsReady}
                 onReprint={handleReprint}
               />
             )}
@@ -364,7 +367,7 @@ function IssuedIdCard({
   printerConnected,
   autoPrintEnabled,
   isConnecting,
-  fontReady,
+  assetsReady,
   onReprint,
 }: {
   groupId: string;
@@ -374,11 +377,11 @@ function IssuedIdCard({
   printerConnected: boolean;
   autoPrintEnabled: boolean;
   isConnecting: boolean;
-  fontReady: boolean;
+  assetsReady: boolean;
   onReprint: () => void;
 }) {
   const reprintDisabled =
-    !fontReady || isConnecting || printState === "printing";
+    !assetsReady || isConnecting || printState === "printing";
   const startUrl = `/start/${groupId}`;
   return (
     <div className="space-y-2 border border-cyan-400/40 bg-[#05070A]/80 p-3 font-mono text-sm">
