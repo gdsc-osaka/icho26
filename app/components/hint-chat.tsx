@@ -2,8 +2,7 @@ import { useState } from "react";
 
 type ViewState = "idle" | "confirm" | "hint";
 
-const FALLBACK_HINT =
-  "イリスは現在復旧中です... もう少しお待ちください。";
+const FALLBACK_HINT = "イリスは現在復旧中です... もう少しお待ちください。";
 
 type Props = {
   /** 設問ごとに固定で表示するヒント本文。 */
@@ -55,10 +54,7 @@ export function HintChat({ hint = FALLBACK_HINT }: Props) {
             </div>
 
             {view === "confirm" ? (
-              <ConfirmBody
-                onConfirm={() => setView("hint")}
-                onCancel={close}
-              />
+              <ConfirmBody onConfirm={() => setView("hint")} onCancel={close} />
             ) : (
               <HintBody hint={hint} />
             )}
