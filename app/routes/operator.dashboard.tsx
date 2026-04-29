@@ -14,11 +14,13 @@ import {
 import { listUsers } from "~/lib/operator/queries";
 import { requireOperatorSession } from "~/lib/operator/session";
 import { createUser } from "~/lib/shared/users";
+import { useLocalStorageBoolean } from "~/lib/hooks/useLocalStorageBoolean";
 import { loadBdfFont } from "~/lib/printer/bdf-font";
 import { usePrinter } from "~/lib/printer/usePrinter";
 import type { Route } from "./+types/operator.dashboard";
 
 const COMPANY_NAME = "ZEUS Inc.";
+const AUTO_PRINT_STORAGE_KEY = "operator.autoPrint";
 
 export function meta() {
   return [{ title: "Operator Dashboard | icho26" }];
@@ -81,6 +83,10 @@ export default function OperatorDashboard() {
   const printer = usePrinter();
   const [font, setFont] = useState<Font | null>(null);
   const [fontError, setFontError] = useState<string | null>(null);
+  const [autoPrintEnabled, setAutoPrintEnabled] = useLocalStorageBoolean(
+    AUTO_PRINT_STORAGE_KEY,
+    true,
+  );
   const lastPrintedRef = useRef<string | null>(null);
   const lastResetRef = useRef<string | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
@@ -113,6 +119,7 @@ export default function OperatorDashboard() {
 
   useEffect(() => {
     if (!actionData?.ok) return;
+    if (!autoPrintEnabled) return;
     if (!font) return;
     if (!printer.status.isConnected) return;
     if (lastPrintedRef.current === actionData.issuedGroupId) return;
@@ -128,7 +135,7 @@ export default function OperatorDashboard() {
       },
       font,
     );
-  }, [actionData, font, printer]);
+  }, [actionData, font, printer, autoPrintEnabled]);
 
   return (
     <main className="min-h-screen bg-bg-primary p-4 md:p-6">
@@ -151,7 +158,32 @@ export default function OperatorDashboard() {
               <ErrorAlert>フォントロード失敗: {fontError}</ErrorAlert>
             )}
 
-            <Form method="post" className="space-y-3" ref={formRef}>
+            <label className="flex items-center gap-2 font-mono text-sm text-text-primary cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={autoPrintEnabled}
+                onChange={(e) => setAutoPrintEnabled(e.target.checked)}
+                className="w-4 h-4 accent-accent"
+              />
+              発行時に自動印刷する
+            </label>
+
+            <Form
+              method="post"
+              className="space-y-3"
+              ref={formRef}
+              onSubmit={() => {
+                if (autoPrintEnabled && !printer.status.isConnected) {
+                  // Fire the Web Bluetooth picker on this user-gesture click;
+                  // run alongside the form submission so the action's DB write
+                  // is not blocked. The auto-print effect waits for the
+                  // resulting connection before sending the badge.
+                  void printer.connect().catch(() => {
+                    // errors surfaced via printer.errorMessage in PrinterPanel
+                  });
+                }
+              }}
+            >
               <input type="hidden" name="_action" value="create-user" />
               <FormField label="社員名 (グループ名)">
                 <TextInput
@@ -176,9 +208,14 @@ export default function OperatorDashboard() {
               {actionData && !actionData.ok && (
                 <ErrorAlert>{actionData.error}</ErrorAlert>
               )}
-              {!printer.status.isConnected && (
+              {autoPrintEnabled && !printer.status.isConnected && (
                 <p className="text-text-secondary text-xs font-mono">
-                  ※ 発行と同時に自動印刷するには、先にプリンタを接続してください。
+                  ※ 発行時にプリンタ未接続の場合、Bluetooth デバイス選択ダイアログが表示されます。
+                </p>
+              )}
+              {!autoPrintEnabled && (
+                <p className="text-text-secondary text-xs font-mono">
+                  ※ 自動印刷オフ。詳細画面から手動で印刷してください。
                 </p>
               )}
               <GlowButton type="submit">ID を発行</GlowButton>
@@ -191,6 +228,8 @@ export default function OperatorDashboard() {
                 groupSize={actionData.groupSize}
                 printState={printer.printState}
                 printerConnected={printer.status.isConnected}
+                autoPrintEnabled={autoPrintEnabled}
+                isConnecting={printer.isConnecting}
               />
             )}
           </div>
@@ -287,12 +326,16 @@ function IssuedIdCard({
   groupSize,
   printState,
   printerConnected,
+  autoPrintEnabled,
+  isConnecting,
 }: {
   groupId: string;
   groupName: string;
   groupSize: number;
   printState: "idle" | "printing" | "success" | "error";
   printerConnected: boolean;
+  autoPrintEnabled: boolean;
+  isConnecting: boolean;
 }) {
   const startUrl = `/start/${groupId}`;
   return (
@@ -316,18 +359,26 @@ function IssuedIdCard({
         <div className="text-text-secondary text-xs">開始 URL(相対)</div>
         <div className="text-text-primary break-all">{startUrl}</div>
       </div>
-      {!printerConnected && (
+      {!autoPrintEnabled && (
         <p className="text-text-secondary text-xs">
-          プリンタ未接続のため自動印刷はスキップされました。詳細画面から再印刷できます。
+          自動印刷オフ。詳細画面から手動で印刷してください。
         </p>
       )}
-      {printerConnected && printState === "printing" && (
+      {autoPrintEnabled && isConnecting && (
+        <p className="text-accent text-xs">プリンタを接続中...</p>
+      )}
+      {autoPrintEnabled && !printerConnected && !isConnecting && (
+        <p className="text-text-secondary text-xs">
+          プリンタが接続されていません。詳細画面から再印刷できます。
+        </p>
+      )}
+      {autoPrintEnabled && printerConnected && printState === "printing" && (
         <p className="text-accent text-xs">社員証を印刷中...</p>
       )}
-      {printerConnected && printState === "success" && (
+      {autoPrintEnabled && printerConnected && printState === "success" && (
         <p className="text-accent text-xs">社員証を印刷しました</p>
       )}
-      {printerConnected && printState === "error" && (
+      {autoPrintEnabled && printerConnected && printState === "error" && (
         <p className="text-danger text-xs">
           印刷に失敗しました。詳細画面から再印刷してください。
         </p>
