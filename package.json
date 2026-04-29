@@ -3,6 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "postinstall": "wrangler types",
     "build": "react-router build",
     "dev": "react-router dev",
     "start": "wrangler dev",
