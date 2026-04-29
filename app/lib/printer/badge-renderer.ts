@@ -35,15 +35,50 @@ function drawBitmapTopLeft(
   ctx.restore();
 }
 
-function drawBitmapAtCenterX(
+/**
+ * Per-glyph advance (DWIDTH) of the b24-datetime BDF subset. All glyphs
+ * use the same value, so we treat it as a font-level monospace constant.
+ */
+const B24_DATETIME_DWX = 12;
+
+/**
+ * Center a bdfparser bitmap horizontally using the *ink* width instead
+ * of `bitmap.width()`.
+ *
+ * Why we do not just use `bitmap.width()`:
+ * `font.draw(str)` defaults to `mode=1`, which renders each glyph into
+ * the FONT bounding box (FBBX, 24 px for b24-datetime) and concatenates
+ * them with offset = `dwx0 - fbbx` = `12 - 24 = -12`. The result for an
+ * n-character monospaced string is therefore
+ *
+ *   bitmap.width() = FBBX + (n - 1) * dwx0 = 24 + 12 * (n - 1)
+ *
+ * which has 12 px (== one full character) of trailing whitespace past
+ * the rightmost ink column. Centering on `bitmap.width() / 2` shifts
+ * the visible digits ~6 px to the left of the requested center — most
+ * obvious for the 2-digit party size at x=60.
+ *
+ * mode=0 is worse (each FBBX cell is concatenated with offset=0, so the
+ * digits end up with a 12 px *gap* between them), `usecurrentglyphspacing`
+ * just toggles which offset entry is dropped (no effect on width), and
+ * `glyph.draw(1)` (BBX-only) is not exposed through `font.draw`. So the
+ * pragmatic fix is to compute the ink width from `text.length * dwx0`
+ * for the known-monospace BDF subsets we ship, ignoring the 12 px tail.
+ *
+ * Investigated against bdfparser 2.2.5 (`drawcps` in
+ * node_modules/bdfparser/dist/esm/bdfparser.js).
+ */
+function drawMonoTextCenteredX(
   ctx: CanvasRenderingContext2D,
   bitmap: Bitmap,
   scale: number,
+  text: string,
+  monoDwx: number,
   centerX: number,
   topY: number,
 ) {
-  const width = bitmap.width() * scale;
-  const x = Math.floor(centerX - width / 2);
+  const inkWidth = text.length * monoDwx * scale;
+  const x = Math.floor(centerX - inkWidth / 2);
   drawBitmapTopLeft(ctx, bitmap, scale, x, topY);
 }
 
@@ -139,10 +174,13 @@ export async function renderBadgeToCanvas(
     BADGE_LAYOUT.qr.maxSize,
   );
 
-  drawBitmapAtCenterX(
+  const groupSizeText = String(args.groupSize);
+  drawMonoTextCenteredX(
     ctx,
-    fontDateTime.draw(String(args.groupSize)),
+    fontDateTime.draw(groupSizeText),
     1,
+    groupSizeText,
+    B24_DATETIME_DWX,
     BADGE_LAYOUT.groupSize.centerX,
     BADGE_LAYOUT.groupSize.topY,
   );
