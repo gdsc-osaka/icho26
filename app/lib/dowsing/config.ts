@@ -6,20 +6,42 @@
  * 既定値はすべて実体検証で再調整可能（specs/dowsing-spec.md §7 参照）。
  */
 
-export const FREQ_Q1_1_HZ = 19000;
+// 対象周波数。18,600 Hz は若年層に微かに聞こえる可能性があるが
+// 18 kHz 以下の不快音域を避けつつ、20 kHz の高域減衰問題からも離す中間点として採用。
+// 20,000 Hz は端末によって減衰しうるが多くの機器で取得可能。
+export const FREQ_Q1_1_HZ = 18600;
 export const FREQ_Q1_2_HZ = 20000;
 
-export const BAND_HALF_HZ = 100;
+// FFT
 export const FFT_SIZE = 8192;
+
+// 中心周波数 ± ENERGY_HALF_BINS の bin を「狭帯域」として線形 magnitude で合計する。
+// 48 kHz サンプリング × FFT 8192 → 約 5.86 Hz/bin、 ±5 bin ≒ ±29 Hz。
+export const ENERGY_HALF_BINS = 5;
+
+// 参照帯域: 対象周波数の +400 Hz を「環境ノイズ監視窓」として常時計測し、
+// そこが急上昇したら誤検知防止のため信号側を減衰させる。
+// Q1-1 → 19,000 Hz、Q1-2 → 20,400 Hz。可聴域 (〜18 kHz) には落ちない。
+export const REF_FREQ_OFFSET_HZ = 400;
+export const REF_GUARD_DB = 9; // 参照帯域がこの dB 以上スパイクしたら閾値を持ち上げる
+export const REF_THRESHOLD_BOOST_DB = 6; // 持ち上げ量
+
+// キャリブレーション
 export const NOISE_WINDOW_MS = 1500;
+
+// 評価周期
 export const TICK_MS = 60;
 
-// Signal -> proximity mapping (dB)
-export const RANGE_MIN_DB = 6;
-export const RANGE_MAX_DB = 36;
+// 線形 magnitude マッピング（dB → 10^(dB/20)）。
+// proximity = clamp((sigMag - LINEAR_RANGE_MIN) / (MAX - MIN)) * 100
+export const LINEAR_RANGE_MIN = 0.0; // proximity=0
+export const LINEAR_RANGE_MAX = 0.05; // proximity=100（暫定値、実体検証で確定）
 
-// Smoothing
+// 時間平滑化
 export const EMA_ALPHA = 0.3;
+
+// デバッグ出力 throttle
+export const DEBUG_LOG_INTERVAL_MS = 250;
 
 // Circle visualization
 export const CIRCLE_SIZE_MIN_PX = 80;
@@ -38,6 +60,11 @@ export const BEEP_FREQ_HZ = 880;
 export const BEEP_PULSE_MS = 80;
 export const BEEP_GAP_MIN_MS = 80;
 export const BEEP_GAP_MAX_MS = 900;
+export const BEEP_FADE_MS = 10; // クリックノイズ防止のための fade in/out
+
+// テストトーン (operator/dowsing-test)
+export const TONE_FADE_MS = 10;
+export const TONE_DEFAULT_LEVEL = 0.3;
 
 export function clamp(v: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, v));
