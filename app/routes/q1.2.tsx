@@ -127,13 +127,30 @@ export default function Q1_2() {
         <p>パズルを解いて、求めた値を入力してください。</p>
       </StageHeader>
 
-      <SystemPanel className="my-8 text-center">
-        <p className="mb-3 font-mono text-[10px] uppercase tracking-widest text-cyan-500/60">
-          PATTERN MATCHING
-        </p>
-        <p className="font-mono leading-relaxed text-cyan-300/80">
-          3×3 グリッドと予約状況を照合し、座標を特定してください。
-        </p>
+      <SystemPanel className="my-6">
+        <div className="flex items-start gap-3">
+          <Icon
+            name="terminal"
+            className="mt-0.5 text-cyan-400 drop-shadow-[0_0_6px_rgba(0,240,255,0.5)]"
+          />
+          <div className="space-y-2">
+            <p className="font-mono text-[10px] uppercase tracking-widest text-cyan-400">
+              [MESSAGE_INCOMING]
+            </p>
+            <p className="font-mono text-sm leading-relaxed text-on-surface">
+              [SCAN_LOG]
+              周辺座席の予約パターンを検知しました。壁の掲示板（4×6座席表）と照合し、ターゲット『？』の座標を特定してください。
+            </p>
+          </div>
+        </div>
+      </SystemPanel>
+
+      <SystemPanel className="my-6">
+        <img
+          src="/q1-2-pattern.png"
+          alt="LOCAL_SCAN_PATTERN_BETA: 3x3 grid showing reserved and empty seats with a target '?' cell"
+          className="mx-auto block w-full max-w-sm"
+        />
       </SystemPanel>
 
       <Form method="post" className="space-y-4">
