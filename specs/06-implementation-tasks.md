@@ -209,28 +209,50 @@ Step 7: CI + 本番デプロイ整備
 
 ## Step 7: インフラ + CI + 本番デプロイ整備
 
-> 目的: Cloudflare リソースを Terraform で構築し、PR チェックと本番デプロイを自動化する
+> 目的: Cloudflare Workers Builds で本番デプロイを自動化し、Terraform で D1 / KV を IaC 管理し、PR トリガーの軽量 CI を整備する
 
 参照: `05-ci-deploy.md`
 
-ブランチ例: `chore/infra-ci-deploy`
+ブランチ例: `feat/infra-ci-deploy`
+
+### 既に完了している項目
+
+以下は Step 7 着手前の小修正 PR で完了済みなので Step 7 の対象外:
+
+- 本番 D1 / KV のリソース作成(`pnpm wrangler d1 create` / `pnpm wrangler kv namespace create` で作成、ID を `wrangler.toml` に記述済み)
+- Worker entry の修正(`workers/app.ts` に `createRequestHandler` ラッパ、`virtual:react-router/server-build` の wrangler `[alias]` 設定、`import.meta.env` フォールバック)
+- ESLint + Prettier 導入(`chore/lint-format`)
+- README 整備 + `postinstall` で `wrangler types` 自動実行(`chore/readme-postinstall`)
+- Workers Builds の GitHub 連携設定(GUI で実施済み、main への push で自動 deploy 動作確認済み)
 
 ### 作業
 
-1. `terraform/` 配下に `main.tf` / `outputs.tf` / `variables.tf` を作成(Cloudflare D1 + KV)
-2. `terraform init` → `terraform apply` を手動実行し、本番 D1 / KV を作成
-3. `terraform output` の値を `wrangler.toml` の `database_id` / `id` に転記してコミット
-4. `.github/workflows/ci.yml` を作成(typecheck + test + build)
-5. `.github/workflows/deploy.yml` を作成(main push でマイグレーション適用 + `wrangler deploy`)
-6. GitHub Secrets に `CLOUDFLARE_API_TOKEN` / `CLOUDFLARE_ACCOUNT_ID` を登録
-7. seed を本番に投入(運営パスワードハッシュ + checkpoint コード)
-8. 受け入れチェックリスト(`05` §8)を実機で実施
+1. **`.github/workflows/ci.yml` 作成**(PR トリガー)
+   - lint / format:check / typecheck / test を実行
+   - Cloudflare 認証情報は不要(API を叩かない)
+   - 詳細は `05-ci-deploy.md` §5
+2. **Terraform 設定の追加**(`terraform/`)
+   - `main.tf`: cloudflare provider + D1 + KV namespace リソース
+   - `variables.tf`: `account_id` / `cloudflare_api_token`(後者は `TF_VAR_` env 経由)
+   - `outputs.tf`: D1 / KV ID(参照用)
+   - `terraform.tfvars.example`: 入力変数の雛形
+   - `.gitignore` に `terraform/.terraform/`、`terraform/terraform.tfstate*`、`terraform/terraform.tfvars` を追加
+3. **既存リソースの import**(手動、運営メンバー側で実施)
+   - `terraform init`
+   - `terraform import cloudflare_d1_database.icho26 <ACCOUNT_ID>/<D1_ID>`
+   - `terraform import cloudflare_workers_kv_namespace.cache <ACCOUNT_ID>/<KV_ID>`
+   - `terraform plan` で差分なしを確認
+4. **README に手順追記**(Workers Builds 接続 + Terraform セットアップ)
+5. **本番 seed 投入**(`05-ci-deploy.md` §8)
+   - `db/seed/generate-operator-credentials.mjs` で本番運営パスワードを投入
+   - 本番 checkpoint コードは推測困難な値を別途生成して投入
+6. **受け入れチェックリスト**(`05-ci-deploy.md` §10)を実機で実施
 
 ### 完了条件
 
-- `terraform apply` が冪等に成功する(2 回目以降の `plan` で差分なし)
-- PR で CI が green になる
-- main マージで本番が自動更新される
+- PR で CI が green になる(lint / format / typecheck / test 全て通る)
+- `terraform plan` が import 後に差分なし(冪等性確認)
+- README の手順通りに新規メンバーが Terraform import + Workers Builds 接続を再現できる
 - 本番 URL で開始 → 完走 → 運営ダッシュボード操作の主要フローが動く
 
 ---

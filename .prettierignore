@@ -7,6 +7,7 @@ worker-configuration.d.ts
 pnpm-lock.yaml
 db/migrations/
 .claude/
+terraform/
 *.md
 docs/
 specs/

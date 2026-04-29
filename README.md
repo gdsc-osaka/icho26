@@ -203,9 +203,38 @@ node db/seed/generate-operator-credentials.mjs '<chosen-password>' \
 
 `main` への push を起点に Cloudflare Workers Builds が自動デプロイ。PR ごとに preview deploy も生成される。
 
-CI(GitHub Actions)は PR 起動で `lint` / `format:check` / `typecheck` / `test` を実行。
+CI(GitHub Actions、`.github/workflows/ci.yml`)は PR 起動で `lint` / `format:check` / `typecheck` / `test` を実行。`pnpm build` は CI で走らせない(Workers Builds の preview deploy が同等の検証になるため)。
 
 詳細セットアップは [`specs/05-ci-deploy.md`](./specs/05-ci-deploy.md)、実装タスクは [`specs/06-implementation-tasks.md`](./specs/06-implementation-tasks.md) Step 7 を参照。
+
+### Workers Builds 初回設定(GUI、運営メンバーのみ)
+
+1. Cloudflare dashboard → Workers & Pages → `icho26` → Settings → Builds & deployments
+2. **Connect to Git** → GitHub アカウントを連携 → `gdsc-osaka/icho26` を選択
+3. Production branch: `main`、PR preview deploy: 有効
+4. Build command: `pnpm build`
+5. Deploy command: `npx wrangler deploy`(デフォルト)
+
+接続後は `main` への merge で自動デプロイ。GitHub Secrets に Cloudflare 関連の値を登録する必要はない(Workers Builds が GitHub App 経由で認証するため)。
+
+### Terraform でのインフラ管理(初回 import)
+
+D1 / KV は Terraform 導入前に `wrangler` CLI で作成済み。Terraform を最初に動かす運営メンバーは既存リソースを state に取り込む必要あり:
+
+```sh
+cd terraform
+cp terraform.tfvars.example terraform.tfvars
+export TF_VAR_cloudflare_api_token='cf-token-with-D1-and-KV-edit'
+
+terraform init
+terraform import cloudflare_d1_database.icho26 \
+  <ACCOUNT_ID>/<D1_ID>
+terraform import cloudflare_workers_kv_namespace.cache \
+  <ACCOUNT_ID>/<KV_ID>
+terraform plan     # 期待値: No changes.
+```
+
+ID は `wrangler.toml` から取得できる。詳細は [`terraform/README.md`](./terraform/README.md)。
 
 ## トラブルシュート
 
