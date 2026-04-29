@@ -114,9 +114,7 @@ export default function OperatorGroupDetail() {
   return (
     <main className="min-h-screen bg-bg-primary p-4 md:p-6">
       <div className="max-w-6xl mx-auto space-y-6">
-        <StageHeader title="GROUP DETAIL">
-          {data.user.groupId}
-        </StageHeader>
+        <StageHeader title="GROUP DETAIL">{data.user.groupId}</StageHeader>
 
         {actionData?.ok && (
           <div className="bg-accent/10 border border-accent text-accent px-4 py-2 rounded font-mono text-sm">
@@ -132,7 +130,9 @@ export default function OperatorGroupDetail() {
         <UserSummary user={data.user} />
 
         <div className="grid md:grid-cols-2 gap-6">
-          <StatusCorrectionForm currentStage={data.user.currentStage as Stage} />
+          <StatusCorrectionForm
+            currentStage={data.user.currentStage as Stage}
+          />
           {data.user.reportedAt === null ? (
             <MarkReportedForm />
           ) : (
@@ -209,7 +209,9 @@ export default function OperatorGroupDetail() {
                     <td className="py-2 pr-4 font-mono text-accent">
                       {p.eventType}
                     </td>
-                    <td className="py-2 pr-4 font-mono">{p.fromStage ?? "—"}</td>
+                    <td className="py-2 pr-4 font-mono">
+                      {p.fromStage ?? "—"}
+                    </td>
                     <td className="py-2 pr-4 font-mono">{p.toStage ?? "—"}</td>
                     <td className="py-2 pr-4 font-mono break-all text-xs">
                       {p.detail ?? ""}
@@ -245,7 +247,9 @@ export default function OperatorGroupDetail() {
                     <td className="py-2 pr-4 font-mono text-accent">
                       {a.actionType}
                     </td>
-                    <td className="py-2 pr-4 font-mono">{a.fromStage ?? "—"}</td>
+                    <td className="py-2 pr-4 font-mono">
+                      {a.fromStage ?? "—"}
+                    </td>
                     <td className="py-2 pr-4 font-mono">{a.toStage ?? "—"}</td>
                     <td className="py-2 pr-4 font-mono">{a.reasonCode}</td>
                     <td className="py-2 pr-4 font-mono break-all text-xs">
@@ -266,7 +270,11 @@ function UserSummary({ user }: { user: UserDetail["user"] }) {
   return (
     <SystemPanel>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 font-mono text-sm">
-        <SummaryField label="current_stage" value={user.currentStage} highlight />
+        <SummaryField
+          label="current_stage"
+          value={user.currentStage}
+          highlight
+        />
         <SummaryField label="q1_order" value={user.q1Order ?? "—"} />
         <SummaryField label="started_at" value={user.startedAt ?? "—"} />
         <SummaryField label="updated_at" value={user.updatedAt} />
@@ -361,9 +369,7 @@ function MarkReportedForm() {
   return (
     <SystemPanel>
       <div className="space-y-4">
-        <h2 className="font-display text-lg text-text-primary">
-          報告済み付与
-        </h2>
+        <h2 className="font-display text-lg text-text-primary">報告済み付与</h2>
         <p className="text-text-secondary text-sm">
           来場者が偽エンドに到達してスタッフに提示した後、ここで報告済みとしてマークします。
         </p>

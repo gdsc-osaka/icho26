@@ -69,14 +69,10 @@ describe("unlockedSub", () => {
 
   it("returns the second sub when the first is cleared", () => {
     expect(
-      unlockedSub(
-        makeUser({ q1Order: "Q1_1_FIRST", q1_1Cleared: 1 }),
-      ),
+      unlockedSub(makeUser({ q1Order: "Q1_1_FIRST", q1_1Cleared: 1 })),
     ).toBe("Q1_2");
     expect(
-      unlockedSub(
-        makeUser({ q1Order: "Q1_2_FIRST", q1_2Cleared: 1 }),
-      ),
+      unlockedSub(makeUser({ q1Order: "Q1_2_FIRST", q1_2Cleared: 1 })),
     ).toBe("Q1_1");
   });
 
@@ -188,10 +184,17 @@ describe("applyQ2Answer", () => {
 });
 
 describe("applyQ2Checkpoint", () => {
-  const baseUser = makeUser({ currentStage: "Q2", q1Order: "Q1_1_FIRST", q1_1Cleared: 1, q1_2Cleared: 1 });
+  const baseUser = makeUser({
+    currentStage: "Q2",
+    q1Order: "Q1_1_FIRST",
+    q1_1Cleared: 1,
+    q1_2Cleared: 1,
+  });
 
   it("rejects when no correct answer recorded", () => {
-    expect(() => applyQ2Checkpoint(baseUser, false, NOW)).toThrow(TransitionError);
+    expect(() => applyQ2Checkpoint(baseUser, false, NOW)).toThrow(
+      TransitionError,
+    );
   });
 
   it("transitions Q2 → Q3_KEYWORD on success", () => {
@@ -206,7 +209,10 @@ describe("applyQ2Checkpoint", () => {
 });
 
 describe("applyQ3Keyword", () => {
-  const baseUser = makeUser({ currentStage: "Q3_KEYWORD", q1Order: "Q1_1_FIRST" });
+  const baseUser = makeUser({
+    currentStage: "Q3_KEYWORD",
+    q1Order: "Q1_1_FIRST",
+  });
 
   it("transitions Q3_KEYWORD → Q3_CODE on correct", () => {
     const { user, events } = applyQ3Keyword(baseUser, true, NOW);

@@ -75,7 +75,9 @@ export default function Q4() {
           <p>
             アーテを解放するには私から接続するためにある定数を認証しないといけません!
           </p>
-          <p className="mt-3 font-mono text-text-primary">定数を探してください。</p>
+          <p className="mt-3 font-mono text-text-primary">
+            定数を探してください。
+          </p>
         </StageHeader>
       </SystemPanel>
 

@@ -1,7 +1,6 @@
 import { GlowButton, StageHeader, SystemPanel } from "~/components";
-import type { Route } from "./+types/home";
 
-export function meta({}: Route.MetaArgs) {
+export function meta() {
   return [
     { title: "icho26 / SYSTEM IDLE" },
     {
@@ -21,8 +20,8 @@ export default function Home() {
           </p>
         </StageHeader>
         <p className="mt-6 text-sm leading-relaxed text-text-secondary">
-          来場者用 QR をスキャンしてゲームを開始してください。
-          QR が見つからない場合は運営スタッフにお声がけください。
+          来場者用 QR をスキャンしてゲームを開始してください。 QR
+          が見つからない場合は運営スタッフにお声がけください。
         </p>
       </SystemPanel>
       <div className="flex justify-center">

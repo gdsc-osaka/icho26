@@ -75,7 +75,10 @@ export function generateSessionId(): string {
   crypto.getRandomValues(bytes);
   let binary = "";
   for (const b of bytes) binary += String.fromCharCode(b);
-  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  return btoa(binary)
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/, "");
 }
 
 export function computeSessionExpiry(now: Date): string {

@@ -60,9 +60,7 @@ export function HintChat({ messages = DEFAULT_MESSAGES }: Props) {
                 <div
                   key={i}
                   className={`text-sm font-mono leading-relaxed ${
-                    m.role === "assistant"
-                      ? "text-text-primary"
-                      : "text-accent"
+                    m.role === "assistant" ? "text-text-primary" : "text-accent"
                   }`}
                 >
                   <span className="text-text-secondary text-xs mr-2">

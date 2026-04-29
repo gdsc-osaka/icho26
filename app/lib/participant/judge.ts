@@ -9,6 +9,9 @@ const ANSWERS: Record<AnswerStage, string> = {
   Q4: "29",
 } as const;
 
-export function isCorrect(stage: AnswerStage, normalizedInput: string): boolean {
+export function isCorrect(
+  stage: AnswerStage,
+  normalizedInput: string,
+): boolean {
   return ANSWERS[stage] === normalizedInput;
 }

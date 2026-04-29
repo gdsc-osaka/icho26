@@ -60,7 +60,8 @@ export async function action({ request, context }: Route.ActionArgs) {
   if (correct) throw redirect("/q4");
   return {
     ok: false as const,
-    message: "コード不一致。入力フォーマット(有効数字 3 桁)を確認してください。",
+    message:
+      "コード不一致。入力フォーマット(有効数字 3 桁)を確認してください。",
   };
 }
 

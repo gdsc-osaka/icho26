@@ -5,9 +5,7 @@ import { verifyPassword } from "./password";
 import { getCredentials } from "./queries";
 import { computeSessionExpiry, generateSessionId } from "./session";
 
-export type LoginResult =
-  | { ok: true; sessionId: string }
-  | { ok: false };
+export type LoginResult = { ok: true; sessionId: string } | { ok: false };
 
 export async function login(
   db: DrizzleD1Database<typeof schema>,
