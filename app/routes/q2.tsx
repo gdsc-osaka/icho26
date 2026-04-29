@@ -137,7 +137,7 @@ export default function Q2() {
         BACK
       </Link>
 
-      <HintChat />
+      <HintChat hint="STAGE 02 は『佐藤のメモ』に記された かな の並びを、キーボード上で同じ位置にある英数字に置き換える設問です。半角小文字で入力し、記号やスペースは含めないでください。" />
     </main>
   );
 }

@@ -140,7 +140,7 @@ export default function Q1_2() {
         BACK TO HUB
       </Link>
 
-      <HintChat />
+      <HintChat hint="DECRYPTION 1-2 はパズルから読み取れる一桁の数値が答えです。配布資料に散らばったヒントを順に組み合わせてみてください。" />
     </main>
   );
 }

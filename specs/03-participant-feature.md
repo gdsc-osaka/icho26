@@ -299,13 +299,25 @@ function unlockedSub(user: UserRow): 'Q1_1' | 'Q1_2' | null {
 
 未解放サブの URL に直接アクセスした場合は `/q1` へリダイレクトする。
 
-## 7. AI ヒントチャット(初期モック)
+## 7. AI ヒントチャット(定型ヒント)
 
-各ステージ画面下部に「ヒント」ボタンを配置する。タップでパネルが開き、固定メッセージを表示する:
+各ステージ画面の **左下** に「? HINT」ボタンを固定配置する。フローは次の 3 ステップ:
 
-> イリスは現在復旧中です... もう少しお待ちください。
+1. ヒントボタン押下
+2. **ヒント閲覧確認モーダル**: 「ヒントを表示しますか? 自力で挑戦したい場合はキャンセルしてください。」を表示し、`CANCEL` / `SHOW HINT` を選択させる
+3. `SHOW HINT` 押下後、Iris(イリス)からの **設問ごとに固定された定型ヒント** をモーダル内に表示する
 
-実装は `app/components/hint-chat.tsx` に置く(再利用する共通コンポーネント)。LLM 連携は本イベント時点では行わない。後続タスクで API 接続を追加できるよう、メッセージは props で受け取る設計にしておく。
+実装は `app/components/hint-chat.tsx` に置く(再利用する共通コンポーネント)。ヒント本文は `hint` prop として各ルートから渡す(設問ごとに固定文字列。LLM 連携は行わない)。`hint` を渡さない場合はフォールバックとして「イリスは現在復旧中です...」を表示する。
+
+各設問の固定ヒントは以下のルートで設定する:
+
+- `app/routes/q1.tsx` (Q1 ハブ)
+- `app/routes/q1.1.tsx` (DECRYPTION 1-1)
+- `app/routes/q1.2.tsx` (DECRYPTION 1-2)
+- `app/routes/q2.tsx` (STAGE 02)
+- `app/routes/q3.tsx` (STAGE 03 / KEYWORD)
+- `app/routes/q3.code.tsx` (STAGE 03 / NUMERIC CODE)
+- `app/routes/q4.tsx` (STAGE 04)
 
 ## 8. ストーリーテキスト
 
@@ -340,7 +352,7 @@ function unlockedSub(user: UserRow): 'Q1_1' | 'Q1_2' | null {
 | 機能 | 初期実装 | 本実装(将来) |
 |---|---|---|
 | 音源 / AR ダウジング | ルート自体を作らず、回答正解後に直接 checkpoint へ遷移 | Web Audio API |
-| AI ヒントチャット | 固定メッセージ | LLM 連携の段階ヒント |
+| AI ヒントチャット | 確認モーダル → 設問ごとの固定ヒント | LLM 連携の段階ヒント |
 | NFC タッチ | 会場 QR で checkpoint URL を開く方式に統一 | Web NFC API |
 | QR 生成 | 運営ダッシュボードで開始 URL を表示するのみ | アプリ内 QR 生成 |
 

@@ -43,7 +43,7 @@ export default function Q1Hub() {
           unlocked={data.unlocked === "Q1_2"}
         />
       </div>
-      <HintChat />
+      <HintChat hint="STAGE 01 は二つのサブ設問の二重ロックです。先に解放されている方からひとつずつ取り組んでください。両方クリアできれば NFC が解放されます。" />
     </main>
   );
 }
