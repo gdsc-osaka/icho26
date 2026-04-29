@@ -1,14 +1,24 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
-  BAND_HALF_HZ,
+  DEBUG_LOG_INTERVAL_MS,
   EMA_ALPHA,
+  ENERGY_HALF_BINS,
   FFT_SIZE,
+  LINEAR_RANGE_MAX,
+  LINEAR_RANGE_MIN,
   NOISE_WINDOW_MS,
-  RANGE_MAX_DB,
-  RANGE_MIN_DB,
+  REF_FREQ_OFFSET_HZ,
+  REF_GUARD_DB,
+  REF_THRESHOLD_BOOST_DB,
   TICK_MS,
   clamp,
 } from "./config";
+import {
+  attenuateBySpike,
+  bandEnergyMagnitude,
+  median,
+  refSpikeDb,
+} from "./signal-math";
 
 export type ProximityState = "idle" | "requesting" | "active" | "unavailable";
 
@@ -24,7 +34,9 @@ type Result = {
 /**
  * マイク入力から targetFreqHz 付近の信号強度を抽出して接近度を返す hook。
  * - getUserMedia + AudioContext + AnalyserNode を内包
- * - キャリブレーション窓でノイズフロアを学習し相対dBで判定
+ * - 中心 ± ENERGY_HALF_BINS の bin を線形 magnitude で合計し、
+ *   参照帯域 (target + REF_FREQ_OFFSET_HZ) のスパイクで動的に減衰
+ * - キャリブレーション窓でノイズフロアを学習
  * - tick_ms 周期の評価ループ + EMA 平滑化
  * - アンマウント時 / stop() 呼び出し時に確実にクリーンアップ
  *
@@ -40,14 +52,14 @@ export function useProximity(targetFreqHz: number): Result {
   const analyserRef = useRef<AnalyserNode | null>(null);
   const rafRef = useRef<number | null>(null);
   const lastTickRef = useRef<number>(0);
+  const lastDebugRef = useRef<number>(0);
   const proximityRef = useRef<number>(0);
-  // キャリブレーション中の早期キャンセル検知用 token
   const runIdRef = useRef<number>(0);
   const stateRef = useRef<ProximityState>("idle");
   stateRef.current = state;
 
   const stop = useCallback(() => {
-    runIdRef.current += 1; // pending ループに「あなたは無効」を伝える
+    runIdRef.current += 1;
     if (rafRef.current !== null) {
       cancelAnimationFrame(rafRef.current);
       rafRef.current = null;
@@ -67,7 +79,6 @@ export function useProximity(targetFreqHz: number): Result {
   }, []);
 
   const start = useCallback(async () => {
-    // 既に起動中（requesting / active）なら無視。再エントリー防止。
     if (stateRef.current === "requesting" || stateRef.current === "active") {
       return;
     }
@@ -86,14 +97,13 @@ export function useProximity(targetFreqHz: number): Result {
         },
       });
     } catch (err) {
-      if (runIdRef.current !== myRunId) return; // stop() が走った
+      if (runIdRef.current !== myRunId) return;
       setErrorReason((err as Error)?.name ?? "UnknownError");
       setState("unavailable");
       return;
     }
 
     if (runIdRef.current !== myRunId) {
-      // start 中に stop() が割り込んだ。stream を即破棄。
       for (const t of stream.getTracks()) t.stop();
       return;
     }
@@ -106,12 +116,11 @@ export function useProximity(targetFreqHz: number): Result {
           .webkitAudioContext;
       if (!AudioCtx) throw new Error("AudioContextUnavailable");
       ctx = new AudioCtx();
-      // iOS Safari は新規 AudioContext が "suspended" で起動するため明示 resume
       if (ctx.state === "suspended") {
         try {
           await ctx.resume();
         } catch {
-          // resume 失敗は致命ではない（mic 入力で動く可能性あり）
+          /* non-fatal */
         }
       }
     } catch {
@@ -150,29 +159,25 @@ export function useProximity(targetFreqHz: number): Result {
 
     const sampleRate = ctx.sampleRate;
     const binHz = sampleRate / FFT_SIZE;
-    const centerBin = Math.round(targetFreqHz / binHz);
-    const halfBins = Math.max(1, Math.round(BAND_HALF_HZ / binHz));
+    const targetCenterBin = Math.round(targetFreqHz / binHz);
+    const refCenterBin = Math.round(
+      (targetFreqHz + REF_FREQ_OFFSET_HZ) / binHz,
+    );
     const bufLen = analyser.frequencyBinCount;
     const buf = new Float32Array(bufLen);
-    const lo = Math.max(0, centerBin - halfBins);
-    const hi = Math.min(bufLen - 1, centerBin + halfBins);
 
-    const peakInBand = (): number => {
-      let peak = -Infinity;
-      for (let i = lo; i <= hi; i++) {
-        const v = buf[i];
-        if (v !== undefined && v > peak) peak = v;
-      }
-      return peak;
-    };
+    const targetLo = Math.max(0, targetCenterBin - ENERGY_HALF_BINS);
+    const targetHi = Math.min(bufLen - 1, targetCenterBin + ENERGY_HALF_BINS);
+    const refLo = Math.max(0, refCenterBin - ENERGY_HALF_BINS);
+    const refHi = Math.min(bufLen - 1, refCenterBin + ENERGY_HALF_BINS);
 
-    // Calibration: collect noise floor over NOISE_WINDOW_MS
+    // Calibration: collect noise floor over NOISE_WINDOW_MS (target / ref 両方)
     const calibStart =
       typeof performance !== "undefined" ? performance.now() : Date.now();
-    const noiseSamples: number[] = [];
+    const targetSamples: number[] = [];
+    const refSamples: number[] = [];
     await new Promise<void>((resolve) => {
       const sample = () => {
-        // stop() 検知
         if (runIdRef.current !== myRunId || !analyserRef.current) {
           resolve();
           return;
@@ -183,8 +188,8 @@ export function useProximity(targetFreqHz: number): Result {
           resolve();
           return;
         }
-        const peak = peakInBand();
-        if (Number.isFinite(peak)) noiseSamples.push(peak);
+        targetSamples.push(bandEnergyMagnitude(buf, targetLo, targetHi));
+        refSamples.push(bandEnergyMagnitude(buf, refLo, refHi));
         const now =
           typeof performance !== "undefined" ? performance.now() : Date.now();
         if (now - calibStart >= NOISE_WINDOW_MS) {
@@ -196,21 +201,20 @@ export function useProximity(targetFreqHz: number): Result {
       rafRef.current = requestAnimationFrame(sample);
     });
 
-    if (runIdRef.current !== myRunId || !analyserRef.current) {
-      // stop() がキャリブレーション中に走った
-      return;
-    }
+    if (runIdRef.current !== myRunId || !analyserRef.current) return;
 
-    noiseSamples.sort((a, b) => a - b);
-    const noiseDb =
-      noiseSamples.length > 0
-        ? noiseSamples[Math.floor(noiseSamples.length / 2)]!
-        : -100;
+    const noiseMag = median(targetSamples, 0);
+    const refNoiseMag = median(refSamples, 0);
 
     proximityRef.current = 0;
     lastTickRef.current = 0;
+    lastDebugRef.current = 0;
     setProximity(0);
     setState("active");
+
+    const isDev =
+      typeof import.meta !== "undefined" &&
+      (import.meta as unknown as { env?: { DEV?: boolean } }).env?.DEV === true;
 
     const tick = (now: number) => {
       if (runIdRef.current !== myRunId || !analyserRef.current) return;
@@ -225,14 +229,43 @@ export function useProximity(targetFreqHz: number): Result {
       } catch {
         return;
       }
-      const peak = peakInBand();
-      const signalDb = Number.isFinite(peak) ? Math.max(0, peak - noiseDb) : 0;
+
+      const targetMag = bandEnergyMagnitude(buf, targetLo, targetHi);
+      const refMag = bandEnergyMagnitude(buf, refLo, refHi);
+      const sigMag = Math.max(0, targetMag - noiseMag);
+      const spike = refSpikeDb(refMag, refNoiseMag);
+      const adjustedMag = attenuateBySpike(
+        sigMag,
+        noiseMag,
+        spike,
+        REF_GUARD_DB,
+        REF_THRESHOLD_BOOST_DB,
+      );
       const raw =
-        clamp((signalDb - RANGE_MIN_DB) / (RANGE_MAX_DB - RANGE_MIN_DB), 0, 1) *
-        100;
+        clamp(
+          (adjustedMag - LINEAR_RANGE_MIN) /
+            (LINEAR_RANGE_MAX - LINEAR_RANGE_MIN),
+          0,
+          1,
+        ) * 100;
       proximityRef.current =
         (1 - EMA_ALPHA) * proximityRef.current + EMA_ALPHA * raw;
       setProximity(proximityRef.current);
+
+      if (isDev && now - lastDebugRef.current >= DEBUG_LOG_INTERVAL_MS) {
+        lastDebugRef.current = now;
+        console.log("[dowsing]", {
+          targetMag: targetMag.toExponential(3),
+          noiseMag: noiseMag.toExponential(3),
+          sigMag: sigMag.toExponential(3),
+          refMag: refMag.toExponential(3),
+          refNoiseMag: refNoiseMag.toExponential(3),
+          spikeDb: spike.toFixed(2),
+          adjustedMag: adjustedMag.toExponential(3),
+          proximity: proximityRef.current.toFixed(1),
+        });
+      }
+
       rafRef.current = requestAnimationFrame(tick);
     };
     rafRef.current = requestAnimationFrame(tick);

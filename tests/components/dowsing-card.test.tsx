@@ -9,10 +9,10 @@ afterEach(() => {
 
 describe("DowsingCard (smoke test)", () => {
   it("renders idle state with START DOWSING button", () => {
-    render(<DowsingCard targetFreqHz={19000} label="DOWSING Q1-1" />);
+    render(<DowsingCard targetFreqHz={18600} label="DOWSING Q1-1" />);
     // Header shows STATUS / FREQ
     expect(screen.getByText(/STATUS/)).toBeInTheDocument();
-    expect(screen.getByText(/19\.0 kHz/)).toBeInTheDocument();
+    expect(screen.getByText(/18\.6 kHz/)).toBeInTheDocument();
     // STANDBY label appears when idle
     expect(screen.getByText(/DOWSING Q1-1/)).toBeInTheDocument();
     expect(screen.getByText(/STANDBY/i)).toBeInTheDocument();
@@ -30,7 +30,7 @@ describe("DowsingCard (smoke test)", () => {
 
   it("does not crash when SystemPanel and Icon dependencies are present", () => {
     // Just verify nothing throws on mount/unmount cycle.
-    const { unmount } = render(<DowsingCard targetFreqHz={19000} label="X" />);
+    const { unmount } = render(<DowsingCard targetFreqHz={18600} label="X" />);
     unmount();
   });
 });

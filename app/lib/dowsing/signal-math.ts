@@ -1,0 +1,65 @@
+/**
+ * ダウジング信号処理の純粋関数。AnalyserNode から取得した dB スペクトルを
+ * 線形 magnitude に変換し、狭帯域エネルギー合計と参照帯域による誤検知抑制を行う。
+ *
+ * すべてサイドエフェクトなし・引数のみに依存。テスト容易性のため hook から分離。
+ */
+
+/** dB (decibel, 振幅スケール) を線形 magnitude に変換: 10^(dB/20) */
+export function dbToMagnitude(db: number): number {
+  return Math.pow(10, db / 20);
+}
+
+/**
+ * `[lo, hi]` (両端含む) の bin の dB 値を線形 magnitude に変換して合計する。
+ * 範囲外・undefined・非有限値は無視する。
+ */
+export function bandEnergyMagnitude(
+  buf: Float32Array,
+  lo: number,
+  hi: number,
+): number {
+  let sum = 0;
+  const start = Math.max(0, lo);
+  const end = Math.min(buf.length - 1, hi);
+  for (let i = start; i <= end; i++) {
+    const v = buf[i];
+    if (v !== undefined && Number.isFinite(v)) sum += dbToMagnitude(v);
+  }
+  return sum;
+}
+
+/**
+ * 参照帯域のスパイクを dB に正規化。
+ * `refNoiseMag` が 0 / 非正なら 0 を返す。比が非有限なら 0 を返す。
+ */
+export function refSpikeDb(refMag: number, refNoiseMag: number): number {
+  if (refNoiseMag <= 0) return 0;
+  const ratio = refMag / refNoiseMag;
+  if (!Number.isFinite(ratio) || ratio <= 0) return 0;
+  return 20 * Math.log10(ratio);
+}
+
+/**
+ * 動的閾値補正: 参照帯域が `guardDb` を超えてスパイクしていたら、
+ * 信号 magnitude から「ノイズフロアの `boostDb` 倍ぶん」を減算してから返す。
+ * これにより環境ノイズ（擦れ音など）が target にも漏れた場合の誤反応を抑える。
+ */
+export function attenuateBySpike(
+  sigMag: number,
+  noiseMag: number,
+  refSpike: number,
+  guardDb: number,
+  boostDb: number,
+): number {
+  if (refSpike <= guardDb) return sigMag;
+  const boost = dbToMagnitude(boostDb);
+  return Math.max(0, sigMag - noiseMag * boost);
+}
+
+/** 配列の中央値。空配列なら fallback を返す。 */
+export function median(values: number[], fallback: number): number {
+  if (values.length === 0) return fallback;
+  const sorted = [...values].sort((a, b) => a - b);
+  return sorted[Math.floor(sorted.length / 2)]!;
+}

@@ -125,17 +125,26 @@ Active --> [*]: ページ遷移 / 停止押下 / QR読取によるURL離脱
 
 ### 4.1 周波数割当
 
-- 1-1 サブ設問: 19,000 Hz（中心、初期値）
+- 1-1 サブ設問: 18,600 Hz（中心、初期値）
 - 1-2 サブ設問: 20,000 Hz（中心、初期値）
+- 18 kHz 以下は若年層に明瞭に可聴のため避け、20 kHz 以上は端末マイクの高域減衰でほぼ取れないため上限とする。中間幅 1,400 Hz 取ることで隣接設問の混信を実質ゼロにする。
 - 上記は実体検証で端末マイクの平坦帯域に合わせて再調整しうる（17〜21kHz 範囲で代替候補を持つ）。
 
 対象周波数はルート（`q1.1.tsx` / `q1.2.tsx`）ごとに静的定数で埋め込む。実行時の周波数切替は行わない。
+
+参照帯域（誤検知抑制用）:
+
+- 各 target の `+400 Hz` を「環境ノイズ参照」として常時計測する（Q1-1 → 19,000 Hz / Q1-2 → 20,400 Hz）。
+- どちらも可聴域には落ちず、相手側 target の帯域とも重ならない。
+- 参照帯域が大きくスパイクしたら、信号側の magnitude を動的に減衰させる（§4.3）。
 
 ### 4.2 スピーカー側発信
 
 - 各地点で連続正弦波を発信する。
 - 出力レベルは `1〜3 m` で接近検知が可能、隣接設問の混信が最小となる値に運営側で調整する（最終値は実体検証）。
 - 1-1 / 1-2 の同時鳴動を許容する（端末側で帯域分離する）。
+- 起動・停止時は `linearRampToValueAtTime` で `TONE_FADE_MS` (= 10 ms) の fade in/out を行い、クリックノイズ（高域スパッタリング）を抑制する。
+- 運営向けにアプリ内テストトーン発生ページ `/operator/dowsing-test` を提供（端末スピーカーから 18.6 / 20 kHz を出力可能・出力レベルスライダー付き）。
 
 ### 4.3 端末側受信・解析
 
@@ -144,25 +153,39 @@ AnalyserNode 設定:
 - `fftSize`: 8192（48kHzサンプリング時の周波数解像度 ≒ 5.86 Hz / bin）
 - `smoothingTimeConstant`: 0.0（自前で平滑化する）
 
-狭帯域抽出:
+狭帯域抽出（エネルギー合計）:
 
-- 中心周波数 ± `band_half_hz` の bin のみを評価
-- その範囲のピーク振幅 `peak_db` を取得
+- 中心周波数 ± `energy_half_bins` (= 5 bin、≒ ±29 Hz @ 48 kHz) の bin を評価
+- 各 bin の dB 値を `magnitude = 10^(dB/20)` で線形変換し、合計値を帯域エネルギーとする
+- ピーク値ではなく合計値を使うことで、単発の鋭いスパイクではなく定常的な信号にだけ反応しやすくなる
 
 底ノイズ補正:
 
-- 起動直後 `noise_window_ms` をキャリブレーション窓とし、対象帯域の中央値を `noise_db` として保存
-- 評価時は `signal_db = max(0, peak_db - noise_db)`
+- 起動直後 `noise_window_ms` をキャリブレーション窓とし、target / 参照帯域それぞれのエネルギー合計の中央値を `noise_mag` / `ref_noise_mag` として保存
+- 評価時は `sig_mag = max(0, target_mag - noise_mag)`
 
-接近度マッピング:
+参照帯域による動的減衰:
 
-- 設計レンジ `[range_min_db, range_max_db]` に対し `signal_db` を 0〜100 に線形マッピング
+- 参照帯域の `ref_spike_db = 20 * log10(ref_mag / ref_noise_mag)`
+- `ref_spike_db > REF_GUARD_DB` (= 9 dB) のとき、target に「広帯域ノイズが漏れ込んでいる」とみなし `adjusted_mag = max(0, sig_mag - noise_mag * 10^(REF_THRESHOLD_BOOST_DB/20))` で減衰
+- これにより擦れ音・拍手などの広帯域突発音による誤反応を抑える
+
+接近度マッピング（線形 magnitude）:
+
+- 設計レンジ `[LINEAR_RANGE_MIN, LINEAR_RANGE_MAX]` に対し `adjusted_mag` を 0〜100 に線形マッピング
 - レンジ外はクランプ
+- dB ではなく線形 magnitude にすることで、距離変化による音圧の指数変化に対し proximity の応答が自然になる
 
 平滑化:
 
 - 指数移動平均（EMA）`proximity = (1 - α) * prev + α * raw`
 - `α = ema_alpha`（実体検証で 0.2〜0.4）
+
+デバッグ出力:
+
+- dev 環境のみ `DEBUG_LOG_INTERVAL_MS` (= 250 ms) 周期で
+  `console.log("[dowsing]", { targetMag, noiseMag, sigMag, refMag, refNoiseMag, spikeDb, adjustedMag, proximity })` を出力
+- 現地でレンジ調整するときの実測値取得に使う
 
 ### 4.4 サブ設問切替
 
@@ -266,15 +289,34 @@ function startDowsing(targetFreqHz: number) {
   analyser.smoothingTimeConstant = 0;
   src.connect(analyser);
 
-  const noiseDb = await calibrate(analyser, targetFreqHz, NOISE_WINDOW_MS);
+  const { noiseMag, refNoiseMag } = await calibrate(
+    analyser,
+    targetFreqHz,
+    NOISE_WINDOW_MS,
+  );
   let proximity = 0;
 
   const tick = () => {
-    const peakDb = peakInBand(analyser, targetFreqHz, BAND_HALF_HZ);
-    const signalDb = Math.max(0, peakDb - noiseDb);
+    const targetMag = bandEnergyMagnitude(analyser, targetFreqHz);
+    const refMag = bandEnergyMagnitude(
+      analyser,
+      targetFreqHz + REF_FREQ_OFFSET_HZ,
+    );
+    const sigMag = Math.max(0, targetMag - noiseMag);
+    const spikeDb = refSpikeDb(refMag, refNoiseMag);
+    const adjusted = attenuateBySpike(
+      sigMag,
+      noiseMag,
+      spikeDb,
+      REF_GUARD_DB,
+      REF_THRESHOLD_BOOST_DB,
+    );
     const raw =
-      clamp((signalDb - RANGE_MIN_DB) / (RANGE_MAX_DB - RANGE_MIN_DB), 0, 1) *
-      100;
+      clamp(
+        (adjusted - LINEAR_RANGE_MIN) / (LINEAR_RANGE_MAX - LINEAR_RANGE_MIN),
+        0,
+        1,
+      ) * 100;
     proximity = (1 - EMA_ALPHA) * proximity + EMA_ALPHA * raw;
     publish(proximity);
     rafHandle = requestAnimationFrame(tick);
@@ -311,30 +353,36 @@ const TARGET_FREQ_HZ = FREQ_Q1_2_HZ;
 
 ## 7. 仕様パラメータ
 
-| 名前                  | 既定値（暫定） | 説明                                   |
-| --------------------- | -------------- | -------------------------------------- |
-| `freq_q1_1_hz`        | 19000          | サブ設問1-1の中心周波数                |
-| `freq_q1_2_hz`        | 20000          | サブ設問1-2の中心周波数                |
-| `band_half_hz`        | 100            | 中心周波数からの帯域半幅               |
-| `fft_size`            | 8192           | AnalyserNode FFTサイズ                 |
-| `noise_window_ms`     | 1500           | キャリブレーション窓長                 |
-| `range_min_db`        | TBD            | proximity=0 にマップする `signal_db`   |
-| `range_max_db`        | TBD            | proximity=100 にマップする `signal_db` |
-| `ema_alpha`           | 0.3            | 接近度EMA係数                          |
-| `tick_ms`             | 60             | 評価ループ周期                         |
-| `circle_size_min_px`  | 80             | 円の最小直径                           |
-| `circle_size_max_px`  | 240            | 円の最大直径                           |
-| `circle_shake_max_px` | 12             | 震え振幅最大値                         |
-| `circle_size_coef`    | 1.0            | 円サイズ感度係数（独立調整）           |
-| `circle_shake_coef`   | 1.0            | 震え振幅感度係数（独立調整）           |
-| `vib_pulse_ms`        | 100            | バイブパルス長（固定）                 |
-| `vib_gap_min_ms`      | 60             | proximity=100時のパルス間隔            |
-| `vib_gap_max_ms`      | 800            | proximity=0時のパルス間隔              |
-| `vib_gap_coef`        | 1.0            | バイブ間隔感度係数（独立調整）         |
-| `beep_freq_hz`        | 880            | iOSフォールバック ビープ周波数         |
-| `beep_pulse_ms`       | 80             | ビープパルス長                         |
-| `beep_gap_min_ms`     | 80             | proximity=100時のビープ間隔            |
-| `beep_gap_max_ms`     | 900            | proximity=0時のビープ間隔              |
+| 名前                       | 既定値（暫定） | 説明                                                       |
+| -------------------------- | -------------- | ---------------------------------------------------------- |
+| `FREQ_Q1_1_HZ`             | 18600          | サブ設問1-1の中心周波数                                    |
+| `FREQ_Q1_2_HZ`             | 20000          | サブ設問1-2の中心周波数                                    |
+| `ENERGY_HALF_BINS`         | 5              | 中心 ± この bin 数を狭帯域として線形 magnitude 合計        |
+| `FFT_SIZE`                 | 8192           | AnalyserNode FFTサイズ                                     |
+| `REF_FREQ_OFFSET_HZ`       | 400            | 参照帯域の中心 = target + これ（Hz）                       |
+| `REF_GUARD_DB`             | 9              | 参照帯域がこの dB 以上スパイクしたら動的減衰を発動         |
+| `REF_THRESHOLD_BOOST_DB`   | 6              | 動的減衰量（信号 magnitude から noise×10^(boost/20) を減算）|
+| `NOISE_WINDOW_MS`          | 1500           | キャリブレーション窓長                                     |
+| `LINEAR_RANGE_MIN`         | 0.0            | proximity=0 にマップする線形 magnitude（実体検証で確定）   |
+| `LINEAR_RANGE_MAX`         | 0.05           | proximity=100 にマップする線形 magnitude（暫定）           |
+| `EMA_ALPHA`                | 0.3            | 接近度EMA係数                                              |
+| `TICK_MS`                  | 60             | 評価ループ周期                                             |
+| `DEBUG_LOG_INTERVAL_MS`    | 250            | dev 環境のデバッグログ throttle 周期                       |
+| `CIRCLE_SIZE_MIN_PX`       | 80             | 円の最小直径                                               |
+| `CIRCLE_SIZE_MAX_PX`       | 240            | 円の最大直径                                               |
+| `CIRCLE_SHAKE_MAX_PX`      | 12             | 震え振幅最大値                                             |
+| `CIRCLE_SIZE_COEF`         | 1.0            | 円サイズ感度係数（独立調整）                               |
+| `CIRCLE_SHAKE_COEF`        | 1.0            | 震え振幅感度係数（独立調整）                               |
+| `VIB_PULSE_MS`             | 100            | バイブパルス長（固定）                                     |
+| `VIB_GAP_MIN_MS`           | 60             | proximity=100時のパルス間隔                                |
+| `VIB_GAP_MAX_MS`           | 800            | proximity=0時のパルス間隔                                  |
+| `BEEP_FREQ_HZ`             | 880            | iOSフォールバック ビープ周波数                             |
+| `BEEP_PULSE_MS`            | 80             | ビープパルス長                                             |
+| `BEEP_GAP_MIN_MS`           | 80             | proximity=100時のビープ間隔                                |
+| `BEEP_GAP_MAX_MS`           | 900            | proximity=0時のビープ間隔                                  |
+| `BEEP_FADE_MS`             | 10             | ビープ起動・停止のクリックノイズ防止 fade                  |
+| `TONE_FADE_MS`             | 10             | テストトーン (`/operator/dowsing-test`) の fade in/out     |
+| `TONE_DEFAULT_LEVEL`       | 0.3            | テストトーン初期出力レベル                                 |
 
 設計レンジは `specs.md` 6.2 の運用要件と整合させ、接近開始 1〜3m / 最大 〜30cm を狙う。最終値はすべて実体検証で確定する。
 

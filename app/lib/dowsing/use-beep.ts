@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import {
+  BEEP_FADE_MS,
   BEEP_FREQ_HZ,
   BEEP_GAP_MAX_MS,
   BEEP_GAP_MIN_MS,
@@ -61,15 +62,16 @@ export function useBeep(active: boolean, proximity: number) {
         const gain = ctx.createGain();
         osc.frequency.value = BEEP_FREQ_HZ;
         osc.type = "sine";
-        gain.gain.setValueAtTime(0, ctx.currentTime);
-        gain.gain.linearRampToValueAtTime(0.15, ctx.currentTime + 0.005);
-        gain.gain.linearRampToValueAtTime(
-          0,
-          ctx.currentTime + BEEP_PULSE_MS / 1000,
-        );
+        const fadeS = BEEP_FADE_MS / 1000;
+        const pulseS = BEEP_PULSE_MS / 1000;
+        const t0 = ctx.currentTime;
+        gain.gain.setValueAtTime(0, t0);
+        gain.gain.linearRampToValueAtTime(0.15, t0 + fadeS);
+        gain.gain.setValueAtTime(0.15, t0 + Math.max(fadeS, pulseS - fadeS));
+        gain.gain.linearRampToValueAtTime(0, t0 + pulseS);
         osc.connect(gain).connect(ctx.destination);
         osc.start();
-        osc.stop(ctx.currentTime + BEEP_PULSE_MS / 1000 + 0.02);
+        osc.stop(t0 + pulseS + 0.02);
       } catch {
         /* ignore transient audio errors */
       }
