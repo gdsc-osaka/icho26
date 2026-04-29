@@ -6,3 +6,7 @@ export { LoadingOverlay } from "./loading-overlay";
 export { StageHeader } from "./stage-header";
 export { MonospaceLog } from "./monospace-log";
 export { HintChat } from "./hint-chat";
+export { Icon } from "./icon";
+export { TopBar } from "./top-bar";
+export { BackgroundFX } from "./background-fx";
+export { PageShell } from "./page-shell";

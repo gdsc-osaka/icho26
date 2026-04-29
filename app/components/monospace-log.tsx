@@ -6,7 +6,7 @@ type Props = {
 
 export function MonospaceLog({ children }: Props) {
   return (
-    <pre className="font-mono text-sm text-text-secondary bg-bg-primary border border-accent-dim p-3 rounded whitespace-pre-wrap">
+    <pre className="whitespace-pre-wrap border border-cyan-900/50 bg-[#05070A]/80 p-3 font-mono text-sm tracking-wider text-on-surface">
       {children}
     </pre>
   );

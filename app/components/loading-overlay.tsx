@@ -6,8 +6,10 @@ type Props = {
 
 export function LoadingOverlay({ children = "LOADING..." }: Props) {
   return (
-    <div className="fixed inset-0 bg-bg-primary/80 flex items-center justify-center z-50 backdrop-blur-sm">
-      <div className="text-accent font-mono animate-pulse">{children}</div>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#05070A]/80 backdrop-blur-sm">
+      <div className="font-mono uppercase tracking-widest text-cyan-400 animate-pulse">
+        {children}
+      </div>
     </div>
   );
 }
