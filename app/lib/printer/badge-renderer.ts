@@ -60,7 +60,12 @@ export async function renderBadgeToCanvas(
   ctx.fillStyle = "#ffffff";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  drawBitmapCentered(ctx, companyBitmap, COMPANY_NAME_SCALE, layout.companyName.y);
+  drawBitmapCentered(
+    ctx,
+    companyBitmap,
+    COMPANY_NAME_SCALE,
+    layout.companyName.y,
+  );
   drawBitmapCentered(ctx, groupNameBitmap, 1, layout.groupName.y);
   drawBitmapCentered(ctx, sizeBitmap, 1, layout.groupSize.y);
 

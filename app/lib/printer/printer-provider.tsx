@@ -56,6 +56,15 @@ export function PrinterProvider({
     setDensity,
     printBadge,
   } = printer;
+
+  // Tear down the GATT connection when the operator section unmounts
+  // (logout, navigation away to /operator/login). disconnect() is a no-op
+  // when the printer was never created or is already disconnected.
+  useEffect(() => {
+    return () => {
+      disconnect();
+    };
+  }, [disconnect]);
   const value = useMemo(
     () => ({
       printer: {

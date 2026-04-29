@@ -532,11 +532,7 @@ function ReprintPanel({ user }: { user: UserDetail["user"] }) {
             このグループには社員名/人数が未登録のため再印刷できません (旧 ID)。
           </p>
         )}
-        <GlowButton
-          type="button"
-          onClick={handleReprint}
-          disabled={!canPrint}
-        >
+        <GlowButton type="button" onClick={handleReprint} disabled={!canPrint}>
           {printer.printState === "printing" ? "印刷中..." : "再印刷"}
         </GlowButton>
       </div>

@@ -18,15 +18,21 @@ async function* iterLines(text: string): AsyncIterableIterator<string> {
 export function loadBdfFont(): Promise<Font> {
   if (cached) return cached;
   cached = (async () => {
-    const res = await fetch(FONT_URL);
-    if (!res.ok) {
+    try {
+      const res = await fetch(FONT_URL);
+      if (!res.ok) {
+        throw new Error(`Failed to fetch BDF font (${res.status})`);
+      }
+      const text = await res.text();
+      const font = new Font();
+      await font.load_filelines(iterLines(text));
+      return font;
+    } catch (err) {
+      // Reset the cache on any failure so a later call can retry instead
+      // of being permanently stuck on the rejected promise.
       cached = null;
-      throw new Error(`Failed to fetch BDF font (${res.status})`);
+      throw err;
     }
-    const text = await res.text();
-    const font = new Font();
-    await font.load_filelines(iterLines(text));
-    return font;
   })();
   return cached;
 }

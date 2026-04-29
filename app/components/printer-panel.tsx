@@ -100,7 +100,9 @@ export function PrinterPanel({ printer, fontReady }: Readonly<Props>) {
       {status.isOutOfPaper && (
         <p className="text-xs text-error">用紙切れです</p>
       )}
-      {status.isOverheat && <p className="text-xs text-error">ヘッド温度警告</p>}
+      {status.isOverheat && (
+        <p className="text-xs text-error">ヘッド温度警告</p>
+      )}
       {printState === "printing" && (
         <p className="text-xs text-cyan-400">印刷中...</p>
       )}

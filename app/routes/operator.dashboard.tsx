@@ -132,17 +132,26 @@ export default function OperatorDashboard() {
     if (!printer.status.isConnected) return;
     if (lastPrintedRef.current === actionData.issuedGroupId) return;
 
+    // Claim the slot before the await so subsequent re-renders (printer
+    // status updates fire several times during a print) do not stack
+    // additional printBadge() calls. On failure the error surfaces via
+    // printer.printState / errorMessage and the operator can retry through
+    // the "このグループを再印刷" button, which bypasses this guard.
     lastPrintedRef.current = actionData.issuedGroupId;
     const startUrl = `${window.location.origin}/start/${actionData.issuedGroupId}`;
-    void printer.printBadge(
-      {
-        companyName: COMPANY_NAME,
-        groupName: actionData.groupName,
-        groupSize: actionData.groupSize,
-        qrUrl: startUrl,
-      },
-      font,
-    );
+    void printer
+      .printBadge(
+        {
+          companyName: COMPANY_NAME,
+          groupName: actionData.groupName,
+          groupSize: actionData.groupSize,
+          qrUrl: startUrl,
+        },
+        font,
+      )
+      .catch(() => {
+        // Error is already surfaced via printer.errorMessage / printState.
+      });
   }, [actionData, font, printer, autoPrintEnabled]);
 
   return (
@@ -211,7 +220,8 @@ export default function OperatorDashboard() {
                   className="w-full"
                 />
                 <p className="font-mono text-xs text-on-surface-variant">
-                  AI チャットボットの呼び掛けに使うので、実際の名前やニックネームを入力してください。
+                  AI
+                  チャットボットの呼び掛けに使うので、実際の名前やニックネームを入力してください。
                 </p>
               </FormField>
               <FormField label="グループ人数">
@@ -230,7 +240,8 @@ export default function OperatorDashboard() {
               )}
               {autoPrintEnabled && !printer.status.isConnected && (
                 <p className="font-mono text-xs text-on-surface-variant">
-                  ※ 発行時にプリンタ未接続の場合、Bluetooth デバイス選択ダイアログが表示されます。
+                  ※ 発行時にプリンタ未接続の場合、Bluetooth
+                  デバイス選択ダイアログが表示されます。
                 </p>
               )}
               {!autoPrintEnabled && (

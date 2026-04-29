@@ -19,7 +19,8 @@ function subscribeFor(key: string) {
     };
     window.addEventListener("storage", onStorage);
     return () => {
-      perKey?.delete(cb);
+      perKey.delete(cb);
+      if (perKey.size === 0) listeners.delete(key);
       window.removeEventListener("storage", onStorage);
     };
   };
@@ -31,10 +32,17 @@ export function useLocalStorageNumber(
 ): [number, (next: number) => void] {
   const subscribe = useCallback(subscribeFor(key), [key]);
   const getSnapshot = useCallback(() => {
-    const stored = window.localStorage.getItem(key);
-    if (stored === null) return defaultValue;
-    const parsed = Number(stored);
-    return Number.isFinite(parsed) ? parsed : defaultValue;
+    // localStorage.getItem can throw SecurityError (restricted origins,
+    // private mode) or QuotaExceededError. Fall back to the default rather
+    // than crashing the consumer.
+    try {
+      const stored = globalThis.localStorage.getItem(key);
+      if (stored === null) return defaultValue;
+      const parsed = Number(stored);
+      return Number.isFinite(parsed) ? parsed : defaultValue;
+    } catch {
+      return defaultValue;
+    }
   }, [key, defaultValue]);
   const getServerSnapshot = useCallback(() => defaultValue, [defaultValue]);
 
@@ -42,7 +50,11 @@ export function useLocalStorageNumber(
 
   const setValue = useCallback(
     (next: number) => {
-      window.localStorage.setItem(key, String(next));
+      try {
+        globalThis.localStorage.setItem(key, String(next));
+      } catch (err) {
+        console.warn(`useLocalStorageNumber: setItem(${key}) failed`, err);
+      }
       notify(key);
     },
     [key],
