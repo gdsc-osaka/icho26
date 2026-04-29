@@ -1,4 +1,5 @@
 build/
+dist/
 .react-router/
 .wrangler/
 node_modules/
