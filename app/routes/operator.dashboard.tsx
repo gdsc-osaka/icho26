@@ -1,7 +1,6 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { drizzle } from "drizzle-orm/d1";
 import { Form, Link, useActionData, useLoaderData } from "react-router";
-import type { Font } from "bdfparser";
 import * as schema from "../../db/schema";
 import {
   ErrorAlert,
@@ -15,8 +14,7 @@ import { listUsers } from "~/lib/operator/queries";
 import { requireOperatorSession } from "~/lib/operator/session";
 import { createUser } from "~/lib/shared/users";
 import { useLocalStorageBoolean } from "~/lib/hooks/useLocalStorageBoolean";
-import { loadBdfFont } from "~/lib/printer/bdf-font";
-import { usePrinter } from "~/lib/printer/usePrinter";
+import { usePrinterContext } from "~/lib/printer/printer-context";
 import type { Route } from "./+types/operator.dashboard";
 
 const COMPANY_NAME = "ZEUS Inc.";
@@ -80,9 +78,7 @@ export default function OperatorDashboard() {
   const { users } = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
 
-  const printer = usePrinter();
-  const [font, setFont] = useState<Font | null>(null);
-  const [fontError, setFontError] = useState<string | null>(null);
+  const { printer, font, fontError } = usePrinterContext();
   const [autoPrintEnabled, setAutoPrintEnabled] = useLocalStorageBoolean(
     AUTO_PRINT_STORAGE_KEY,
     true,
@@ -90,29 +86,6 @@ export default function OperatorDashboard() {
   const lastPrintedRef = useRef<string | null>(null);
   const lastResetRef = useRef<string | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    loadBdfFont()
-      .then((f) => {
-        if (!cancelled) setFont(f);
-      })
-      .catch((err: unknown) => {
-        if (!cancelled) {
-          setFontError(err instanceof Error ? err.message : String(err));
-        }
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  // Pre-warm the lx-printer dynamic import so the user-gesture click on
-  // either the form's submit or the re-print button can call requestDevice()
-  // within transient activation without waiting on a fresh module fetch.
-  useEffect(() => {
-    void import("lx-printer/lx-d02");
-  }, []);
 
   const handleReprint = useCallback(() => {
     if (!actionData?.ok || !font) return;
