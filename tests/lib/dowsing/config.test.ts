@@ -1,12 +1,16 @@
 import { describe, expect, it } from "vitest";
 import {
+  DEFAULT_DETECTION_METHOD,
   EMA_ALPHA,
   ENERGY_HALF_BINS,
+  ENERGY_RANGE_MAX_DB,
+  ENERGY_RANGE_MIN_DB,
   FFT_SIZE,
   FREQ_Q1_1_HZ,
   FREQ_Q1_2_HZ,
-  RANGE_MAX_DB,
-  RANGE_MIN_DB,
+  PEAK_BAND_HALF_HZ,
+  PEAK_RANGE_MAX_DB,
+  PEAK_RANGE_MIN_DB,
   clamp,
 } from "~/lib/dowsing/config";
 
@@ -32,13 +36,24 @@ describe("dowsing config sanity", () => {
     expect(EMA_ALPHA).toBeLessThan(1);
   });
 
-  it("dB range is monotonically increasing", () => {
-    expect(RANGE_MAX_DB).toBeGreaterThan(RANGE_MIN_DB);
+  it("peak / energy dB ranges are monotonically increasing", () => {
+    expect(PEAK_RANGE_MAX_DB).toBeGreaterThan(PEAK_RANGE_MIN_DB);
+    expect(ENERGY_RANGE_MAX_DB).toBeGreaterThan(ENERGY_RANGE_MIN_DB);
   });
 
   it("energy half-bins covers FFT spectral leakage width (>= 3 bins)", () => {
     // 連続正弦波は中心周辺 3〜5 bin にリークするため、リーク幅をカバーできる必要がある。
     expect(ENERGY_HALF_BINS).toBeGreaterThanOrEqual(3);
+  });
+
+  it("peak band half-width covers at least one bin at 48kHz / 8192", () => {
+    const binHz = 48000 / FFT_SIZE;
+    const halfBins = Math.round(PEAK_BAND_HALF_HZ / binHz);
+    expect(halfBins).toBeGreaterThanOrEqual(1);
+  });
+
+  it("default detection method is one of the supported values", () => {
+    expect(["peak", "energy_sum"]).toContain(DEFAULT_DETECTION_METHOD);
   });
 });
 

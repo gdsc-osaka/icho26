@@ -9,20 +9,30 @@
 export const FREQ_Q1_1_HZ = 19000;
 export const FREQ_Q1_2_HZ = 20000;
 
-/**
- * 中心 ± この bin 数を「狭帯域」として線形 magnitude を合計する。
- * 48 kHz / FFT_SIZE 8192 では 1 bin ≒ 5.86 Hz なので ±5 bin ≒ ±29 Hz。
- * 連続正弦波の FFT リーケージ幅（≒3〜5 bin）に合わせている。
- */
-export const ENERGY_HALF_BINS = 5;
 export const FFT_SIZE = 8192;
 export const NOISE_WINDOW_MS = 1500;
 export const TICK_MS = 60;
 
-// Signal -> proximity mapping (dB)
-// energy-sum 方式の signal_db = 20 * log10(target_sum / noise_sum) のレンジに合わせる。
-export const RANGE_MIN_DB = 3;
-export const RANGE_MAX_DB = 30;
+/**
+ * 帯域抽出方式。
+ * - "peak": 帯域内 dB の最大値を信号レベルとする。広い帯域（PEAK_BAND_HALF_HZ）で取り、
+ *   ピークが立った瞬間に強く反応する。広帯域ノイズには強いが、リーケージで取りこぼしやすい。
+ * - "energy_sum": 帯域内の線形 magnitude を合計し、20*log10(target/noise) を信号 dB とする。
+ *   FFT リーケージ全部を取り込めるので連続正弦波の検出に強い。狭帯域（ENERGY_HALF_BINS）必須。
+ */
+export type DetectionMethod = "peak" | "energy_sum";
+
+export const DEFAULT_DETECTION_METHOD: DetectionMethod = "energy_sum";
+
+// Peak 方式: 中心 ± この Hz を帯域とし dB ピークを取る
+export const PEAK_BAND_HALF_HZ = 100;
+export const PEAK_RANGE_MIN_DB = 6;
+export const PEAK_RANGE_MAX_DB = 36;
+
+// Energy-sum 方式: 中心 ± この bin 数（≒±29 Hz @ 48kHz/8192）の線形 magnitude を合計
+export const ENERGY_HALF_BINS = 5;
+export const ENERGY_RANGE_MIN_DB = 3;
+export const ENERGY_RANGE_MAX_DB = 30;
 
 // Smoothing
 export const EMA_ALPHA = 0.3;
