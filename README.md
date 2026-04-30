@@ -54,7 +54,7 @@ pnpm dev
 | Q1-2 | `(2, 3)` |
 | Q2 | `coffeecup` |
 | Q3 keyword | `hakidamenitsuru` |
-| Q3 code | `2.24` |
+| Q3 code | `2.236` |
 | Q4 | `29` |
 
 #### Q1 / Q2 の checkpoint コード(`db/seed/checkpoint-codes.sql` で投入)
