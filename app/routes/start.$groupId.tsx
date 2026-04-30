@@ -146,12 +146,11 @@ export default function StartGroup() {
           <span className="pointer-events-none absolute top-0 left-0 h-4 w-4 border-t-2 border-l-2 border-cyan-400" />
           <span className="pointer-events-none absolute bottom-0 right-0 h-4 w-4 border-b-2 border-r-2 border-cyan-400" />
           <p className="text-sm leading-relaxed tracking-wide text-on-surface-variant md:text-base">
-            あなたはZeus
-            Corpの新人社員です。入社一ヶ月、突如会社が崩壊しました。
+            あなたはNexus Dynamicsの新人社員です。入社一ヶ月、突如会社が倒産しました。
             <br />
-            共に働いていたAI「Iris」はノイズに埋もれています。
+            公式の説明は一切なく、残ったのはノイズに埋もれた社内用AIツール「Iris」のみ。
             <br />
-            真実を見つけ、彼女を修復することがあなたの任務です。
+            あなたの任務はIrisのノイズを取り除き、真実を見つけることです。
           </p>
         </div>
 
