@@ -1,11 +1,5 @@
 import { drizzle } from "drizzle-orm/d1";
-import {
-  Form,
-  Link,
-  redirect,
-  useActionData,
-  useLoaderData,
-} from "react-router";
+import { Form, redirect, useActionData, useLoaderData } from "react-router";
 import {
   ErrorAlert,
   HintChat,
@@ -129,13 +123,6 @@ export default function Q2() {
         </section>
       </div>
 
-      <Link
-        to="/q1"
-        className="mt-8 inline-flex items-center gap-2 self-center font-mono text-xs uppercase tracking-widest text-cyan-900 hover:text-cyan-400"
-      >
-        <Icon name="arrow_back" className="text-sm" /> BACK
-      </Link>
-
       <HintChat hint="STAGE 02 は『佐藤のメモ』に記された かな の並びを、キーボード上で同じ位置にある英数字に置き換える設問です。半角小文字で入力し、記号やスペースは含めないでください。" />
     </PageShell>
   );
@@ -156,8 +143,8 @@ function IrisMessageCard() {
           </span>
         </div>
         <p className="text-sm leading-relaxed text-on-surface">
-          佐藤ディレクターは認証キーを書き換えました ——
-          物理キーボードそのものをコンバーターとして利用しています。
+          佐藤ディレクターは認証キーを書き換えました —— <br />
+          彼はいつもモニターと睨み合いながら仕事をしているようでした。
         </p>
         <div className="mt-4 flex items-center justify-between border-t border-cyan-900/50 pt-3 font-mono text-[10px] uppercase tracking-widest text-cyan-700">
           <span>TRACE_ORIGIN: LOG_S_1993</span>
@@ -198,7 +185,7 @@ function RecoveredMemoCard() {
         </div>
         <div className="flex flex-col gap-1">
           <span className="text-cyan-700">石油（せきゆ）</span>
-          <span className="ml-2 text-sm text-cyan-400">→ pru</span>
+          <span className="ml-2 text-sm text-cyan-400">→ pg8</span>
         </div>
       </div>
     </SystemPanel>
