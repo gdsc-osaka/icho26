@@ -4,8 +4,9 @@ import { normalize } from "~/lib/participant/normalize";
 
 describe("isCorrect", () => {
   it.each([
-    ["Q1_1", "42", true],
-    ["Q1_1", "43", false],
+    ["Q1_1", "4,6", true],
+    ["Q1_1", "6,4", false],
+    ["Q1_1", "4", false],
     ["Q1_2", "2,3", true],
     ["Q1_2", "3,2", false],
     ["Q1_2", "2", false],
@@ -18,7 +19,10 @@ describe("isCorrect", () => {
   });
 
   it("integrates with normalize for full-width / mixed-case input", () => {
-    expect(isCorrect("Q1_1", normalize("０４２"))).toBe(true);
+    // Q1_1 は x,y 形式: 各成分を別々に normalize して "," で連結
+    expect(isCorrect("Q1_1", `${normalize("４")},${normalize("６")}`)).toBe(
+      true,
+    );
     expect(isCorrect("Q2", normalize("Coffee Cup".replace(" ", "")))).toBe(
       true,
     );
