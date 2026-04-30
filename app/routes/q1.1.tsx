@@ -141,7 +141,9 @@ export default function Q1_1() {
               X
             </label>
             <div className="mt-1 flex items-center border-b border-cyan-900 focus-within:border-cyan-400">
-              <Icon name="functions" className="mr-2 text-sm text-cyan-500" />
+              <span className="mr-2 font-mono text-sm font-bold text-cyan-500">
+                x =
+              </span>
               <TextInput
                 id="q1-1-x"
                 name="x"
@@ -162,7 +164,9 @@ export default function Q1_1() {
               Y
             </label>
             <div className="mt-1 flex items-center border-b border-cyan-900 focus-within:border-cyan-400">
-              <Icon name="functions" className="mr-2 text-sm text-cyan-500" />
+              <span className="mr-2 font-mono text-sm font-bold text-cyan-500">
+                y =
+              </span>
               <TextInput
                 id="q1-1-y"
                 name="y"
