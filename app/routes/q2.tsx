@@ -196,15 +196,9 @@ function RecoveredMemoCard() {
           <span className="text-cyan-700">佐藤渉（さとうわたる）</span>
           <span className="ml-2 text-sm text-cyan-400">→ xs40q.</span>
         </div>
-        <div className="flex flex-col gap-1 border-b border-cyan-900/30 pb-2">
+        <div className="flex flex-col gap-1">
           <span className="text-cyan-700">石油（せきゆ）</span>
           <span className="ml-2 text-sm text-cyan-400">→ pru</span>
-        </div>
-        <div className="flex flex-col gap-1">
-          <span className="text-cyan-700">そらははいいそなせ</span>
-          <span className="ml-2 text-sm text-cyan-400">
-            → ？？？？？？？？？
-          </span>
         </div>
       </div>
     </SystemPanel>
