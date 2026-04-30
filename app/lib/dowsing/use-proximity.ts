@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
-  BAND_HALF_HZ,
   EMA_ALPHA,
+  ENERGY_HALF_BINS,
   FFT_SIZE,
   NOISE_WINDOW_MS,
   RANGE_MAX_DB,
@@ -9,6 +9,9 @@ import {
   TICK_MS,
   clamp,
 } from "./config";
+
+/** 0 除算回避用の十分小さい magnitude フロア（≒ -200 dB） */
+const MIN_NOISE_MAG = 1e-10;
 
 export type ProximityState = "idle" | "requesting" | "active" | "unavailable";
 
@@ -151,22 +154,26 @@ export function useProximity(targetFreqHz: number): Result {
     const sampleRate = ctx.sampleRate;
     const binHz = sampleRate / FFT_SIZE;
     const centerBin = Math.round(targetFreqHz / binHz);
-    const halfBins = Math.max(1, Math.round(BAND_HALF_HZ / binHz));
+    const halfBins = Math.max(1, ENERGY_HALF_BINS);
     const bufLen = analyser.frequencyBinCount;
     const buf = new Float32Array(bufLen);
     const lo = Math.max(0, centerBin - halfBins);
     const hi = Math.min(bufLen - 1, centerBin + halfBins);
 
-    const peakInBand = (): number => {
-      let peak = -Infinity;
+    // 帯域内の bin の dB を線形 magnitude に直して合計する。
+    // 連続正弦波のスペクトルリーケージを取りこぼさないため、ピーク bin ではなく合計を採る。
+    const sumMagInBand = (): number => {
+      let sum = 0;
       for (let i = lo; i <= hi; i++) {
         const v = buf[i];
-        if (v !== undefined && v > peak) peak = v;
+        if (v !== undefined && Number.isFinite(v)) {
+          sum += 10 ** (v / 20);
+        }
       }
-      return peak;
+      return sum;
     };
 
-    // Calibration: collect noise floor over NOISE_WINDOW_MS
+    // Calibration: collect band-energy floor over NOISE_WINDOW_MS
     const calibStart =
       typeof performance !== "undefined" ? performance.now() : Date.now();
     const noiseSamples: number[] = [];
@@ -183,8 +190,8 @@ export function useProximity(targetFreqHz: number): Result {
           resolve();
           return;
         }
-        const peak = peakInBand();
-        if (Number.isFinite(peak)) noiseSamples.push(peak);
+        const sum = sumMagInBand();
+        if (sum > 0 && Number.isFinite(sum)) noiseSamples.push(sum);
         const now =
           typeof performance !== "undefined" ? performance.now() : Date.now();
         if (now - calibStart >= NOISE_WINDOW_MS) {
@@ -202,10 +209,13 @@ export function useProximity(targetFreqHz: number): Result {
     }
 
     noiseSamples.sort((a, b) => a - b);
-    const noiseDb =
+    const noiseSumMag =
       noiseSamples.length > 0
-        ? noiseSamples[Math.floor(noiseSamples.length / 2)]!
-        : -100;
+        ? Math.max(
+            MIN_NOISE_MAG,
+            noiseSamples[Math.floor(noiseSamples.length / 2)],
+          )
+        : MIN_NOISE_MAG;
 
     proximityRef.current = 0;
     lastTickRef.current = 0;
@@ -225,8 +235,9 @@ export function useProximity(targetFreqHz: number): Result {
       } catch {
         return;
       }
-      const peak = peakInBand();
-      const signalDb = Number.isFinite(peak) ? Math.max(0, peak - noiseDb) : 0;
+      const targetSum = sumMagInBand();
+      const ratio = targetSum / noiseSumMag;
+      const signalDb = ratio > 0 ? Math.max(0, 20 * Math.log10(ratio)) : 0;
       const raw =
         clamp((signalDb - RANGE_MIN_DB) / (RANGE_MAX_DB - RANGE_MIN_DB), 0, 1) *
         100;

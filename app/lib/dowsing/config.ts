@@ -9,14 +9,20 @@
 export const FREQ_Q1_1_HZ = 19000;
 export const FREQ_Q1_2_HZ = 20000;
 
-export const BAND_HALF_HZ = 100;
+/**
+ * 中心 ± この bin 数を「狭帯域」として線形 magnitude を合計する。
+ * 48 kHz / FFT_SIZE 8192 では 1 bin ≒ 5.86 Hz なので ±5 bin ≒ ±29 Hz。
+ * 連続正弦波の FFT リーケージ幅（≒3〜5 bin）に合わせている。
+ */
+export const ENERGY_HALF_BINS = 5;
 export const FFT_SIZE = 8192;
 export const NOISE_WINDOW_MS = 1500;
 export const TICK_MS = 60;
 
 // Signal -> proximity mapping (dB)
-export const RANGE_MIN_DB = 6;
-export const RANGE_MAX_DB = 36;
+// energy-sum 方式の signal_db = 20 * log10(target_sum / noise_sum) のレンジに合わせる。
+export const RANGE_MIN_DB = 3;
+export const RANGE_MAX_DB = 30;
 
 // Smoothing
 export const EMA_ALPHA = 0.3;

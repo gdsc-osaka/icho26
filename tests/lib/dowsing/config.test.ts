@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
-  BAND_HALF_HZ,
   EMA_ALPHA,
+  ENERGY_HALF_BINS,
   FFT_SIZE,
   FREQ_Q1_1_HZ,
   FREQ_Q1_2_HZ,
@@ -15,9 +15,11 @@ describe("dowsing config sanity", () => {
     expect(FREQ_Q1_1_HZ).toBeGreaterThanOrEqual(15000);
     expect(FREQ_Q1_2_HZ).toBeGreaterThanOrEqual(15000);
     expect(FREQ_Q1_1_HZ).not.toBe(FREQ_Q1_2_HZ);
-    // 帯域が重ならないこと（band 100Hz × 2 + マージン分離れている）
+    // 帯域が重ならないこと（合計帯域 ±ENERGY_HALF_BINS × bin幅 の 4 倍以上の分離）
+    const binHz = 48000 / FFT_SIZE;
+    const bandHalfHz = ENERGY_HALF_BINS * binHz;
     expect(Math.abs(FREQ_Q1_2_HZ - FREQ_Q1_1_HZ)).toBeGreaterThan(
-      BAND_HALF_HZ * 4,
+      bandHalfHz * 4,
     );
   });
 
@@ -34,10 +36,9 @@ describe("dowsing config sanity", () => {
     expect(RANGE_MAX_DB).toBeGreaterThan(RANGE_MIN_DB);
   });
 
-  it("band half-width covers at least one bin at 48kHz / 8192", () => {
-    const binHz = 48000 / FFT_SIZE;
-    const halfBins = Math.round(BAND_HALF_HZ / binHz);
-    expect(halfBins).toBeGreaterThanOrEqual(1);
+  it("energy half-bins covers FFT spectral leakage width (>= 3 bins)", () => {
+    // 連続正弦波は中心周辺 3〜5 bin にリークするため、リーク幅をカバーできる必要がある。
+    expect(ENERGY_HALF_BINS).toBeGreaterThanOrEqual(3);
   });
 });
 
