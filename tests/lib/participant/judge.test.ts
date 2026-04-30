@@ -11,7 +11,7 @@ describe("isCorrect", () => {
     ["Q1_2", "3,2", false],
     ["Q1_2", "2", false],
     ["Q2", "coffeecup", true],
-    ["Q3_KEYWORD", "hakidamenitsuru", true],
+    ["Q3_KEYWORD", "はきだめにつる", true],
     ["Q3_CODE", "2236", true],
     ["Q3_CODE", "1234", false],
     ["Q4", "29", true],

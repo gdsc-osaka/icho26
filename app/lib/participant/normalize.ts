@@ -6,6 +6,7 @@
  *   2. Convert full-width digits and ASCII letters to half-width
  *   3. Lowercase ASCII letters
  *   4. Strip leading zeros from pure-digit strings (`029` → `29`, `0` stays `0`)
+ *   5. Convert katakana to hiragana (ア→あ)
  */
 export function normalize(input: string): string {
   // 1. trim
@@ -23,6 +24,11 @@ export function normalize(input: string): string {
   if (/^\d+$/.test(s)) {
     s = s.replace(/^0+(\d)/, "$1");
   }
+
+  // 5. katakana → hiragana (ァ-ヶ range, offset 0x60)
+  s = s.replace(/[ァ-ヶ]/g, (ch) =>
+    String.fromCharCode(ch.charCodeAt(0) - 0x60),
+  );
 
   return s;
 }
