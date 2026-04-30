@@ -1,453 +1,362 @@
-import { useCallback, useEffect, useRef } from "react";
 import { drizzle } from "drizzle-orm/d1";
-import { Form, Link, useActionData, useLoaderData } from "react-router";
-import * as schema from "../../db/schema";
+import { useMemo, useState } from "react";
 import {
-  BackgroundFX,
-  ErrorAlert,
-  GlowButton,
-  Icon,
-  PrinterPanel,
-  StageHeader,
-  SystemPanel,
-  TextInput,
-  TopBar,
-} from "~/components";
-import { listUsers } from "~/lib/operator/queries";
+  Form,
+  Link,
+  redirect,
+  useActionData,
+  useLoaderData,
+} from "react-router";
+import * as schema from "../../db/schema";
+import { STAGES, type Stage } from "../../db/schema";
+import { Icon } from "~/components";
+import {
+  CopyButton,
+  OperatorShell,
+  StageBadge,
+  StatCard,
+} from "~/components/operator";
+import { softDeleteUser } from "~/lib/operator/mutations";
+import { getStats, listUsers, type DashboardRow } from "~/lib/operator/queries";
 import { requireOperatorSession } from "~/lib/operator/session";
-import { createUser } from "~/lib/shared/users";
-import { useLocalStorageBoolean } from "~/lib/hooks/useLocalStorageBoolean";
-import { usePrinterContext } from "~/lib/printer/printer-context";
 import type { Route } from "./+types/operator.dashboard";
 
-const AUTO_PRINT_STORAGE_KEY = "operator.autoPrint";
-
 export function meta() {
-  return [{ title: "Operator Dashboard | icho26" }];
+  return [{ title: "ダッシュボード | Operator | icho26" }];
 }
 
-export async function loader({ context }: Route.LoaderArgs) {
+export async function loader({ request, context }: Route.LoaderArgs) {
   const env = context.cloudflare.env;
   const db = drizzle(env.DB, { schema });
-  const users = await listUsers(db);
-  return { users };
+  await requireOperatorSession(request, db);
+  const [users, stats] = await Promise.all([listUsers(db), getStats(db)]);
+  return { users, stats };
 }
 
 type ActionResult =
-  | {
-      ok: true;
-      issuedGroupId: string;
-      groupName: string;
-      groupSize: number;
-      issuedAt: string;
-    }
+  | { ok: true; intent: "soft-delete"; groupId: string }
   | { ok: false; error: string };
 
 export async function action({
   request,
   context,
-}: Route.ActionArgs): Promise<ActionResult | null> {
+}: Route.ActionArgs): Promise<ActionResult> {
   const env = context.cloudflare.env;
   const db = drizzle(env.DB, { schema });
-  await requireOperatorSession(request, db);
+  const session = await requireOperatorSession(request, db);
 
   const formData = await request.formData();
   const intent = String(formData.get("_action") ?? "");
 
-  if (intent === "create-user") {
-    const groupName = String(formData.get("group_name") ?? "").trim();
-    const groupSizeRaw = String(formData.get("group_size") ?? "").trim();
-    const groupSize = Number(groupSizeRaw);
+  if (intent === "soft-delete") {
+    const groupId = String(formData.get("group_id") ?? "");
+    const reasonCode =
+      String(formData.get("reason_code") ?? "").trim() || "DASHBOARD_HIDE";
+    if (!groupId) return { ok: false, error: "groupId が指定されていません" };
 
-    if (!groupName) {
-      return { ok: false, error: "グループ名は必須です" };
-    }
-    if (!Number.isInteger(groupSize) || groupSize <= 0) {
-      return { ok: false, error: "人数は 1 以上の整数で入力してください" };
-    }
-
-    const groupId = `g_${crypto.randomUUID()}`;
-    const issuedAt = new Date().toISOString();
-    await createUser(db, groupId, issuedAt, {
-      groupName,
-      groupSize,
+    await softDeleteUser(db, {
+      operatorId: session.operatorId,
+      groupId,
+      reasonCode,
+      note: null,
+      now: new Date().toISOString(),
     });
-    return {
-      ok: true,
-      issuedGroupId: groupId,
-      groupName,
-      groupSize,
-      issuedAt,
-    };
+    throw redirect("/operator/dashboard");
   }
 
-  return null;
+  return { ok: false, error: "unknown action" };
 }
+
+type ReportedFilter = "all" | "reported" | "not_reported";
 
 export default function OperatorDashboard() {
-  const { users } = useLoaderData<typeof loader>();
+  const { users, stats } = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
 
-  const { printer, assetsReady, assetError } = usePrinterContext();
-  const [autoPrintEnabled, setAutoPrintEnabled] = useLocalStorageBoolean(
-    AUTO_PRINT_STORAGE_KEY,
-    true,
-  );
-  const lastPrintedRef = useRef<string | null>(null);
-  const lastResetRef = useRef<string | null>(null);
-  const formRef = useRef<HTMLFormElement>(null);
+  const [stageFilter, setStageFilter] = useState<Stage | "ALL">("ALL");
+  const [reportedFilter, setReportedFilter] = useState<ReportedFilter>("all");
+  const [search, setSearch] = useState("");
 
-  const handleReprint = useCallback(() => {
-    if (!actionData?.ok) return;
-    const issued = actionData;
-    const startUrl = `${window.location.origin}/start/${issued.issuedGroupId}`;
-    const print = () =>
-      printer.printBadge({
-        groupName: issued.groupName,
-        groupSize: issued.groupSize,
-        groupId: issued.issuedGroupId,
-        issuedAt: new Date(issued.issuedAt),
-        qrUrl: startUrl,
-      });
-    if (printer.status.isConnected) {
-      void print().catch(() => {});
-    } else {
-      // Synchronously kick off connect on this user gesture, then chain print.
-      void printer
-        .connect()
-        .then(print)
-        .catch(() => {});
-    }
-  }, [actionData, printer]);
-
-  useEffect(() => {
-    if (!actionData?.ok) return;
-    if (lastResetRef.current === actionData.issuedGroupId) return;
-    lastResetRef.current = actionData.issuedGroupId;
-
-    formRef.current?.reset();
-    const nameInput = formRef.current?.elements.namedItem("group_name");
-    if (nameInput instanceof HTMLInputElement) nameInput.focus();
-  }, [actionData]);
-
-  useEffect(() => {
-    if (!actionData?.ok) return;
-    if (!autoPrintEnabled) return;
-    if (!assetsReady) return;
-    if (!printer.status.isConnected) return;
-    if (lastPrintedRef.current === actionData.issuedGroupId) return;
-
-    // Claim the slot before the await so subsequent re-renders (printer
-    // status updates fire several times during a print) do not stack
-    // additional printBadge() calls. On failure the error surfaces via
-    // printer.printState / errorMessage and the operator can retry through
-    // the "このグループを再印刷" button, which bypasses this guard.
-    lastPrintedRef.current = actionData.issuedGroupId;
-    const startUrl = `${window.location.origin}/start/${actionData.issuedGroupId}`;
-    void printer
-      .printBadge({
-        groupName: actionData.groupName,
-        groupSize: actionData.groupSize,
-        groupId: actionData.issuedGroupId,
-        issuedAt: new Date(actionData.issuedAt),
-        qrUrl: startUrl,
-      })
-      .catch(() => {
-        // Error is already surfaced via printer.errorMessage / printState.
-      });
-  }, [actionData, assetsReady, printer, autoPrintEnabled]);
+  const filtered = useMemo(() => {
+    return users.filter((u) => {
+      if (stageFilter !== "ALL" && u.currentStage !== stageFilter) return false;
+      if (reportedFilter === "reported" && u.reportedAt === null) return false;
+      if (reportedFilter === "not_reported" && u.reportedAt !== null)
+        return false;
+      if (search.trim()) {
+        const q = search.trim().toLowerCase();
+        const name = (u.groupName ?? "").toLowerCase();
+        const id = u.groupId.toLowerCase();
+        if (!name.includes(q) && !id.includes(q)) return false;
+      }
+      return true;
+    });
+  }, [users, stageFilter, reportedFilter, search]);
 
   return (
-    <>
-      <TopBar sessionId="OPERATOR" rightIcon="admin_panel_settings" />
-      <BackgroundFX />
-      <main className="relative z-10 mx-auto max-w-6xl space-y-6 px-4 pt-20 pb-12 md:px-6">
-        <header className="flex flex-wrap items-center justify-between gap-4">
-          <StageHeader title="OPERATOR DASHBOARD" eyebrow="進捗一覧 / GROUPS" />
-          <Form method="post" action="/operator/login?action=logout">
-            <GlowButton type="submit">
-              <span className="inline-flex items-center gap-2">
-                <Icon name="logout" className="text-sm" /> LOGOUT
-              </span>
-            </GlowButton>
-          </Form>
-        </header>
+    <OperatorShell
+      title="ダッシュボード"
+      eyebrow="DASHBOARD"
+      actions={
+        <Link
+          to="/operator/issue"
+          className="inline-flex items-center gap-1 rounded-md bg-gray-900 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-gray-800"
+        >
+          <Icon name="add" className="text-sm" /> ID 発行
+        </Link>
+      }
+    >
+      {/* KPI cards */}
+      <section className="grid grid-cols-2 gap-3 md:grid-cols-4">
+        <StatCard
+          icon="groups"
+          label="登録グループ"
+          value={stats.totalGroups}
+          hint={`合計 ${stats.totalParticipants} 名`}
+        />
+        <StatCard
+          icon="play_circle"
+          label="開始済み"
+          value={stats.startedGroups}
+          hint={percent(stats.startedGroups, stats.totalGroups)}
+          accent="info"
+        />
+        <StatCard
+          icon="check_circle"
+          label="クリア"
+          value={stats.completedGroups}
+          hint={percent(stats.completedGroups, stats.totalGroups)}
+          accent="success"
+        />
+        <StatCard
+          icon="assignment_turned_in"
+          label="報告済み"
+          value={stats.reportedGroups}
+          hint={percent(stats.reportedGroups, stats.totalGroups)}
+          accent="warning"
+        />
+      </section>
 
-        <SystemPanel>
-          <div className="space-y-4">
-            <div className="flex items-center gap-2 text-cyan-400">
-              <Icon name="add_box" className="text-sm" />
-              <h2 className="font-mono text-[10px] uppercase tracking-widest">
-                NEW ID ISSUE
-              </h2>
-            </div>
-
-            <PrinterPanel printer={printer} assetsReady={assetsReady} />
-            {assetError && (
-              <ErrorAlert>アセットロード失敗: {assetError}</ErrorAlert>
-            )}
-
-            <label className="flex cursor-pointer select-none items-center gap-2 font-mono text-sm text-on-surface">
-              <input
-                type="checkbox"
-                checked={autoPrintEnabled}
-                onChange={(e) => setAutoPrintEnabled(e.target.checked)}
-                className="h-4 w-4 accent-cyan-400"
-              />
-              発行時に自動印刷する
+      {/* Filters */}
+      <section className="mt-6 rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+        <div className="flex flex-wrap items-end gap-4">
+          <div className="flex-1 min-w-[180px]">
+            <label className="block text-xs font-medium text-gray-700">
+              検索（グループ名 / groupId）
             </label>
-
-            <Form
-              method="post"
-              className="space-y-3"
-              ref={formRef}
-              onSubmit={() => {
-                if (autoPrintEnabled && !printer.status.isConnected) {
-                  // Fire the Web Bluetooth picker on this user-gesture click;
-                  // run alongside the form submission so the action's DB write
-                  // is not blocked. The auto-print effect waits for the
-                  // resulting connection before sending the badge.
-                  void printer.connect().catch(() => {
-                    // errors surfaced via printer.errorMessage in PrinterPanel
-                  });
-                }
-              }}
-            >
-              <input type="hidden" name="_action" value="create-user" />
-              <FormField label="社員名 (代表者の本名 or ニックネーム)">
-                <TextInput
-                  name="group_name"
-                  required
-                  maxLength={32}
-                  placeholder="例: たかし、ヤマダ"
-                  className="w-full"
-                />
-                <p className="font-mono text-xs text-on-surface-variant">
-                  AI
-                  チャットボットの呼び掛けに使うので、実際の名前やニックネームを入力してください。
-                </p>
-              </FormField>
-              <FormField label="グループ人数">
-                <TextInput
-                  type="number"
-                  name="group_size"
-                  required
-                  min={1}
-                  max={20}
-                  placeholder="1"
-                  className="w-full"
-                />
-              </FormField>
-              {actionData && !actionData.ok && (
-                <ErrorAlert>{actionData.error}</ErrorAlert>
-              )}
-              {autoPrintEnabled && !printer.status.isConnected && (
-                <p className="font-mono text-xs text-on-surface-variant">
-                  ※ 発行時にプリンタ未接続の場合、Bluetooth
-                  デバイス選択ダイアログが表示されます。
-                </p>
-              )}
-              {!autoPrintEnabled && (
-                <p className="font-mono text-xs text-on-surface-variant">
-                  ※ 自動印刷オフ。詳細画面から手動で印刷してください。
-                </p>
-              )}
-              <GlowButton type="submit">ID を発行</GlowButton>
-            </Form>
-
-            {actionData?.ok && (
-              <IssuedIdCard
-                groupId={actionData.issuedGroupId}
-                groupName={actionData.groupName}
-                groupSize={actionData.groupSize}
-                printState={printer.printState}
-                printerConnected={printer.status.isConnected}
-                autoPrintEnabled={autoPrintEnabled}
-                isConnecting={printer.isConnecting}
-                assetsReady={assetsReady}
-                onReprint={handleReprint}
+            <div className="relative mt-1">
+              <Icon
+                name="search"
+                className="absolute left-2 top-1/2 -translate-y-1/2 text-base text-gray-400"
               />
-            )}
+              <input
+                type="search"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="例: たかし"
+                className="w-full rounded-md border border-gray-300 py-2 pl-8 pr-3 text-sm focus:border-gray-900 focus:outline-none focus:ring-1 focus:ring-gray-900"
+              />
+            </div>
           </div>
-        </SystemPanel>
 
-        <SystemPanel>
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm">
-              <thead className="font-mono text-on-surface-variant">
-                <tr className="border-b border-cyan-900/50">
-                  <th className="py-2 pr-4">groupId</th>
-                  <th className="py-2 pr-4">グループ名</th>
-                  <th className="py-2 pr-4">人数</th>
-                  <th className="py-2 pr-4">stage</th>
-                  <th className="py-2 pr-4">attempts</th>
-                  <th className="py-2 pr-4">reported</th>
-                  <th className="py-2 pr-4">updated</th>
-                  <th className="py-2"></th>
-                </tr>
-              </thead>
-              <tbody>
-                {users.length === 0 && (
-                  <tr>
-                    <td
-                      colSpan={8}
-                      className="py-4 text-center font-mono text-on-surface-variant"
-                    >
-                      no groups yet
-                    </td>
-                  </tr>
-                )}
-                {users.map((u) => (
-                  <tr
-                    key={u.groupId}
-                    className="border-b border-cyan-900/30 hover:bg-cyan-950/10"
-                  >
-                    <td className="break-all py-2 pr-4 font-mono text-on-surface">
-                      {u.groupId}
-                    </td>
-                    <td className="py-2 pr-4 font-mono text-on-surface">
-                      {u.groupName ?? "—"}
-                    </td>
-                    <td className="py-2 pr-4 font-mono text-on-surface">
-                      {u.groupSize ?? "—"}
-                    </td>
-                    <td className="py-2 pr-4 font-mono text-cyan-400">
-                      {u.currentStage}
-                    </td>
-                    <td className="py-2 pr-4 font-mono text-on-surface">
-                      {u.attemptCountTotal}
-                    </td>
-                    <td className="py-2 pr-4 font-mono text-on-surface">
-                      {u.reportedAt ? "✓" : "—"}
-                    </td>
-                    <td className="py-2 pr-4 font-mono text-xs text-on-surface-variant">
-                      {u.updatedAt}
-                    </td>
-                    <td className="py-2">
-                      <Link
-                        to={`/operator/group/${u.groupId}`}
-                        className="font-mono text-cyan-400 hover:underline"
-                      >
-                        詳細 →
-                      </Link>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div>
+            <label className="block text-xs font-medium text-gray-700">
+              報告状況
+            </label>
+            <select
+              value={reportedFilter}
+              onChange={(e) =>
+                setReportedFilter(e.target.value as ReportedFilter)
+              }
+              className="mt-1 rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-gray-900 focus:outline-none focus:ring-1 focus:ring-gray-900"
+            >
+              <option value="all">すべて</option>
+              <option value="reported">報告済みのみ</option>
+              <option value="not_reported">未報告のみ</option>
+            </select>
           </div>
-        </SystemPanel>
-      </main>
-    </>
+        </div>
+
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <span className="font-mono text-[10px] uppercase tracking-widest text-gray-500">
+            STAGE
+          </span>
+          <FilterChip
+            active={stageFilter === "ALL"}
+            onClick={() => setStageFilter("ALL")}
+          >
+            すべて
+          </FilterChip>
+          {STAGES.map((s) => (
+            <FilterChip
+              key={s}
+              active={stageFilter === s}
+              onClick={() => setStageFilter(s)}
+            >
+              <StageBadge stage={s} />
+            </FilterChip>
+          ))}
+        </div>
+      </section>
+
+      {/* Action result */}
+      {actionData && !actionData.ok && (
+        <div className="mt-4 rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+          {actionData.error}
+        </div>
+      )}
+
+      {/* Groups table */}
+      <section className="mt-4 rounded-lg border border-gray-200 bg-white shadow-sm">
+        <header className="flex items-center justify-between border-b border-gray-200 px-4 py-3">
+          <h2 className="text-sm font-semibold text-gray-900">
+            グループ一覧（{filtered.length} / {users.length}）
+          </h2>
+        </header>
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200 text-sm">
+            <thead className="bg-gray-50">
+              <tr className="text-left text-[10px] font-medium uppercase tracking-widest text-gray-500">
+                <th className="px-4 py-2">グループ名</th>
+                <th className="px-4 py-2">groupId</th>
+                <th className="px-4 py-2">人数</th>
+                <th className="px-4 py-2">ステージ</th>
+                <th className="px-4 py-2 tabular-nums">試行</th>
+                <th className="px-4 py-2">報告</th>
+                <th className="px-4 py-2">最終更新</th>
+                <th className="px-4 py-2 text-right">操作</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100 bg-white">
+              {filtered.length === 0 && (
+                <tr>
+                  <td
+                    colSpan={8}
+                    className="px-4 py-8 text-center text-gray-500"
+                  >
+                    該当するグループがありません
+                  </td>
+                </tr>
+              )}
+              {filtered.map((u) => (
+                <GroupRow key={u.groupId} user={u} />
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </OperatorShell>
   );
 }
 
-function FormField({
-  label,
+function FilterChip({
+  active,
+  onClick,
   children,
 }: {
-  label: string;
+  active: boolean;
+  onClick: () => void;
   children: React.ReactNode;
 }) {
   return (
-    <div className="space-y-1">
-      <label className="block font-mono text-[10px] uppercase tracking-widest text-cyan-900">
-        {label}
-      </label>
+    <button
+      type="button"
+      onClick={onClick}
+      className={`inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
+        active
+          ? "border-gray-900 bg-gray-900 text-white"
+          : "border-gray-200 bg-white text-gray-700 hover:border-gray-300"
+      }`}
+    >
       {children}
-    </div>
+    </button>
   );
 }
 
-function IssuedIdCard({
-  groupId,
-  groupName,
-  groupSize,
-  printState,
-  printerConnected,
-  autoPrintEnabled,
-  isConnecting,
-  assetsReady,
-  onReprint,
-}: {
-  groupId: string;
-  groupName: string;
-  groupSize: number;
-  printState: "idle" | "printing" | "success" | "error";
-  printerConnected: boolean;
-  autoPrintEnabled: boolean;
-  isConnecting: boolean;
-  assetsReady: boolean;
-  onReprint: () => void;
-}) {
-  const reprintDisabled =
-    !assetsReady || isConnecting || printState === "printing";
-  const startUrl = `/start/${groupId}`;
+function GroupRow({ user }: { user: DashboardRow }) {
   return (
-    <div className="space-y-2 border border-cyan-400/40 bg-[#05070A]/80 p-3 font-mono text-sm">
-      <div className="flex items-center gap-2 text-cyan-400">
-        <Icon name="check_circle" filled className="text-sm" />
-        <span className="text-[10px] uppercase tracking-widest">ISSUED</span>
-      </div>
-      <div className="grid grid-cols-2 gap-2">
-        <div>
-          <div className="text-[10px] uppercase tracking-widest text-cyan-900">
-            グループ名
-          </div>
-          <div className="text-on-surface">{groupName}</div>
+    <tr className="hover:bg-gray-50">
+      <td className="whitespace-nowrap px-4 py-2 font-medium text-gray-900">
+        {user.groupName ?? "—"}
+      </td>
+      <td className="px-4 py-2">
+        <CopyButton value={user.groupId} label={shortId(user.groupId)} />
+      </td>
+      <td className="whitespace-nowrap px-4 py-2 tabular-nums text-gray-700">
+        {user.groupSize ?? "—"}
+      </td>
+      <td className="whitespace-nowrap px-4 py-2">
+        <StageBadge stage={user.currentStage} />
+      </td>
+      <td className="whitespace-nowrap px-4 py-2 tabular-nums text-gray-700">
+        {user.attemptCountTotal}
+      </td>
+      <td className="whitespace-nowrap px-4 py-2">
+        {user.reportedAt ? (
+          <span className="inline-flex items-center gap-1 text-emerald-600">
+            <Icon name="check" className="text-sm" />
+            <span className="text-xs">済</span>
+          </span>
+        ) : (
+          <span className="text-xs text-gray-400">—</span>
+        )}
+      </td>
+      <td className="whitespace-nowrap px-4 py-2 font-mono text-xs text-gray-500">
+        {formatTime(user.updatedAt)}
+      </td>
+      <td className="whitespace-nowrap px-4 py-2 text-right">
+        <div className="inline-flex items-center gap-1">
+          <Link
+            to={`/operator/group/${user.groupId}`}
+            className="inline-flex items-center gap-1 rounded-md border border-gray-300 bg-white px-2 py-1 text-xs font-medium text-gray-800 transition-colors hover:bg-gray-50"
+          >
+            <Icon name="visibility" className="text-sm" />
+            詳細
+          </Link>
+          <Form
+            method="post"
+            onSubmit={(e) => {
+              if (
+                !confirm(
+                  `「${user.groupName ?? user.groupId}」をダッシュボードから非表示にします。よろしいですか?`,
+                )
+              ) {
+                e.preventDefault();
+              }
+            }}
+          >
+            <input type="hidden" name="_action" value="soft-delete" />
+            <input type="hidden" name="group_id" value={user.groupId} />
+            <button
+              type="submit"
+              title="ダッシュボードから非表示"
+              className="inline-flex items-center justify-center rounded-md border border-transparent p-1 text-gray-400 transition-colors hover:border-red-200 hover:bg-red-50 hover:text-red-600"
+            >
+              <Icon name="delete_outline" className="text-base" />
+            </button>
+          </Form>
         </div>
-        <div>
-          <div className="text-[10px] uppercase tracking-widest text-cyan-900">
-            人数
-          </div>
-          <div className="text-on-surface">{groupSize}</div>
-        </div>
-      </div>
-      <div className="space-y-1">
-        <div className="text-[10px] uppercase tracking-widest text-cyan-900">
-          groupId
-        </div>
-        <div className="break-all text-on-surface">{groupId}</div>
-      </div>
-      <div className="space-y-1">
-        <div className="text-[10px] uppercase tracking-widest text-cyan-900">
-          開始 URL(相対)
-        </div>
-        <div className="break-all text-on-surface">{startUrl}</div>
-      </div>
-      {!autoPrintEnabled && (
-        <p className="text-xs text-on-surface-variant">
-          自動印刷オフ。下記のボタンか詳細画面から手動で印刷してください。
-        </p>
-      )}
-      {autoPrintEnabled && isConnecting && (
-        <p className="text-xs text-cyan-400">プリンタを接続中...</p>
-      )}
-      {autoPrintEnabled && !printerConnected && !isConnecting && (
-        <p className="text-xs text-on-surface-variant">
-          プリンタが接続されていません。下記のボタンか詳細画面から再印刷できます。
-        </p>
-      )}
-      {autoPrintEnabled && printerConnected && printState === "printing" && (
-        <p className="text-xs text-cyan-400">社員証を印刷中...</p>
-      )}
-      {autoPrintEnabled && printerConnected && printState === "success" && (
-        <p className="text-xs text-cyan-400">社員証を印刷しました</p>
-      )}
-      {autoPrintEnabled && printerConnected && printState === "error" && (
-        <p className="text-xs text-error">
-          印刷に失敗しました。下記のボタンか詳細画面から再印刷してください。
-        </p>
-      )}
-      <div className="pt-1">
-        <GlowButton
-          type="button"
-          onClick={onReprint}
-          disabled={reprintDisabled}
-        >
-          {printState === "printing" ? "印刷中..." : "このグループを再印刷"}
-        </GlowButton>
-      </div>
-    </div>
+      </td>
+    </tr>
   );
+}
+
+function shortId(groupId: string): string {
+  const tail = groupId.replace(/^g_/, "").replace(/-/g, "").slice(-8);
+  return `IC-${tail.slice(0, 4).toUpperCase()}-${tail.slice(4).toUpperCase()}`;
+}
+
+function percent(value: number, total: number): string {
+  if (total === 0) return "0%";
+  return `${Math.round((value / total) * 1000) / 10}%`;
+}
+
+function formatTime(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  const HH = String(d.getHours()).padStart(2, "0");
+  const MM = String(d.getMinutes()).padStart(2, "0");
+  return `${mm}/${dd} ${HH}:${MM}`;
 }

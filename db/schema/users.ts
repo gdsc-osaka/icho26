@@ -15,8 +15,13 @@ export const users = sqliteTable(
     completedAt: text("completed_at"),
     reportedAt: text("reported_at"),
     epilogueViewedAt: text("epilogue_viewed_at"),
+    // 論理削除フラグ。0 = 有効、1 = 削除済み（dashboard には表示しない）。
+    isDeleted: integer("is_deleted").notNull().default(0),
     createdAt: text("created_at").notNull(),
     updatedAt: text("updated_at").notNull(),
   },
-  (table) => [index("idx_users_updated_at").on(table.updatedAt)],
+  (table) => [
+    index("idx_users_updated_at").on(table.updatedAt),
+    index("idx_users_is_deleted").on(table.isDeleted),
+  ],
 );

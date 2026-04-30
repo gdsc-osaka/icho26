@@ -30,6 +30,7 @@ function makeUser(overrides: Partial<UserRow> = {}): UserRow {
     completedAt: null,
     reportedAt: null,
     epilogueViewedAt: null,
+    isDeleted: 0,
     createdAt: NOW,
     updatedAt: NOW,
     ...overrides,

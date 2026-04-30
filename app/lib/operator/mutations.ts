@@ -79,6 +79,41 @@ export async function correctStatus(
   ]);
 }
 
+/**
+ * グループの論理削除（is_deleted = 1）。dashboard 一覧やステータス補正対象から除外する。
+ * 物理削除はしないため、後で復活や監査が可能。
+ */
+export async function softDeleteUser(
+  db: DrizzleD1Database<typeof schema>,
+  params: {
+    operatorId: string;
+    groupId: string;
+    reasonCode: string;
+    note: string | null;
+    now: string;
+  },
+): Promise<void> {
+  const actionId = crypto.randomUUID();
+
+  await db.batch([
+    db
+      .update(schema.users)
+      .set({ isDeleted: 1, updatedAt: params.now })
+      .where(eq(schema.users.groupId, params.groupId)),
+    db.insert(schema.operatorActions).values({
+      id: actionId,
+      operatorId: params.operatorId,
+      groupId: params.groupId,
+      actionType: "SOFT_DELETE",
+      fromStage: null,
+      toStage: null,
+      reasonCode: params.reasonCode,
+      note: params.note,
+      createdAt: params.now,
+    }),
+  ]);
+}
+
 export async function markReported(
   db: DrizzleD1Database<typeof schema>,
   params: {
