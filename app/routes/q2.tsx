@@ -159,9 +159,6 @@ function IrisMessageCard() {
           佐藤ディレクターは認証キーを書き換えました ——
           物理キーボードそのものをコンバーターとして利用しています。
         </p>
-        <p className="mt-3 font-mono text-sm leading-relaxed text-cyan-300">
-          「かな入力を捨て、その指が叩く『文字』を信じろ。」
-        </p>
         <div className="mt-4 flex items-center justify-between border-t border-cyan-900/50 pt-3 font-mono text-[10px] uppercase tracking-widest text-cyan-700">
           <span>TRACE_ORIGIN: LOG_S_1993</span>
           <span>STATUS: ACTIVE</span>
@@ -236,6 +233,18 @@ function DecodePanel({ errorMessage }: { errorMessage: string | null }) {
     <div className="relative bg-[#05070A]/40 backdrop-blur-md border border-cyan-900/40 p-6 md:p-8">
       <span className="pointer-events-none absolute -top-2 -left-2 h-6 w-6 border-t-2 border-l-2 border-cyan-400" />
       <span className="pointer-events-none absolute -bottom-2 -right-2 h-6 w-6 border-b-2 border-r-2 border-cyan-400" />
+
+      {/* DECODE_TARGET_WORD: 変換前のかな文字列を中央大表示（stitch準拠） */}
+      <div className="mb-12 text-center">
+        <h3 className="mb-4 font-mono text-[10px] uppercase tracking-[0.3em] text-cyan-500/50">
+          DECODE_TARGET_WORD
+        </h3>
+        <div className="inline-block rounded-2xl border border-cyan-400/20 bg-cyan-950/10 p-6 shadow-[inset_0_0_20px_rgba(0,240,255,0.05)] md:p-8">
+          <div className="font-display text-4xl tracking-widest text-cyan-400 brightness-125 drop-shadow-[0_0_15px_rgba(0,240,255,0.5)] md:text-5xl">
+            そらははいいそなせ
+          </div>
+        </div>
+      </div>
 
       <Form method="post" className="mx-auto max-w-md space-y-8">
         <div>
