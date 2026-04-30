@@ -59,9 +59,9 @@ function stageSpec(stage: Stage): StageSpec {
         fallback: "/q2",
       };
     case "Q3_KEYWORD":
-      return { matches: (p) => p === "/q3", fallback: "/q3" };
     case "Q3_CODE":
-      return { matches: (p) => p === "/q3/code", fallback: "/q3/code" };
+      // 単一画面 (/q3) で PHASE_01 / PHASE_02 を順次入力する
+      return { matches: (p) => p === "/q3", fallback: "/q3" };
     case "Q4":
       return { matches: (p) => p === "/q4", fallback: "/q4" };
     case "FAKE_END":
