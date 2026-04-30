@@ -165,7 +165,7 @@ function IndoorSearchScreen({ errorMessage }: { errorMessage: string | null }) {
         <Form
           method="post"
           viewTransition
-          className="mx-auto mt-8 w-full max-w-md space-y-8"
+          className="mx-auto mt-8 mb-24 w-full max-w-md space-y-8"
         >
           <KeywordPhase />
           {errorMessage && <ErrorAlert>{errorMessage}</ErrorAlert>}
@@ -301,7 +301,7 @@ function PrivilegeScreen({ errorMessage }: { errorMessage: string | null }) {
         <Phase01CompletedBanner />
         <PrivilegeIrisSection />
 
-        <Form method="post" viewTransition className="space-y-6 pt-4">
+        <Form method="post" viewTransition className="mb-24 space-y-6 pt-4">
           <Phase02Header />
           <CodeSegmentedInput />
           {errorMessage && <ErrorAlert>{errorMessage}</ErrorAlert>}
