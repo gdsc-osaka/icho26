@@ -1,16 +1,7 @@
 import { drizzle } from "drizzle-orm/d1";
 import { Form, redirect, useActionData } from "react-router";
 import * as schema from "../../db/schema";
-import {
-  BackgroundFX,
-  ErrorAlert,
-  GlowButton,
-  Icon,
-  StageHeader,
-  SystemPanel,
-  TextInput,
-  TopBar,
-} from "~/components";
+import { Icon } from "~/components";
 import { login } from "~/lib/operator/auth";
 import { revokeSession } from "~/lib/operator/mutations";
 import {
@@ -70,43 +61,55 @@ export async function action({ request, context }: Route.ActionArgs) {
 export default function OperatorLogin() {
   const actionData = useActionData<typeof action>();
   return (
-    <>
-      <TopBar sessionId="OPERATOR" rightIcon="admin_panel_settings" />
-      <BackgroundFX />
-      <main className="relative z-10 mx-auto flex min-h-screen max-w-md flex-col items-center justify-center px-6 py-20">
-        <SystemPanel className="w-full">
-          <div className="space-y-6">
-            <StageHeader title="OPERATOR LOGIN" eyebrow="ZEUS CORP / ADMIN">
-              運営者認証
-            </StageHeader>
-            {actionData?.error && <ErrorAlert>{actionData.error}</ErrorAlert>}
-            <Form method="post" className="space-y-4">
-              <div className="space-y-2">
-                <label
-                  htmlFor="password"
-                  className="block font-mono text-[10px] uppercase tracking-widest text-cyan-900"
-                >
-                  PASSWORD
-                </label>
-                <div className="flex items-center border-b border-cyan-900 focus-within:border-cyan-400">
-                  <Icon name="vpn_key" className="mr-2 text-sm text-cyan-500" />
-                  <TextInput
-                    id="password"
-                    name="password"
-                    type="password"
-                    required
-                    autoComplete="current-password"
-                    className="border-0 focus:ring-0"
-                  />
-                </div>
-              </div>
-              <GlowButton type="submit" className="w-full">
-                LOGIN
-              </GlowButton>
-            </Form>
+    <main className="flex min-h-screen items-center justify-center bg-gray-50 px-4 py-12">
+      <div className="w-full max-w-sm rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+        <div className="mb-6 flex items-center gap-2">
+          <Icon name="shield_person" className="text-base text-gray-900" />
+          <span className="font-mono text-xs font-bold uppercase tracking-widest text-gray-900">
+            icho26 / OPERATOR
+          </span>
+        </div>
+
+        <h1 className="text-base font-semibold text-gray-900">
+          運営者ログイン
+        </h1>
+        <p className="mt-1 text-xs text-gray-500">
+          発行されたパスワードを入力してください。
+        </p>
+
+        {actionData?.error && (
+          <div className="mt-4 rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+            {actionData.error}
           </div>
-        </SystemPanel>
-      </main>
-    </>
+        )}
+
+        <Form method="post" className="mt-5 space-y-4">
+          <div>
+            <label
+              htmlFor="password"
+              className="mb-1 block text-xs font-medium text-gray-700"
+            >
+              パスワード
+            </label>
+            <input
+              id="password"
+              name="password"
+              type="password"
+              required
+              autoComplete="current-password"
+              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-gray-900 focus:outline-none focus:ring-1 focus:ring-gray-900"
+            />
+          </div>
+
+          <button
+            type="submit"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-md bg-gray-900 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-gray-800"
+          >
+            <Icon name="login" className="text-base" />
+            ログイン
+          </button>
+        </Form>
+      </div>
+    </main>
   );
 }

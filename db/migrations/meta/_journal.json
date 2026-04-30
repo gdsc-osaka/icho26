@@ -15,6 +15,13 @@
       "when": 1777460354892,
       "tag": "0001_bored_mandroid",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1777526703218,
+      "tag": "0002_unique_juggernaut",
+      "breakpoints": true
     }
   ]
 }
