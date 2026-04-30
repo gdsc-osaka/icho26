@@ -84,17 +84,12 @@ export async function action({
   }
 
   if (intent === "mark-reported") {
-    const reasonCode = String(formData.get("reason_code") ?? "").trim();
     const note = String(formData.get("note") ?? "").trim() || null;
-
-    if (!reasonCode) {
-      return { ok: false, error: "reason_code は必須です" };
-    }
 
     await markReported(db, {
       operatorId: session.operatorId,
       groupId: params.groupId,
-      reasonCode,
+      reasonCode: "MARK_REPORTED",
       note,
       now,
     });
@@ -419,15 +414,6 @@ function MarkReportedForm() {
         }}
       >
         <input type="hidden" name="_action" value="mark-reported" />
-        <FormField label="reason_code">
-          <input
-            type="text"
-            name="reason_code"
-            required
-            placeholder="例: REWARD_HANDED"
-            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-gray-900 focus:outline-none focus:ring-1 focus:ring-gray-900"
-          />
-        </FormField>
         <FormField label="note (任意)">
           <textarea
             name="note"
