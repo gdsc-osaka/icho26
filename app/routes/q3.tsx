@@ -269,11 +269,11 @@ function IndoorSearchScreen({ errorMessage }: { errorMessage: string | null }) {
   return (
     <PageShell sessionId="ID: X-99">
       <div key="phase-1" className="q3-stage-enter">
-        <BackAction />
         <IrisHaloAvatar />
         <NarrativeCard>
-          &quot;Check the bin in the corner. Sato used to hide notes there. A
-          numeric code is needed to unlock highest privilege.&quot;
+          「佐藤さんは、本当に大事なことをモニターに残さない人でした。
+          みんなが通り過ぎる壁——
+          色褪せたチラシや誰も読み返さない予定表の中に、彼はそっと紛れ込ませていたのです。
         </NarrativeCard>
 
         <Form
@@ -289,22 +289,6 @@ function IndoorSearchScreen({ errorMessage }: { errorMessage: string | null }) {
         <HintChat hint="STAGE 03 / PHASE_01 はことわざ『掃き溜めに鶴』のひらがな。クリアすると PHASE_02 が解放されます。" />
       </div>
     </PageShell>
-  );
-}
-
-function BackAction() {
-  return (
-    <button
-      type="button"
-      onClick={() => history.back()}
-      className="group mb-6 inline-flex items-center gap-2 self-start font-mono text-[10px] uppercase tracking-[0.2em] text-cyan-500 hover:text-cyan-400"
-    >
-      <Icon
-        name="arrow_back"
-        className="text-base transition-transform group-hover:-translate-x-1"
-      />
-      ABORT_SEQUENCE
-    </button>
   );
 }
 
