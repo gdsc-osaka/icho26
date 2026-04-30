@@ -48,6 +48,15 @@ type Result = {
   errorReason: string | null;
   start: () => Promise<void>;
   stop: () => void;
+  /**
+   * 最新の周波数スペクトル（dB 値）を `out` に書き込む。
+   * 書き込めた場合 true、analyser がまだ存在しない / 失敗時は false。
+   * 描画ループから毎フレーム呼び出して使う想定（再レンダなしで読み取れる）。
+   * `out.length` は `frequencyBinCount` (= FFT_SIZE / 2) と一致させること。
+   */
+  getSpectrum: (out: Float32Array) => boolean;
+  /** AudioContext のサンプルレート。bin → Hz 変換用。idle 時は 0 */
+  sampleRate: number;
 };
 
 type Options = {
@@ -72,6 +81,9 @@ export function useProximity(targetFreqHz: number, options?: Options): Result {
   const [proximity, setProximity] = useState(0);
   const [metrics, setMetrics] = useState<ProximityMetrics>(ZERO_METRICS);
   const [errorReason, setErrorReason] = useState<string | null>(null);
+  const [sampleRate, setSampleRate] = useState(0);
+  // 描画コンポーネント側から再レンダ無しで FFT バッファを読み出すための ref
+  const getSpectrumRef = useRef<(out: Float32Array) => boolean>(() => false);
 
   const ctxRef = useRef<AudioContext | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -104,10 +116,12 @@ export function useProximity(targetFreqHz: number, options?: Options): Result {
       ctxRef.current = null;
     }
     analyserRef.current = null;
+    getSpectrumRef.current = () => false;
     peakProxRef.current = 0;
     energyProxRef.current = 0;
     setProximity(0);
     setMetrics(ZERO_METRICS);
+    setSampleRate(0);
     setState("idle");
   }, []);
 
@@ -190,11 +204,27 @@ export function useProximity(targetFreqHz: number, options?: Options): Result {
     ctxRef.current = ctx;
     analyserRef.current = analyser;
 
-    const sampleRate = ctx.sampleRate;
-    const binHz = sampleRate / FFT_SIZE;
+    const ctxSampleRate = ctx.sampleRate;
+    const binHz = ctxSampleRate / FFT_SIZE;
     const centerBin = Math.round(targetFreqHz / binHz);
     const bufLen = analyser.frequencyBinCount;
     const buf = new Float32Array(bufLen);
+
+    setSampleRate(ctxSampleRate);
+    // 描画用の getter を ref に差し替える。外部から RAF で呼ばれる前提。
+    getSpectrumRef.current = (out) => {
+      const a = analyserRef.current;
+      if (!a) return false;
+      if (out.length !== a.frequencyBinCount) return false;
+      try {
+        // lib.dom の getFloatFrequencyData は Float32Array<ArrayBuffer> を要求するが、
+        // 通常の new Float32Array(N) は ArrayBufferLike として推論されるためキャストする。
+        a.getFloatFrequencyData(out as Float32Array<ArrayBuffer>);
+        return true;
+      } catch {
+        return false;
+      }
+    };
 
     // peak 方式のための広めの帯域
     const peakHalfBins = Math.max(1, Math.round(PEAK_BAND_HALF_HZ / binHz));
@@ -362,5 +392,20 @@ export function useProximity(targetFreqHz: number, options?: Options): Result {
     };
   }, [stop]);
 
-  return { state, proximity, metrics, method, errorReason, start, stop };
+  // 親コンポーネントからは安定参照の関数を渡したいので、ref を呼ぶラッパを useCallback で返す
+  const getSpectrum = useCallback((out: Float32Array): boolean => {
+    return getSpectrumRef.current(out);
+  }, []);
+
+  return {
+    state,
+    proximity,
+    metrics,
+    method,
+    errorReason,
+    start,
+    stop,
+    getSpectrum,
+    sampleRate,
+  };
 }

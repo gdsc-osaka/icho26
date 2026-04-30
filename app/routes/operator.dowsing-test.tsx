@@ -2,6 +2,7 @@ import { drizzle } from "drizzle-orm/d1";
 import { useMemo, useState } from "react";
 import * as schema from "../../db/schema";
 import { Icon } from "~/components";
+import { DowsingSpectrumChart } from "~/components/dowsing-spectrum-chart";
 import { OperatorShell } from "~/components/operator";
 import {
   type DetectionMethod,
@@ -107,6 +108,8 @@ export default function OperatorDowsingTest() {
           state={proximity.state}
           metrics={proximity.metrics}
           errorReason={proximity.errorReason}
+          getSpectrum={proximity.getSpectrum}
+          sampleRate={proximity.sampleRate}
           onFreqChange={onRxFreqChange}
           onMethodChange={setMethod}
           onStart={() => void proximity.start()}
@@ -248,6 +251,8 @@ type RxPanelProps = {
   state: "idle" | "requesting" | "active" | "unavailable";
   metrics: { peak: ProximityMetric; energy: ProximityMetric };
   errorReason: string | null;
+  getSpectrum: (out: Float32Array) => boolean;
+  sampleRate: number;
   onFreqChange: (hz: number) => void;
   onMethodChange: (m: DetectionMethod) => void;
   onStart: () => void;
@@ -338,18 +343,32 @@ function ReceiverPanel(props: RxPanelProps) {
       )}
 
       {isActive && (
-        <div className="mt-5 grid grid-cols-2 gap-3">
-          <MetricCard
-            title="Peak"
-            metric={props.metrics.peak}
-            highlighted={props.method === "peak"}
-          />
-          <MetricCard
-            title="Energy Sum"
-            metric={props.metrics.energy}
-            highlighted={props.method === "energy_sum"}
-          />
-        </div>
+        <>
+          <div className="mt-5">
+            <p className="mb-2 text-xs font-medium text-gray-700">
+              スペクトル（target ±2 kHz）
+            </p>
+            <DowsingSpectrumChart
+              getSpectrum={props.getSpectrum}
+              sampleRate={props.sampleRate}
+              targetFreqHz={props.freq}
+              active={isActive}
+            />
+          </div>
+
+          <div className="mt-5 grid grid-cols-2 gap-3">
+            <MetricCard
+              title="Peak"
+              metric={props.metrics.peak}
+              highlighted={props.method === "peak"}
+            />
+            <MetricCard
+              title="Energy Sum"
+              metric={props.metrics.energy}
+              highlighted={props.method === "energy_sum"}
+            />
+          </div>
+        </>
       )}
     </section>
   );
