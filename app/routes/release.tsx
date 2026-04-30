@@ -163,7 +163,7 @@ function Headline() {
   return (
     <>
       <h1 className="release-headline font-display text-4xl font-bold tracking-widest md:text-5xl">
-        [ MISSION COMPLETE ]
+        MISSION COMPLETE
       </h1>
       <p className="mt-2 font-mono text-[11px] uppercase tracking-[0.4em] text-cyan-300/80">
         System Access Granted // Final Sequence
