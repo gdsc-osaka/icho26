@@ -286,7 +286,7 @@ function IndoorSearchScreen({ errorMessage }: { errorMessage: string | null }) {
           <ExecuteDecryptButton />
         </Form>
 
-        <HintChat hint="STAGE 03 / PHASE_01 はことわざ『掃き溜めに鶴』のローマ字（ヘボン式・半角小文字）。クリアすると PHASE_02 が解放されます。" />
+        <HintChat hint="STAGE 03 / PHASE_01 はことわざ『掃き溜めに鶴』のひらがな。クリアすると PHASE_02 が解放されます。" />
       </div>
     </PageShell>
   );
@@ -357,7 +357,7 @@ function KeywordPhase() {
           </span>
         </div>
         <span className="font-mono text-[10px] uppercase tracking-widest text-on-surface-variant">
-          REQ: ALPHANUM
+          REQ: HIRAGANA
         </span>
       </div>
       <div className="space-y-2">
@@ -365,7 +365,7 @@ function KeywordPhase() {
           htmlFor="q3-keyword"
           className="block font-mono text-sm tracking-wider text-on-surface-variant"
         >
-          Enter keyword found in room
+          ひらがなでキーワードを入力
         </label>
         <div className="relative flex items-center">
           <span className="mr-2 font-mono text-cyan-400 opacity-50">&gt;</span>
@@ -375,11 +375,12 @@ function KeywordPhase() {
             type="text"
             inputMode="text"
             autoComplete="off"
+            autoCorrect="off"
             spellCheck={false}
             placeholder="AWAITING_INPUT..."
             required
             autoFocus
-            className="w-full border-0 border-b border-cyan-700 bg-transparent py-2 font-mono text-base uppercase tracking-[0.2em] text-cyan-400 placeholder:text-cyan-700/50 focus:border-cyan-400 focus:outline-none focus:ring-0"
+            className="w-full border-0 border-b border-cyan-700 bg-transparent py-2 font-mono text-base text-cyan-400 placeholder:text-cyan-700/50 focus:border-cyan-400 focus:outline-none focus:ring-0"
           />
         </div>
       </div>
@@ -575,13 +576,21 @@ function CodeSegmentedInput() {
     };
 
   return (
-    <div className="flex justify-center gap-4">
+    <div className="flex items-center justify-center gap-4">
       {Array.from({ length: CODE_LENGTH }).map((_, i) => (
-        <div
-          key={i}
-          className="q3-cell-pop relative"
-          style={{ animationDelay: `${900 + i * 140}ms` }}
-        >
+        <div key={i} className="contents">
+          {i === 1 && (
+            <span
+              className="q3-cell-pop self-end pb-2 font-mono text-2xl font-bold text-cyan-400 select-none"
+              style={{ animationDelay: "970ms" }}
+            >
+              .
+            </span>
+          )}
+          <div
+            className="q3-cell-pop relative"
+            style={{ animationDelay: `${900 + i * 140}ms` }}
+          >
           {/* Glow halo behind cell */}
           <div
             className="q3-cell-glow absolute -inset-px rounded-sm"
@@ -602,6 +611,7 @@ function CodeSegmentedInput() {
             onKeyDown={handleKeyDown(i)}
             className="relative h-20 w-14 rounded-sm border border-cyan-500/50 bg-surface-container-highest/30 text-center font-display text-3xl font-bold text-cyan-300 shadow-[inset_0_0_18px_rgba(0,240,255,0.08)] outline-none transition-colors placeholder:text-cyan-900/40 focus:border-cyan-300 focus:bg-cyan-500/15 focus:text-cyan-200 focus:ring-2 focus:ring-cyan-400 focus:shadow-[0_0_18px_rgba(0,240,255,0.45),inset_0_0_18px_rgba(0,240,255,0.25)]"
           />
+          </div>
         </div>
       ))}
     </div>
