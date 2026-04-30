@@ -22,7 +22,7 @@ export const TICK_MS = 60;
  */
 export type DetectionMethod = "peak" | "energy_sum";
 
-export const DEFAULT_DETECTION_METHOD: DetectionMethod = "energy_sum";
+export const DEFAULT_DETECTION_METHOD: DetectionMethod = "peak";
 
 // Peak 方式: 中心 ± この Hz を帯域とし dB ピークを取る
 export const PEAK_BAND_HALF_HZ = 100;

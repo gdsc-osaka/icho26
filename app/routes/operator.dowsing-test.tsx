@@ -6,12 +6,12 @@ import { DowsingSpectrumChart } from "~/components/dowsing-spectrum-chart";
 import { DowsingTimeChart } from "~/components/dowsing-time-chart";
 import { OperatorShell } from "~/components/operator";
 import {
+  DEFAULT_DETECTION_METHOD,
   type DetectionMethod,
   FREQ_Q1_1_HZ,
   FREQ_Q1_2_HZ,
   clamp,
 } from "~/lib/dowsing/config";
-import { useDetectionMethod } from "~/lib/dowsing/use-detection-method";
 import {
   type HistoryBuffers,
   type ProximityMetric,
@@ -51,8 +51,8 @@ export default function OperatorDowsingTest() {
   const [linkFreq, setLinkFreq] = useState(true);
 
   const tone = useToneGenerator(txFreq);
-  const [method, setMethod] = useDetectionMethod();
-  const proximity = useProximity(rxFreq);
+  const [method, setMethod] = useState<DetectionMethod>(DEFAULT_DETECTION_METHOD);
+  const proximity = useProximity(rxFreq, { method });
 
   // TX/RX 周波数を連動させるオプション
   const onTxFreqChange = (hz: number) => {
@@ -129,9 +129,9 @@ export default function OperatorDowsingTest() {
             START を押してください。
           </li>
           <li>
-            両方式を同時に計算しているので、メソッド切替トグルは「現在 active な
-            ゲーム画面の表示にどちらを採用するか」を切替えます（
-            localStorage に保存・他タブにも反映）。
+            両方式を同時に計算しているので、メソッド切替トグルは
+            「このページでハイライト表示する系列」を切替えます。
+            来場者画面側は常に peak 方式で動作します（本ページの設定は反映されません）。
           </li>
           <li>
             キャリブレーションは RX START 直後の 1.5

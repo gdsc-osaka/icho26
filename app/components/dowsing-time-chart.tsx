@@ -30,6 +30,7 @@ const DEFAULT_DECAY_PER_SEC = 6;
 
 const COLOR_PEAK = "#d97706"; // amber-600
 const COLOR_ENERGY = "#059669"; // emerald-600
+const COLOR_DIFF = "#4f46e5"; // indigo-600 (検証用 peak - energy)
 
 /**
  * signalDb の時系列を Task Manager 風に描画する canvas。
@@ -111,11 +112,14 @@ export function DowsingTimeChart({
 
       // Y 軸スケール: 観測最大値 × ヘッドルーム、最低 minYMaxDb
       let observedMax = 0;
+      let observedMin = 0; // 差分が負に振れる可能性に備える
       for (let i = 0; i < count; i++) {
         const a = buf.peakDb[i];
         const b = buf.energyDb[i];
+        const d = a - b; // 検証用: peak - energy
         if (a > observedMax) observedMax = a;
         if (b > observedMax) observedMax = b;
+        if (d < observedMin) observedMin = d;
       }
       const targetYMax = Math.max(minYMaxDb, observedMax * yHeadroom);
       // 即時上昇 / 緩やか減少
@@ -132,6 +136,8 @@ export function DowsingTimeChart({
       }
       lastFrameRef.current = now;
       const yMax = yMaxRef.current;
+      // 差分の負値分だけ下に余白を確保（最低 0、最大 -minYMaxDb）
+      const yMin = Math.min(0, observedMin * yHeadroom);
 
       // 時間軸: 現在から windowMs 前まで
       const tEnd = count > 0 ? buf.time[count - 1] : now;
@@ -142,8 +148,9 @@ export function DowsingTimeChart({
         return r * cssW;
       };
       const yForDb = (db: number): number => {
-        const r = Math.max(0, Math.min(1, db / yMax));
-        return cssH - r * cssH;
+        const r = (db - yMin) / (yMax - yMin);
+        const clamped = Math.max(0, Math.min(1, r));
+        return cssH - clamped * cssH;
       };
 
       // 横グリッド: dB 段（5 本程度）
@@ -151,16 +158,28 @@ export function DowsingTimeChart({
       ctx2d.fillStyle = "#9ca3af"; // gray-400
       ctx2d.lineWidth = 1;
       ctx2d.font = "10px ui-monospace, monospace";
-      const stepDb = niceStep(yMax / 4);
-      for (let db = 0; db <= yMax; db += stepDb) {
+      const stepDb = niceStep((yMax - yMin) / 4);
+      const startDb = Math.ceil(yMin / stepDb) * stepDb;
+      for (let db = startDb; db <= yMax; db += stepDb) {
         const y = yForDb(db);
         ctx2d.beginPath();
         ctx2d.moveTo(0, y);
         ctx2d.lineTo(cssW, y);
         ctx2d.stroke();
-        if (db > 0) {
+        if (db !== 0) {
           ctx2d.fillText(`${db.toFixed(0)}dB`, 4, y - 2);
         }
+      }
+      // 0 dB 基準線（差分が 0 を跨ぐかの目安）。やや濃いめに
+      if (yMin < 0) {
+        const y0 = yForDb(0);
+        ctx2d.strokeStyle = "#9ca3af";
+        ctx2d.beginPath();
+        ctx2d.moveTo(0, y0);
+        ctx2d.lineTo(cssW, y0);
+        ctx2d.stroke();
+        ctx2d.fillStyle = "#6b7280";
+        ctx2d.fillText("0dB", 4, y0 - 2);
       }
 
       // 縦グリッド: 5 秒刻み（時間ラベル）
@@ -196,11 +215,13 @@ export function DowsingTimeChart({
           values: Float32Array,
           color: string,
           alpha: number,
+          dashed = false,
         ) => {
           ctx2d.beginPath();
           ctx2d.strokeStyle = color;
           ctx2d.globalAlpha = alpha;
           ctx2d.lineWidth = 1.5;
+          ctx2d.setLineDash(dashed ? [4, 3] : []);
           for (let i = 0; i < count; i++) {
             const x = xForTime(buf.time[i]);
             const y = yForDb(values[i]);
@@ -208,12 +229,20 @@ export function DowsingTimeChart({
             else ctx2d.lineTo(x, y);
           }
           ctx2d.stroke();
+          ctx2d.setLineDash([]);
           ctx2d.globalAlpha = 1;
         };
         const peakAlpha = highlight === "peak" ? 1 : 0.55;
         const energyAlpha = highlight === "energy_sum" ? 1 : 0.55;
         drawSeries(buf.peakDb, COLOR_PEAK, peakAlpha);
         drawSeries(buf.energyDb, COLOR_ENERGY, energyAlpha);
+
+        // 検証用: 差分 (peak - energy) を破線で重ね描き
+        const diff = new Float32Array(count);
+        for (let i = 0; i < count; i++) {
+          diff[i] = buf.peakDb[i] - buf.energyDb[i];
+        }
+        drawSeries(diff, COLOR_DIFF, 0.85, true);
       }
 
       raf = requestAnimationFrame(draw);
@@ -253,6 +282,15 @@ export function DowsingTimeChart({
             style={{ backgroundColor: COLOR_ENERGY }}
           />
           energy_sum signalDb
+        </span>
+        <span className="flex items-center gap-1">
+          <span
+            className="inline-block h-1 w-3 rounded-sm"
+            style={{
+              background: `repeating-linear-gradient(90deg, ${COLOR_DIFF} 0 4px, transparent 4px 7px)`,
+            }}
+          />
+          diff (peak − energy)
         </span>
         <span>右端=現在 / 左端=
           {Math.round(windowMs / 1000)}秒前</span>

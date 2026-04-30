@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
+  DEFAULT_DETECTION_METHOD,
   type DetectionMethod,
   EMA_ALPHA,
   ENERGY_HALF_BINS,
@@ -13,7 +14,6 @@ import {
   TICK_MS,
   clamp,
 } from "./config";
-import { useDetectionMethod } from "./use-detection-method";
 
 /** 0 除算回避用の十分小さい magnitude フロア（≒ -200 dB） */
 const MIN_NOISE_MAG = 1e-10;
@@ -97,8 +97,7 @@ type Options = {
  * 並行性: 起動中は再 start() を黙って無視する（state==="idle" or "unavailable" のときのみ受理）。
  */
 export function useProximity(targetFreqHz: number, options?: Options): Result {
-  const [stored] = useDetectionMethod();
-  const method = options?.method ?? stored;
+  const method = options?.method ?? DEFAULT_DETECTION_METHOD;
 
   const [state, setState] = useState<ProximityState>("idle");
   const [proximity, setProximity] = useState(0);
