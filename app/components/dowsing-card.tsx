@@ -10,6 +10,7 @@ import {
 import { useBeep } from "~/lib/dowsing/use-beep";
 import { useHaptic } from "~/lib/dowsing/use-haptic";
 import { useProximity } from "~/lib/dowsing/use-proximity";
+import { DowsingTimeChart } from "./dowsing-time-chart";
 import { Icon } from "./icon";
 import { SystemPanel } from "./system-panel";
 
@@ -25,8 +26,15 @@ type Props = {
  * 解答送信後の AWAITING PHYSICAL VERIFICATION 表示と並べて配置する想定。
  */
 export function DowsingCard({ targetFreqHz, label = "DOWSING" }: Props) {
-  const { state, proximity, errorReason, start, stop } =
-    useProximity(targetFreqHz);
+  const {
+    state,
+    proximity,
+    errorReason,
+    start,
+    stop,
+    getHistory,
+    historyCapacity,
+  } = useProximity(targetFreqHz);
   const isActive = state === "active";
   useHaptic(isActive, proximity);
   useBeep(isActive, proximity);
@@ -70,7 +78,13 @@ export function DowsingCard({ targetFreqHz, label = "DOWSING" }: Props) {
       ) : (
         <>
           <Radar proximity={isActive ? proximity : 0} />
-          {isActive && <Waveform proximity={proximity} />}
+          {isActive && (
+            <SignalTimeline
+              getHistory={getHistory}
+              historyCapacity={historyCapacity}
+              active={isActive}
+            />
+          )}
 
           <p className="mt-4 text-center font-mono text-[11px] uppercase tracking-wider text-cyan-500/70">
             {isActive
@@ -172,38 +186,32 @@ function Radar({ proximity }: { proximity: number }) {
   );
 }
 
-function Waveform({ proximity }: { proximity: number }) {
-  const p = clamp(proximity, 0, 100) / 100;
-  const bars = 12;
+type SignalTimelineProps = {
+  getHistory: Parameters<typeof DowsingTimeChart>[0]["getHistory"];
+  historyCapacity: number;
+  active: boolean;
+};
 
+function SignalTimeline({
+  getHistory,
+  historyCapacity,
+  active,
+}: SignalTimelineProps) {
   return (
     <div className="mt-6 border border-cyan-900/40 bg-[#05070A]/60 p-3">
       <div className="mb-2 flex items-center justify-between">
         <span className="font-mono text-[10px] uppercase tracking-widest text-cyan-500/60">
-          GAIN_VISUALIZER
+          SIGNAL_TIMELINE
         </span>
         <span className="font-mono text-[10px] text-cyan-400">LIVE</span>
       </div>
-      <div className="flex h-12 items-end justify-between gap-[2px]">
-        {Array.from({ length: bars }).map((_, i) => {
-          const center = (bars - 1) / 2;
-          const dist = Math.abs(i - center) / center;
-          const intensity = clamp(p * (1 - dist * 0.7), 0, 1);
-          const h = Math.max(0.1, intensity);
-          return (
-            <div
-              key={i}
-              className="w-full bg-cyan-400 transition-[height,opacity] duration-150"
-              style={{
-                height: `${h * 100}%`,
-                opacity: 0.2 + intensity * 0.8,
-                boxShadow:
-                  intensity > 0.5 ? "0 0 8px rgba(0,240,255,0.7)" : undefined,
-              }}
-            />
-          );
-        })}
-      </div>
+      <DowsingTimeChart
+        getHistory={getHistory}
+        historyCapacity={historyCapacity}
+        active={active}
+        theme="cyber"
+        showSeries={{ peak: true }}
+      />
     </div>
   );
 }
