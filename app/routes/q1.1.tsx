@@ -48,8 +48,11 @@ export async function action({ request, context }: Route.ActionArgs) {
   if (!groupId) throw redirect("/");
 
   const formData = await request.formData();
-  const raw = String(formData.get("answer") ?? "");
-  const normalized = normalize(raw);
+  const rawX = String(formData.get("x") ?? "");
+  const rawY = String(formData.get("y") ?? "");
+  const raw = `${rawX},${rawY}`;
+  // x と y をそれぞれ正規化してから連結することで、全角カンマ等の表記揺れを回避する
+  const normalized = `${normalize(rawX)},${normalize(rawY)}`;
   const correct = isCorrect("Q1_1", normalized);
 
   const db = drizzle(env.DB);
@@ -96,38 +99,85 @@ export default function Q1_1() {
   return (
     <PageShell sessionId="ID: X-99">
       <StageHeader title="DECRYPTION 1-1" eyebrow="MODULE: SIGNAL RECOVERY">
-        <p>連立方程式を解いて、求めた値を入力してください。</p>
+        <p>連立方程式を解いて、x と y の値を入力してください。</p>
       </StageHeader>
 
-      <SystemPanel className="my-8 text-center">
-        <p className="mb-4 font-mono text-[10px] uppercase tracking-widest text-cyan-500/60">
-          EQUATION INPUT
-        </p>
-        <div className="space-y-4 py-2">
-          <p className="font-display text-2xl tracking-widest text-primary drop-shadow-[0_0_8px_rgba(219,252,255,0.3)]">
-            設問の方程式を解け
-          </p>
+      <SystemPanel className="my-6">
+        <div className="flex items-start gap-3">
+          <Icon
+            name="terminal"
+            className="mt-0.5 text-cyan-400 drop-shadow-[0_0_6px_rgba(0,240,255,0.5)]"
+          />
+          <div className="space-y-2">
+            <p className="font-mono text-[10px] uppercase tracking-widest text-cyan-400">
+              [MESSAGE_INCOMING]
+            </p>
+            <p className="font-mono text-sm leading-relaxed text-on-surface">
+              [EQUATION_LOG] 二つの方程式を同時に満たす解を求め、x と y
+              の値をそれぞれ入力してください。
+            </p>
+          </div>
         </div>
       </SystemPanel>
 
+      <SystemPanel className="my-6">
+        <img
+          src="/q1-1-equations.png"
+          alt="EQ_01: 2x + 3 = 11, EQ_02: y - 4x = -10"
+          className="mx-auto block w-full max-w-sm"
+        />
+      </SystemPanel>
+
       <Form method="post" className="space-y-4">
-        <label className="block font-mono text-[10px] uppercase tracking-widest text-cyan-900">
-          ANSWER
-        </label>
-        <div className="flex items-center border-b border-cyan-900 focus-within:border-cyan-400">
-          <Icon
-            name="arrow_forward_ios"
-            className="mr-2 text-sm text-cyan-500"
-          />
-          <TextInput
-            name="answer"
-            inputMode="numeric"
-            autoComplete="off"
-            autoFocus
-            placeholder="ENTER VALUE"
-            required
-            className="border-0 focus:ring-0"
-          />
+        <p className="font-mono text-[10px] uppercase tracking-widest text-cyan-900">
+          SOLUTION
+        </p>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label
+              htmlFor="q1-1-x"
+              className="block font-mono text-[10px] uppercase tracking-widest text-cyan-500/70"
+            >
+              X
+            </label>
+            <div className="mt-1 flex items-center border-b border-cyan-900 focus-within:border-cyan-400">
+              <span className="mr-2 font-mono text-sm font-bold text-cyan-500">
+                x =
+              </span>
+              <TextInput
+                id="q1-1-x"
+                name="x"
+                inputMode="numeric"
+                autoComplete="off"
+                autoFocus
+                placeholder="0"
+                required
+                className="border-0 focus:ring-0"
+              />
+            </div>
+          </div>
+          <div>
+            <label
+              htmlFor="q1-1-y"
+              className="block font-mono text-[10px] uppercase tracking-widest text-cyan-500/70"
+            >
+              Y
+            </label>
+            <div className="mt-1 flex items-center border-b border-cyan-900 focus-within:border-cyan-400">
+              <span className="mr-2 font-mono text-sm font-bold text-cyan-500">
+                y =
+              </span>
+              <TextInput
+                id="q1-1-y"
+                name="y"
+                inputMode="numeric"
+                autoComplete="off"
+                placeholder="0"
+                required
+                className="border-0 focus:ring-0"
+              />
+            </div>
+          </div>
         </div>
         {errorMessage && <ErrorAlert>{errorMessage}</ErrorAlert>}
         <GlowButton type="submit" className="w-full">
@@ -142,7 +192,7 @@ export default function Q1_1() {
         <Icon name="arrow_back" className="text-sm" /> BACK TO HUB
       </Link>
 
-      <HintChat hint="DECRYPTION 1-1 は連立方程式の解です。会場で配布された資料の式を整理し、求まった数値そのものを半角で入力してください。単位記号は不要です。" />
+      <HintChat hint="DECRYPTION 1-1 は連立方程式 EQ_01 / EQ_02 の解です。EQ_01 から x を求め、その x を EQ_02 に代入して y を求めてください。x と y の両方が一致したときのみ次に進めます。" />
     </PageShell>
   );
 }
