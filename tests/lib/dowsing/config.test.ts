@@ -19,11 +19,14 @@ describe("dowsing config sanity", () => {
     expect(FREQ_Q1_1_HZ).toBeGreaterThanOrEqual(15000);
     expect(FREQ_Q1_2_HZ).toBeGreaterThanOrEqual(15000);
     expect(FREQ_Q1_1_HZ).not.toBe(FREQ_Q1_2_HZ);
-    // 帯域が重ならないこと（合計帯域 ±ENERGY_HALF_BINS × bin幅 の 4 倍以上の分離）
+    // 両方式の帯域が重ならないこと。広い方（peak）が分離条件を満たせば、
+    // 自動的に狭い方（energy_sum）も満たされる。
     const binHz = 48000 / FFT_SIZE;
-    const bandHalfHz = ENERGY_HALF_BINS * binHz;
+    const peakHalfHz = PEAK_BAND_HALF_HZ;
+    const energyHalfHz = ENERGY_HALF_BINS * binHz;
+    const widerHalfHz = Math.max(peakHalfHz, energyHalfHz);
     expect(Math.abs(FREQ_Q1_2_HZ - FREQ_Q1_1_HZ)).toBeGreaterThan(
-      bandHalfHz * 4,
+      widerHalfHz * 4,
     );
   });
 
@@ -52,8 +55,10 @@ describe("dowsing config sanity", () => {
     expect(halfBins).toBeGreaterThanOrEqual(1);
   });
 
-  it("default detection method is one of the supported values", () => {
-    expect(["peak", "energy_sum"]).toContain(DEFAULT_DETECTION_METHOD);
+  it("default detection method is pinned to 'peak'", () => {
+    // 広帯域ノイズ耐性で実機検証した結果、peak を本番採用としたためここで固定。
+    // 仕様変更で energy_sum に戻すなら本テストも更新すること。
+    expect(DEFAULT_DETECTION_METHOD).toBe("peak");
   });
 });
 

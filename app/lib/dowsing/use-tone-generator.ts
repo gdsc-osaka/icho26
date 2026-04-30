@@ -32,8 +32,12 @@ export function useToneGenerator(initialFrequency = 19000): Result {
   const ctxRef = useRef<AudioContext | null>(null);
   const oscRef = useRef<OscillatorNode | null>(null);
   const gainRef = useRef<GainNode | null>(null);
+  // start() の世代トークン。stop() / 新しい start() でインクリメントし、
+  // in-flight の start() が古い世代だったら結果を破棄する。
+  const startGenRef = useRef(0);
 
   const stop = useCallback(() => {
+    startGenRef.current += 1;
     const ctx = ctxRef.current;
     const osc = oscRef.current;
     const gain = gainRef.current;
@@ -63,7 +67,8 @@ export function useToneGenerator(initialFrequency = 19000): Result {
 
   const start = useCallback(
     async (freqHz: number, levelArg: number) => {
-      stop(); // 既存トーンをフェードアウトしてから再起動
+      stop(); // 既存トーンをフェードアウトしてから再起動（世代も +1）
+      const myGen = ++startGenRef.current;
       setErrorReason(null);
       setFrequencyState(freqHz);
       setLevelState(levelArg);
@@ -73,6 +78,7 @@ export function useToneGenerator(initialFrequency = 19000): Result {
         (window as unknown as { webkitAudioContext?: typeof AudioContext })
           .webkitAudioContext;
       if (!AudioCtx) {
+        if (myGen !== startGenRef.current) return;
         setErrorReason("AudioContextUnavailable");
         setState("unavailable");
         return;
@@ -89,8 +95,15 @@ export function useToneGenerator(initialFrequency = 19000): Result {
           }
         }
       } catch {
+        if (myGen !== startGenRef.current) return;
         setErrorReason("AudioContextCreateFailed");
         setState("unavailable");
+        return;
+      }
+
+      // ctx.resume の await 中に新しい start() / stop() が来ていたら破棄
+      if (myGen !== startGenRef.current) {
+        void ctx.close().catch(() => undefined);
         return;
       }
 
@@ -109,8 +122,20 @@ export function useToneGenerator(initialFrequency = 19000): Result {
         osc.start();
       } catch {
         void ctx.close().catch(() => undefined);
+        if (myGen !== startGenRef.current) return;
         setErrorReason("OscillatorCreateFailed");
         setState("unavailable");
+        return;
+      }
+
+      // ノードを ref に書き込む直前に最終チェック
+      if (myGen !== startGenRef.current) {
+        try {
+          osc.stop();
+        } catch {
+          /* ignore */
+        }
+        void ctx.close().catch(() => undefined);
         return;
       }
 

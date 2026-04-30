@@ -29,7 +29,7 @@ const DYNAMIC_RANGE_FLOOR_DB = 5;
 /** signalDb 履歴の保持期間（ms） */
 export const HISTORY_DURATION_MS = 30_000;
 /** リングバッファ容量。TICK_MS の余裕分も含む */
-const HISTORY_CAPACITY = Math.ceil(HISTORY_DURATION_MS / 60 /* TICK_MS */) + 16;
+const HISTORY_CAPACITY = Math.ceil(HISTORY_DURATION_MS / TICK_MS) + 16;
 
 export type HistoryBuffers = {
   /** タイムスタンプ (performance.now() ベース、ms) */
@@ -74,7 +74,7 @@ type Result = {
   dynamicProximity: number;
   /** 両方式の生計測値。比較用 */
   metrics: ProximityMetrics;
-  /** 現在採用中の方式（override 指定時はそれ、未指定時は localStorage 設定） */
+  /** 現在採用中の方式（options.method 指定時はそれ、未指定時は DEFAULT_DETECTION_METHOD） */
   method: DetectionMethod;
   errorReason: string | null;
   start: () => Promise<void>;
@@ -99,7 +99,7 @@ type Result = {
 };
 
 type Options = {
-  /** 検出方式の上書き。未指定なら useDetectionMethod() の値を使用 */
+  /** 検出方式の上書き。未指定なら DEFAULT_DETECTION_METHOD を使用 */
   method?: DetectionMethod;
 };
 
@@ -108,7 +108,8 @@ type Options = {
  * - getUserMedia + AudioContext + AnalyserNode を内包
  * - 毎 tick **両方式（peak / energy_sum）を同じ FFT バッファで同時計算**
  * - tick_ms 周期 + EMA 平滑化、各方式独立に EMA を持つ
- * - localStorage で選択中方式を共有（useDetectionMethod 経由）
+ * - 検出方式は options.method（明示指定）または DEFAULT_DETECTION_METHOD（既定 "peak"）
+ * - 動作中に targetFreqHz が変化したら、tick 内で帯域インデックスを再計算して追従する
  *
  * 並行性: 起動中は再 start() を黙って無視する（state==="idle" or "unavailable" のときのみ受理）。
  */
@@ -146,6 +147,9 @@ export function useProximity(targetFreqHz: number, options?: Options): Result {
   // 評価ループ側で読む現在の選択方式
   const methodRef = useRef<DetectionMethod>(method);
   methodRef.current = method;
+  // 評価ループ側で読む現在の中心周波数（動作中の動的変更に追従）
+  const targetFreqHzRef = useRef<number>(targetFreqHz);
+  targetFreqHzRef.current = targetFreqHz;
   // キャリブレーション中の早期キャンセル検知用 token
   const runIdRef = useRef<number>(0);
   const stateRef = useRef<ProximityState>("idle");
@@ -260,7 +264,6 @@ export function useProximity(targetFreqHz: number, options?: Options): Result {
 
     const ctxSampleRate = ctx.sampleRate;
     const binHz = ctxSampleRate / FFT_SIZE;
-    const centerBin = Math.round(targetFreqHz / binHz);
     const bufLen = analyser.frequencyBinCount;
     const buf = new Float32Array(bufLen);
 
@@ -280,15 +283,24 @@ export function useProximity(targetFreqHz: number, options?: Options): Result {
       }
     };
 
-    // peak 方式のための広めの帯域
+    // 帯域幅は固定（FFT サイズと方式定数に依存）。中心 bin だけ動的に動かす
     const peakHalfBins = Math.max(1, Math.round(PEAK_BAND_HALF_HZ / binHz));
-    const peakLo = Math.max(0, centerBin - peakHalfBins);
-    const peakHi = Math.min(bufLen - 1, centerBin + peakHalfBins);
-
-    // energy_sum 方式のための狭めの帯域
     const energyHalfBins = Math.max(1, ENERGY_HALF_BINS);
-    const energyLo = Math.max(0, centerBin - energyHalfBins);
-    const energyHi = Math.min(bufLen - 1, centerBin + energyHalfBins);
+    // tick 内で targetFreqHzRef から再計算する
+    let centerBin = Math.round(targetFreqHzRef.current / binHz);
+    let peakLo = Math.max(0, centerBin - peakHalfBins);
+    let peakHi = Math.min(bufLen - 1, centerBin + peakHalfBins);
+    let energyLo = Math.max(0, centerBin - energyHalfBins);
+    let energyHi = Math.min(bufLen - 1, centerBin + energyHalfBins);
+    const refreshBandIndices = () => {
+      const next = Math.round(targetFreqHzRef.current / binHz);
+      if (next === centerBin) return;
+      centerBin = next;
+      peakLo = Math.max(0, centerBin - peakHalfBins);
+      peakHi = Math.min(bufLen - 1, centerBin + peakHalfBins);
+      energyLo = Math.max(0, centerBin - energyHalfBins);
+      energyHi = Math.min(bufLen - 1, centerBin + energyHalfBins);
+    };
 
     const peakInBand = (): number => {
       let peakDb = -Infinity;
@@ -373,9 +385,14 @@ export function useProximity(targetFreqHz: number, options?: Options): Result {
       }
       lastTickRef.current = now;
 
+      // targetFreqHz が動作中に変化していたら帯域インデックスを更新
+      refreshBandIndices();
+
       try {
         analyserRef.current.getFloatFrequencyData(buf);
       } catch {
+        // 一時的な API 失敗で評価ループを止めない（次フレームで再試行）
+        rafRef.current = requestAnimationFrame(tick);
         return;
       }
 

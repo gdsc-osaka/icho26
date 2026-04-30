@@ -1,5 +1,5 @@
 import { drizzle } from "drizzle-orm/d1";
-import { useMemo, useState } from "react";
+import { useId, useMemo, useState } from "react";
 import * as schema from "../../db/schema";
 import { Icon } from "~/components";
 import { DowsingSpectrumChart } from "~/components/dowsing-spectrum-chart";
@@ -88,7 +88,8 @@ export default function OperatorDowsingTest() {
     <OperatorShell title="ダウジングテスト" eyebrow="DOWSING_TEST">
       <p className="mb-6 max-w-2xl text-sm text-gray-600">
         端末スピーカーから連続正弦波を発信しながら、同じ端末（または別端末）の
-        マイクでピーク方式とエネルギー合計方式を**同時計測**して比較できます。
+        マイクでピーク方式とエネルギー合計方式を<strong>同時計測</strong>
+        して比較できます。
         二台で運用する場合は片方を送信、もう片方を受信に設定してください。
       </p>
 
@@ -161,6 +162,7 @@ type TxPanelProps = {
 
 function TransmitterPanel(props: TxPanelProps) {
   const playing = props.state === "playing";
+  const levelInputId = useId();
 
   return (
     <section className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
@@ -192,13 +194,17 @@ function TransmitterPanel(props: TxPanelProps) {
       />
 
       <div className="mt-4">
-        <label className="flex items-center justify-between text-xs font-medium text-gray-700">
+        <label
+          htmlFor={levelInputId}
+          className="flex items-center justify-between text-xs font-medium text-gray-700"
+        >
           <span>出力レベル</span>
           <span className="font-mono tabular-nums text-gray-500">
             {(props.level * 100).toFixed(0)}%
           </span>
         </label>
         <input
+          id={levelInputId}
           type="range"
           min={0}
           max={1}
@@ -411,6 +417,7 @@ function MethodToggle({
     <button
       type="button"
       onClick={onClick}
+      aria-pressed={active}
       className={[
         "flex-1 rounded-md border px-3 py-2 text-left text-xs transition-colors",
         active
@@ -488,15 +495,20 @@ function FrequencyControl({
   freq: number;
   onChange: (hz: number) => void;
 }) {
+  const inputId = useId();
   return (
     <div>
-      <label className="flex items-center justify-between text-xs font-medium text-gray-700">
+      <label
+        htmlFor={inputId}
+        className="flex items-center justify-between text-xs font-medium text-gray-700"
+      >
         <span>{label}</span>
         <span className="font-mono tabular-nums text-gray-500">
           {(freq / 1000).toFixed(2)} kHz
         </span>
       </label>
       <input
+        id={inputId}
         type="range"
         min={FREQ_MIN}
         max={FREQ_MAX}

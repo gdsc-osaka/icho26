@@ -113,6 +113,8 @@ export function DowsingTimeChart({
     peakDb: new Float32Array(historyCapacity),
     energyDb: new Float32Array(historyCapacity),
   });
+  // diff (peak - energy) 計算用の使い回しバッファ。RAF ホットパスでの GC 圧を回避
+  const diffRef = useRef<Float32Array>(new Float32Array(historyCapacity));
 
   // Y 軸スケールの内部状態（描画ループ間で持続）
   const yMaxRef = useRef(minYMaxDb);
@@ -125,6 +127,9 @@ export function DowsingTimeChart({
         peakDb: new Float32Array(historyCapacity),
         energyDb: new Float32Array(historyCapacity),
       };
+    }
+    if (diffRef.current.length !== historyCapacity) {
+      diffRef.current = new Float32Array(historyCapacity);
     }
   }, [historyCapacity]);
 
@@ -306,11 +311,17 @@ export function DowsingTimeChart({
           drawSeries(buf.energyDb, colors.energy, energyAlpha);
         }
         if (showDiff) {
-          const diff = new Float32Array(count);
+          // count 個分だけ書き戻し、drawSeries には先頭 count 個を渡す
+          if (diffRef.current.length < count) {
+            diffRef.current = new Float32Array(count);
+          }
+          const diff = diffRef.current;
           for (let i = 0; i < count; i++) {
             diff[i] = buf.peakDb[i] - buf.energyDb[i];
           }
-          drawSeries(diff, colors.diff, 0.85, { dashed: true });
+          drawSeries(diff.subarray(0, count), colors.diff, 0.85, {
+            dashed: true,
+          });
         }
       }
 
