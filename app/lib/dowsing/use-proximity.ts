@@ -18,6 +18,14 @@ import {
 /** 0 除算回避用の十分小さい magnitude フロア（≒ -200 dB） */
 const MIN_NOISE_MAG = 1e-10;
 
+/**
+ * 動的 proximity を計算する際の最低レンジ (dB)。
+ * 履歴の max - min がこの値より小さい場合は、これを分母として用いる。
+ * これにより停止時の (max ≈ min) で 0 除算を防ぎつつ、わずかな揺らぎで
+ * 値が乱高下するのを抑える。
+ */
+const DYNAMIC_RANGE_FLOOR_DB = 5;
+
 /** signalDb 履歴の保持期間（ms） */
 export const HISTORY_DURATION_MS = 30_000;
 /** リングバッファ容量。TICK_MS の余裕分も含む */
@@ -54,8 +62,14 @@ const ZERO_METRICS: ProximityMetrics = { peak: ZERO_METRIC, energy: ZERO_METRIC 
 
 type Result = {
   state: ProximityState;
-  /** 現在選択中の方式の proximity（0-100） */
+  /** 現在選択中の方式の proximity（0-100）。静的 RANGE_*_DB で固定マッピング */
   proximity: number;
+  /**
+   * 過去 HISTORY_DURATION_MS の peak signalDb の min..max に対する現在値の
+   * 相対位置（0-100、EMA 平滑化済み）。端末個体差に依存しない感度演出向け。
+   * 履歴幅が DYNAMIC_RANGE_FLOOR_DB 未満のときはこの値が分母になり 0 近辺に張り付く。
+   */
+  dynamicProximity: number;
   /** 両方式の生計測値。比較用 */
   metrics: ProximityMetrics;
   /** 現在採用中の方式（override 指定時はそれ、未指定時は localStorage 設定） */
@@ -101,6 +115,7 @@ export function useProximity(targetFreqHz: number, options?: Options): Result {
 
   const [state, setState] = useState<ProximityState>("idle");
   const [proximity, setProximity] = useState(0);
+  const [dynamicProximity, setDynamicProximity] = useState(0);
   const [metrics, setMetrics] = useState<ProximityMetrics>(ZERO_METRICS);
   const [errorReason, setErrorReason] = useState<string | null>(null);
   const [sampleRate, setSampleRate] = useState(0);
@@ -122,6 +137,8 @@ export function useProximity(targetFreqHz: number, options?: Options): Result {
   // 各方式の EMA 状態を独立に保持
   const peakProxRef = useRef<number>(0);
   const energyProxRef = useRef<number>(0);
+  // 動的 proximity（履歴 min/max 比）の EMA
+  const dynamicProxRef = useRef<number>(0);
   // 評価ループ側で読む現在の選択方式
   const methodRef = useRef<DetectionMethod>(method);
   methodRef.current = method;
@@ -148,9 +165,11 @@ export function useProximity(targetFreqHz: number, options?: Options): Result {
     getSpectrumRef.current = () => false;
     peakProxRef.current = 0;
     energyProxRef.current = 0;
+    dynamicProxRef.current = 0;
     histWriteRef.current = 0;
     histCountRef.current = 0;
     setProximity(0);
+    setDynamicProximity(0);
     setMetrics(ZERO_METRICS);
     setSampleRate(0);
     setState("idle");
@@ -396,6 +415,25 @@ export function useProximity(targetFreqHz: number, options?: Options): Result {
         histCountRef.current += 1;
       }
 
+      // 動的 proximity: 履歴 min..max に対する peakSignalDb の相対位置
+      const hCount = histCountRef.current;
+      let histMin = peakSignalDb;
+      let histMax = peakSignalDb;
+      for (let k = 0; k < hCount; k++) {
+        const v = histPeakRef.current[k];
+        if (v < histMin) histMin = v;
+        if (v > histMax) histMax = v;
+      }
+      const dynamicRange = Math.max(
+        DYNAMIC_RANGE_FLOOR_DB,
+        histMax - histMin,
+      );
+      const dynamicRaw =
+        clamp((peakSignalDb - histMin) / dynamicRange, 0, 1) * 100;
+      dynamicProxRef.current =
+        (1 - EMA_ALPHA) * dynamicProxRef.current + EMA_ALPHA * dynamicRaw;
+      setDynamicProximity(dynamicProxRef.current);
+
       const next: ProximityMetrics = {
         peak: {
           proximity: peakProxRef.current,
@@ -465,6 +503,7 @@ export function useProximity(targetFreqHz: number, options?: Options): Result {
   return {
     state,
     proximity,
+    dynamicProximity,
     metrics,
     method,
     errorReason,

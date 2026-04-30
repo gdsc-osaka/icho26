@@ -28,7 +28,7 @@ type Props = {
 export function DowsingCard({ targetFreqHz, label = "DOWSING" }: Props) {
   const {
     state,
-    proximity,
+    dynamicProximity,
     errorReason,
     start,
     stop,
@@ -36,8 +36,9 @@ export function DowsingCard({ targetFreqHz, label = "DOWSING" }: Props) {
     historyCapacity,
   } = useProximity(targetFreqHz);
   const isActive = state === "active";
-  useHaptic(isActive, proximity);
-  useBeep(isActive, proximity);
+  // 端末個体差を吸収するため、感度演出はすべて履歴 min..max 比の dynamicProximity を採用
+  useHaptic(isActive, dynamicProximity);
+  useBeep(isActive, dynamicProximity);
 
   const freqLabel = useMemo(
     () => `${(targetFreqHz / 1000).toFixed(1)} kHz`,
@@ -77,7 +78,7 @@ export function DowsingCard({ targetFreqHz, label = "DOWSING" }: Props) {
         <UnavailableBody errorReason={errorReason} />
       ) : (
         <>
-          <Radar proximity={isActive ? proximity : 0} />
+          <Radar proximity={isActive ? dynamicProximity : 0} />
           {isActive && (
             <SignalTimeline
               getHistory={getHistory}
