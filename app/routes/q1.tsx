@@ -66,7 +66,7 @@ export default function Q1Hub() {
         </p>
       </div>
 
-      <HintChat hint="STAGE 01 は二つのサブ設問の二重ロックです。先に解放されている方からひとつずつ取り組んでください。両方クリアできれば NFC が解放されます。" />
+      <HintChat hint="STAGE 01 は二つのサブ設問の二重ロックです。先に解放されている方からひとつずつ取り組んでください。両方クリアできれば ステージクリアです。" />
     </PageShell>
   );
 }
