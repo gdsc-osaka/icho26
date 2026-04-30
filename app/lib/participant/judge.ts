@@ -5,7 +5,7 @@ const ANSWERS: Record<AnswerStage, string> = {
   Q1_2: "2,3",
   Q2: "coffeecup",
   Q3_KEYWORD: "hakidamenitsuru",
-  Q3_CODE: "224",
+  Q3_CODE: "2236",
   Q4: "29",
 } as const;
 

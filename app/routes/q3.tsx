@@ -13,7 +13,7 @@ import {
 import { applyQ3Code, applyQ3Keyword } from "~/lib/participant/transitions";
 import type { Route } from "./+types/q3";
 
-const CODE_LENGTH = 3;
+const CODE_LENGTH = 4;
 
 type ActionResult =
   | { ok: false; phase: "keyword" | "code"; message: string }
@@ -103,7 +103,7 @@ export async function action({
       return {
         ok: false,
         phase: "code",
-        message: "PHASE_02 コード不一致。3 桁の数字を再確認してください。",
+        message: "PHASE_02 コード不一致。4 桁の数字を再確認してください。",
       };
     }
     if (t.user.currentStage === "Q4") throw redirect("/q4");
@@ -449,7 +449,7 @@ function PrivilegeScreen({ errorMessage }: { errorMessage: string | null }) {
             <DecorativeSystemMeta />
           </div>
 
-          <HintChat hint="STAGE 03 / PHASE_02 は『掃き溜めに鶴』にちなんだ数字コードです。3 桁を探して順に入力してください。" />
+          <HintChat hint="STAGE 03 / PHASE_02 は『掃き溜めに鶴』にちなんだ数字コードです。4 桁を探して順に入力してください。" />
         </div>
       </PageShell>
     </div>
@@ -528,7 +528,7 @@ function PrivilegeIrisMessage() {
         IRIS_SYS_COMM_v4.2
       </span>
       <p className="relative text-sm leading-relaxed text-on-surface">
-        掃き溜めに鶴……ごみの中にも素敵なものがあることを表すことわざです。アプリのさらなる上級権限を開放するには数字のコードが必要です。3
+        掃き溜めに鶴……ごみの中にも素敵なものがあることを表すことわざです。アプリのさらなる上級権限を開放するには数字のコードが必要です。4
         桁を探してみてください
         <span
           className="ml-1 inline-block h-3 w-2 align-middle bg-cyan-400"

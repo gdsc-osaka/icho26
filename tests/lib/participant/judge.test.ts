@@ -12,8 +12,8 @@ describe("isCorrect", () => {
     ["Q1_2", "2", false],
     ["Q2", "coffeecup", true],
     ["Q3_KEYWORD", "hakidamenitsuru", true],
-    ["Q3_CODE", "224", true],
-    ["Q3_CODE", "123", false],
+    ["Q3_CODE", "2236", true],
+    ["Q3_CODE", "1234", false],
     ["Q4", "29", true],
   ] as const)("%s with %s returns %s", (stage, normalized, expected) => {
     expect(isCorrect(stage, normalized)).toBe(expected);
