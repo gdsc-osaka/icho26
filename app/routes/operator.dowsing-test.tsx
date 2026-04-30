@@ -51,7 +51,9 @@ export default function OperatorDowsingTest() {
   const [linkFreq, setLinkFreq] = useState(true);
 
   const tone = useToneGenerator(txFreq);
-  const [method, setMethod] = useState<DetectionMethod>(DEFAULT_DETECTION_METHOD);
+  const [method, setMethod] = useState<DetectionMethod>(
+    DEFAULT_DETECTION_METHOD,
+  );
   const proximity = useProximity(rxFreq, { method });
 
   // TX/RX 周波数を連動させるオプション
@@ -125,17 +127,18 @@ export default function OperatorDowsingTest() {
         <p className="font-semibold">使い方のヒント</p>
         <ul className="mt-2 list-disc space-y-1 pl-5">
           <li>
-            iOS Safari は AudioContext / マイクともに「ボタン押下」必須。それぞれ
-            START を押してください。
+            iOS Safari は AudioContext /
+            マイクともに「ボタン押下」必須。それぞれ START を押してください。
           </li>
           <li>
             両方式を同時に計算しているので、メソッド切替トグルは
             「このページでハイライト表示する系列」を切替えます。
-            来場者画面側は常に peak 方式で動作します（本ページの設定は反映されません）。
+            来場者画面側は常に peak
+            方式で動作します（本ページの設定は反映されません）。
           </li>
           <li>
-            キャリブレーションは RX START 直後の 1.5
-            秒で行います。送信機を OFF にした状態で開始すると正確なノイズフロアが取れます。
+            キャリブレーションは RX START 直後の 1.5 秒で行います。送信機を OFF
+            にした状態で開始すると正確なノイズフロアが取れます。
           </li>
         </ul>
       </div>
@@ -205,7 +208,8 @@ function TransmitterPanel(props: TxPanelProps) {
           className="mt-1 w-full"
         />
         <p className="mt-1 text-[10px] text-gray-500">
-          初回は 30% 前後で開始し、隣接設問への混信を確認してから調整してください。
+          初回は 30%
+          前後で開始し、隣接設問への混信を確認してから調整してください。
         </p>
       </div>
 
@@ -442,9 +446,7 @@ function MetricCard({
     <div
       className={[
         "rounded-md border p-3",
-        highlighted
-          ? "border-gray-900 bg-gray-50"
-          : "border-gray-200 bg-white",
+        highlighted ? "border-gray-900 bg-gray-50" : "border-gray-200 bg-white",
       ].join(" ")}
     >
       <div className="flex items-center justify-between">
@@ -547,4 +549,3 @@ function StatusPill({ tone, label }: { tone: PillTone; label: string }) {
     </span>
   );
 }
-

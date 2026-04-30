@@ -29,8 +29,7 @@ const DYNAMIC_RANGE_FLOOR_DB = 5;
 /** signalDb 履歴の保持期間（ms） */
 export const HISTORY_DURATION_MS = 30_000;
 /** リングバッファ容量。TICK_MS の余裕分も含む */
-const HISTORY_CAPACITY =
-  Math.ceil(HISTORY_DURATION_MS / 60 /* TICK_MS */) + 16;
+const HISTORY_CAPACITY = Math.ceil(HISTORY_DURATION_MS / 60 /* TICK_MS */) + 16;
 
 export type HistoryBuffers = {
   /** タイムスタンプ (performance.now() ベース、ms) */
@@ -58,7 +57,10 @@ export type ProximityMetrics = {
 };
 
 const ZERO_METRIC: ProximityMetric = { proximity: 0, raw: 0, signalDb: 0 };
-const ZERO_METRICS: ProximityMetrics = { peak: ZERO_METRIC, energy: ZERO_METRIC };
+const ZERO_METRICS: ProximityMetrics = {
+  peak: ZERO_METRIC,
+  energy: ZERO_METRIC,
+};
 
 type Result = {
   state: ProximityState;
@@ -125,7 +127,9 @@ export function useProximity(targetFreqHz: number, options?: Options): Result {
   // signalDb 履歴のリングバッファ。tick で書き込み、描画から getHistory で読み出す
   const histTimeRef = useRef<Float32Array>(new Float32Array(HISTORY_CAPACITY));
   const histPeakRef = useRef<Float32Array>(new Float32Array(HISTORY_CAPACITY));
-  const histEnergyRef = useRef<Float32Array>(new Float32Array(HISTORY_CAPACITY));
+  const histEnergyRef = useRef<Float32Array>(
+    new Float32Array(HISTORY_CAPACITY),
+  );
   const histWriteRef = useRef<number>(0);
   const histCountRef = useRef<number>(0);
 
@@ -424,10 +428,7 @@ export function useProximity(targetFreqHz: number, options?: Options): Result {
         if (v < histMin) histMin = v;
         if (v > histMax) histMax = v;
       }
-      const dynamicRange = Math.max(
-        DYNAMIC_RANGE_FLOOR_DB,
-        histMax - histMin,
-      );
+      const dynamicRange = Math.max(DYNAMIC_RANGE_FLOOR_DB, histMax - histMin);
       const dynamicRaw =
         clamp((peakSignalDb - histMin) / dynamicRange, 0, 1) * 100;
       dynamicProxRef.current =
@@ -487,8 +488,7 @@ export function useProximity(targetFreqHz: number, options?: Options): Result {
       count,
     );
     // 古い側の先頭インデックス: バッファが満杯なら write 位置、未満なら 0
-    const startIdx =
-      count < HISTORY_CAPACITY ? 0 : histWriteRef.current;
+    const startIdx = count < HISTORY_CAPACITY ? 0 : histWriteRef.current;
     // 末尾 cap 個を取り出す（古いものから新しいものへ昇順）
     const begin = (startIdx + (count - cap)) % HISTORY_CAPACITY;
     for (let i = 0; i < cap; i++) {

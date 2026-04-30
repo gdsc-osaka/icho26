@@ -379,9 +379,7 @@ export function DowsingTimeChart({
               diff (peak − energy)
             </span>
           )}
-          <span>
-            右端=現在 / 左端={Math.round(windowMs / 1000)}秒前
-          </span>
+          <span>右端=現在 / 左端={Math.round(windowMs / 1000)}秒前</span>
         </div>
       )}
     </div>

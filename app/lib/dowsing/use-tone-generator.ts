@@ -51,9 +51,12 @@ export function useToneGenerator(initialFrequency = 19000): Result {
       } catch {
         /* ignore: 既に停止済み等 */
       }
-      window.setTimeout(() => {
-        void ctx.close().catch(() => undefined);
-      }, (TONE_FADE_MS + 50) | 0);
+      window.setTimeout(
+        () => {
+          void ctx.close().catch(() => undefined);
+        },
+        (TONE_FADE_MS + 50) | 0,
+      );
     }
     setState("idle");
   }, []);

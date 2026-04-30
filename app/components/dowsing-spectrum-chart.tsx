@@ -155,11 +155,7 @@ export function DowsingSpectrumChart({
       ctx2d.stroke();
       ctx2d.setLineDash([]);
       ctx2d.fillStyle = "rgba(220, 38, 38, 0.9)";
-      ctx2d.fillText(
-        `${(targetFreqHz / 1000).toFixed(2)}k`,
-        targetX + 3,
-        12,
-      );
+      ctx2d.fillText(`${(targetFreqHz / 1000).toFixed(2)}k`, targetX + 3, 12);
 
       // 周波数軸ラベル（端と中央）
       ctx2d.fillStyle = "#6b7280"; // gray-500
