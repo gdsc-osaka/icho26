@@ -50,8 +50,8 @@ pnpm dev
 
 | 設問 | 正解 |
 |---|---|
-| Q1-1 | `42` |
-| Q1-2 | `7` |
+| Q1-1 | `x=4, y=2` |
+| Q1-2 | `(2, 3)` |
 | Q2 | `coffeecup` |
 | Q3 keyword | `hakidamenitsuru` |
 | Q3 code | `2.24` |
