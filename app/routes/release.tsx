@@ -106,6 +106,119 @@ export default function Release() {
           50%      { text-shadow: 0 0 26px rgba(0,240,255,0.85), 0 0 40px rgba(0,240,255,0.4); }
         }
 
+        /* === Iris avatar rich animations === */
+        @keyframes release-iris-halo {
+          0%, 100% { opacity: 0.55; transform: scale(1);    }
+          50%      { opacity: 0.95; transform: scale(1.08); }
+        }
+        .release-iris-halo {
+          background: radial-gradient(circle at 50% 50%, rgba(0,240,255,0.35) 0%, rgba(0,240,255,0.10) 40%, transparent 70%);
+          filter: blur(18px);
+          animation: release-iris-halo 3.6s ease-in-out infinite;
+        }
+
+        @keyframes release-iris-pulse {
+          0%   { transform: scale(1);    opacity: 0.7; }
+          80%  { transform: scale(1.45); opacity: 0;   }
+          100% { transform: scale(1.45); opacity: 0;   }
+        }
+        .release-iris-pulse {
+          animation: release-iris-pulse 3.2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+          transform-origin: 50% 50%;
+        }
+
+        @keyframes release-iris-conic-spin {
+          from { transform: rotate(0deg); }
+          to   { transform: rotate(360deg); }
+        }
+        .release-iris-conic {
+          background: conic-gradient(from 0deg,
+            transparent 0deg,
+            rgba(0,240,255,0.0) 240deg,
+            rgba(0,240,255,0.55) 320deg,
+            rgba(125,244,255,0.9) 350deg,
+            transparent 360deg);
+          mask: radial-gradient(circle, transparent 60%, black 62%, black 70%, transparent 72%);
+          -webkit-mask: radial-gradient(circle, transparent 60%, black 62%, black 70%, transparent 72%);
+          animation: release-iris-conic-spin 4s linear infinite;
+        }
+
+        @keyframes release-iris-ticks-spin {
+          from { transform: rotate(0deg); }
+          to   { transform: rotate(360deg); }
+        }
+        .release-iris-ticks-slow {
+          animation: release-iris-ticks-spin 24s linear infinite;
+        }
+
+        @keyframes release-iris-radiate {
+          0%, 100% { box-shadow: inset 0 0 30px rgba(0,240,255,0.25), 0 0 0 0 rgba(0,240,255,0.0); }
+          50%      { box-shadow: inset 0 0 50px rgba(0,240,255,0.55), 0 0 30px rgba(0,240,255,0.30); }
+        }
+        .release-iris-radiate { animation: release-iris-radiate 3s ease-in-out infinite; }
+
+        @keyframes release-iris-scan {
+          0%   { transform: translateY(-100%); opacity: 0; }
+          15%  { opacity: 1; }
+          85%  { opacity: 1; }
+          100% { transform: translateY(100%);  opacity: 0; }
+        }
+        .release-iris-scan { animation: release-iris-scan 2.4s ease-in-out infinite; }
+
+        @keyframes release-iris-bracket-flicker {
+          0%, 100% { opacity: 1; filter: drop-shadow(0 0 6px rgba(0,240,255,0.7)); }
+          50%      { opacity: 0.5; filter: drop-shadow(0 0 0 transparent); }
+        }
+        .release-iris-bracket { animation: release-iris-bracket-flicker 2.6s ease-in-out infinite; }
+
+        @keyframes release-iris-orbit-a {
+          0%   { transform: translate(-50%, -50%) rotate(0deg)   translateX(118px) rotate(0deg); }
+          100% { transform: translate(-50%, -50%) rotate(360deg) translateX(118px) rotate(-360deg); }
+        }
+        @keyframes release-iris-orbit-b {
+          0%   { transform: translate(-50%, -50%) rotate(0deg)    translateX(86px)  rotate(0deg); }
+          100% { transform: translate(-50%, -50%) rotate(-360deg) translateX(86px)  rotate(360deg); }
+        }
+        @keyframes release-iris-orbit-c {
+          0%   { transform: translate(-50%, -50%) rotate(180deg) translateX(102px) rotate(0deg); }
+          100% { transform: translate(-50%, -50%) rotate(540deg) translateX(102px) rotate(-360deg); }
+        }
+        .release-iris-orbit-a { animation: release-iris-orbit-a 6s linear infinite; }
+        .release-iris-orbit-b { animation: release-iris-orbit-b 4.2s linear infinite; }
+        .release-iris-orbit-c { animation: release-iris-orbit-c 8s linear infinite; }
+
+        @keyframes release-iris-spark {
+          from { transform: rotate(0deg); }
+          to   { transform: rotate(360deg); }
+        }
+        .release-iris-spark {
+          background:
+            conic-gradient(from 0deg,
+              transparent 0deg,
+              rgba(125,244,255,0.4) 30deg,
+              transparent 60deg,
+              transparent 180deg,
+              rgba(125,244,255,0.4) 210deg,
+              transparent 240deg);
+          filter: blur(4px);
+          animation: release-iris-spark 5s linear infinite;
+        }
+
+        @keyframes release-iris-icon-float {
+          0%, 100% { transform: translateY(0)   scale(1);    filter: drop-shadow(0 0 28px rgba(0,240,255,0.95)); }
+          50%      { transform: translateY(-3px) scale(1.06); filter: drop-shadow(0 0 42px rgba(0,240,255,1)); }
+        }
+        .release-iris-icon { animation: release-iris-icon-float 3.6s ease-in-out infinite; }
+
+        @keyframes release-iris-label-pop {
+          0%   { opacity: 0; transform: translate(-50%, -8px) scale(0.85); }
+          100% { opacity: 1; transform: translate(-50%, 0)    scale(1);    }
+        }
+        .release-iris-label {
+          animation: release-iris-label-pop 700ms 1100ms cubic-bezier(0.34, 1.56, 0.64, 1) both,
+            release-passkey-glow 2.8s ease-in-out infinite 1800ms;
+        }
+
         .release-fade-up    { animation: release-fade-up 700ms cubic-bezier(0.22,1,0.36,1) both; }
         .release-avatar-pop { animation: release-avatar-pop 1000ms cubic-bezier(0.34,1.56,0.64,1) both; }
         .release-spark      { animation: release-spark 2.4s ease-in-out infinite; }
@@ -132,7 +245,12 @@ export default function Release() {
 
         @media (prefers-reduced-motion: reduce) {
           .release-fade-up, .release-avatar-pop, .release-spark,
-          .release-passkey-glow, .release-bar-fill, .release-headline {
+          .release-passkey-glow, .release-bar-fill, .release-headline,
+          .release-iris-halo, .release-iris-pulse, .release-iris-conic,
+          .release-iris-ticks-slow, .release-iris-radiate, .release-iris-scan,
+          .release-iris-bracket, .release-iris-orbit-a, .release-iris-orbit-b,
+          .release-iris-orbit-c, .release-iris-spark, .release-iris-icon,
+          .release-iris-label {
             animation: none;
           }
           .release-headline { color: #00f0ff; }
@@ -144,17 +262,83 @@ export default function Release() {
 
 function IrisAvatar() {
   return (
-    <div className="relative flex h-48 w-48 items-center justify-center">
-      <div className="absolute inset-0 animate-[spin_10s_linear_infinite] rounded-full border-2 border-cyan-500/20 border-t-cyan-400" />
-      <div className="absolute inset-4 animate-[spin_6s_linear_infinite_reverse] rounded-full border border-cyan-500/10 border-b-cyan-300" />
-      <div className="absolute inset-8 animate-pulse rounded-full border-2 border-dashed border-cyan-500/30" />
-      <div className="iris-bloom relative flex flex-col items-center">
+    <div className="release-iris relative flex h-64 w-64 items-center justify-center">
+      {/* Aurora bloom halo (breathing) */}
+      <div className="release-iris-halo absolute inset-[-28px] rounded-full" />
+
+      {/* Expanding pulse rings */}
+      <div className="release-iris-pulse absolute inset-0 rounded-full border border-cyan-400/40" />
+      <div
+        className="release-iris-pulse absolute inset-0 rounded-full border border-cyan-400/30"
+        style={{ animationDelay: "1s" }}
+      />
+      <div
+        className="release-iris-pulse absolute inset-0 rounded-full border border-cyan-400/20"
+        style={{ animationDelay: "2s" }}
+      />
+
+      {/* Conic gradient sweep ring */}
+      <div className="release-iris-conic absolute inset-0 rounded-full" />
+
+      {/* Outer rotating ring with arc highlight */}
+      <div className="absolute inset-0 animate-[spin_10s_linear_infinite] rounded-full border-2 border-cyan-500/20 border-t-cyan-300 shadow-[0_0_30px_rgba(0,240,255,0.25)]" />
+
+      {/* Outer marker ticks (rotates slow) */}
+      <div className="release-iris-ticks-slow absolute inset-1 pointer-events-none">
+        {[0, 45, 90, 135, 180, 225, 270, 315].map((deg) => (
+          <span
+            key={deg}
+            className="absolute left-1/2 top-1/2 h-2 w-px bg-cyan-300/70"
+            style={{
+              transform: `translate(-50%, -50%) rotate(${deg}deg) translateY(-126px)`,
+              boxShadow: "0 0 4px rgba(0,240,255,0.7)",
+            }}
+          />
+        ))}
+      </div>
+
+      {/* Mid dashed ring rotating reverse */}
+      <div className="absolute inset-4 animate-[spin_6s_linear_infinite_reverse] rounded-full border border-dashed border-cyan-300/50" />
+
+      {/* Inner solid ring with inset glow */}
+      <div className="release-iris-radiate absolute inset-8 rounded-full border-2 border-cyan-400/60 shadow-[inset_0_0_30px_rgba(0,240,255,0.35)]" />
+
+      {/* Internal vertical scan beam */}
+      <div className="absolute inset-10 overflow-hidden rounded-full">
+        <div className="release-iris-scan absolute inset-x-0 h-12 bg-gradient-to-b from-transparent via-cyan-400/45 to-transparent" />
+      </div>
+
+      {/* Crosshair targeting */}
+      <span className="pointer-events-none absolute left-1/2 top-0 h-3 w-px -translate-x-1/2 bg-cyan-300/60" />
+      <span className="pointer-events-none absolute left-1/2 bottom-0 h-3 w-px -translate-x-1/2 bg-cyan-300/60" />
+      <span className="pointer-events-none absolute top-1/2 left-0 h-px w-3 -translate-y-1/2 bg-cyan-300/60" />
+      <span className="pointer-events-none absolute top-1/2 right-0 h-px w-3 -translate-y-1/2 bg-cyan-300/60" />
+
+      {/* Privilege corner brackets */}
+      <span className="release-iris-bracket pointer-events-none absolute -top-2 -left-2 h-4 w-4 border-t-2 border-l-2 border-cyan-300" />
+      <span className="release-iris-bracket pointer-events-none absolute -top-2 -right-2 h-4 w-4 border-t-2 border-r-2 border-cyan-300" />
+      <span className="release-iris-bracket pointer-events-none absolute -bottom-2 -left-2 h-4 w-4 border-b-2 border-l-2 border-cyan-300" />
+      <span className="release-iris-bracket pointer-events-none absolute -bottom-2 -right-2 h-4 w-4 border-b-2 border-r-2 border-cyan-300" />
+
+      {/* Orbiting particles */}
+      <span className="release-iris-orbit-a absolute left-1/2 top-1/2 h-1.5 w-1.5 rounded-full bg-cyan-200 shadow-[0_0_10px_rgba(0,240,255,0.95)]" />
+      <span className="release-iris-orbit-b absolute left-1/2 top-1/2 h-1 w-1 rounded-full bg-cyan-100" />
+      <span className="release-iris-orbit-c absolute left-1/2 top-1/2 h-1.5 w-1.5 rounded-full bg-cyan-300/80 shadow-[0_0_8px_rgba(0,240,255,0.8)]" />
+
+      {/* Core icon with rotating sparkle layer */}
+      <div className="iris-bloom release-iris-core relative flex items-center justify-center">
+        <div className="release-iris-spark absolute inset-[-10px] rounded-full" />
         <Icon
           name="auto_awesome"
           filled
-          className="text-7xl text-cyan-300 drop-shadow-[0_0_18px_rgba(0,240,255,0.7)]"
+          className="release-iris-icon text-8xl text-cyan-200 drop-shadow-[0_0_28px_rgba(0,240,255,0.95)]"
         />
       </div>
+
+      {/* Privilege label arc (top) */}
+      <span className="release-iris-label pointer-events-none absolute -top-7 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-sm border border-cyan-400/40 bg-cyan-500/10 px-2 py-0.5 font-mono text-[9px] tracking-[0.4em] text-cyan-300 backdrop-blur-md">
+        ROOT_PRIVILEGE // GRANTED
+      </span>
     </div>
   );
 }

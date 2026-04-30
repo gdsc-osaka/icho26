@@ -7,13 +7,13 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   const env = context.cloudflare.env;
   const { user } = await requireParticipant(request, env);
   return {
-    groupId: user.groupId,
+    groupName: user.groupName,
     reported: user.reportedAt !== null,
   };
 }
 
 export default function Report() {
-  const { groupId, reported } = useLoaderData<typeof loader>();
+  const { groupName, reported } = useLoaderData<typeof loader>();
   return (
     <PageShell sessionId="ID: X-99">
       <section className="relative flex flex-col items-center py-8">
@@ -38,9 +38,9 @@ export default function Report() {
       <SystemPanel className="my-8">
         <div className="border-b border-cyan-500/20 pb-4">
           <p className="font-mono text-[10px] uppercase tracking-widest text-cyan-900">
-            GROUP ID
+            USER NAME
           </p>
-          <MonospaceLog>{groupId}</MonospaceLog>
+          <MonospaceLog>{groupName ?? "—"}</MonospaceLog>
         </div>
 
         <div className="mt-4 border-l-4 border-cyan-400 bg-cyan-500/5 p-4">
