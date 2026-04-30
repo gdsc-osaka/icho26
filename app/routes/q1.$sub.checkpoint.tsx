@@ -196,10 +196,34 @@ export default function Q1Checkpoint() {
           <div className="absolute inset-0 pointer-events-none">
             {[
               { left: "20%", top: "30%", vx: "10px", vy: "-50px", delay: "0s" },
-              { left: "75%", top: "40%", vx: "-15px", vy: "-60px", delay: "0.6s" },
-              { left: "30%", top: "70%", vx: "20px", vy: "-45px", delay: "1.2s" },
-              { left: "65%", top: "65%", vx: "-10px", vy: "-55px", delay: "1.8s" },
-              { left: "50%", top: "80%", vx: "5px", vy: "-65px", delay: "2.2s" },
+              {
+                left: "75%",
+                top: "40%",
+                vx: "-15px",
+                vy: "-60px",
+                delay: "0.6s",
+              },
+              {
+                left: "30%",
+                top: "70%",
+                vx: "20px",
+                vy: "-45px",
+                delay: "1.2s",
+              },
+              {
+                left: "65%",
+                top: "65%",
+                vx: "-10px",
+                vy: "-55px",
+                delay: "1.8s",
+              },
+              {
+                left: "50%",
+                top: "80%",
+                vx: "5px",
+                vy: "-65px",
+                delay: "2.2s",
+              },
             ].map((p, i) => (
               <span
                 key={i}

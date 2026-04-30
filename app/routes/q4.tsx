@@ -362,7 +362,10 @@ function IrisMessage() {
       </span>
 
       <p className="relative text-center font-body leading-relaxed text-on-surface opacity-95">
-        <span className="q4-fade-up inline-block" style={{ animationDelay: "120ms" }}>
+        <span
+          className="q4-fade-up inline-block"
+          style={{ animationDelay: "120ms" }}
+        >
           私を介して
         </span>
         <span
@@ -371,7 +374,10 @@ function IrisMessage() {
         >
           ATE
         </span>
-        <span className="q4-fade-up inline-block" style={{ animationDelay: "400ms" }}>
+        <span
+          className="q4-fade-up inline-block"
+          style={{ animationDelay: "400ms" }}
+        >
           に接続するには、ある
         </span>
         <span
@@ -380,7 +386,10 @@ function IrisMessage() {
         >
           定数
         </span>
-        <span className="q4-fade-up inline-block" style={{ animationDelay: "680ms" }}>
+        <span
+          className="q4-fade-up inline-block"
+          style={{ animationDelay: "680ms" }}
+        >
           の認証が必要です。
         </span>
         <br />

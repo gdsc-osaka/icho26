@@ -225,7 +225,10 @@ export default function Q2Checkpoint() {
         }}
       >
         <div className="flex gap-3">
-          <Icon name="check_circle" className="text-cyan-400 text-lg shrink-0" />
+          <Icon
+            name="check_circle"
+            className="text-cyan-400 text-lg shrink-0"
+          />
           <p className="text-xs text-on-surface-variant leading-relaxed">
             物理キーの転送が完了しました。続けて次のフェーズへ進んでください。
           </p>

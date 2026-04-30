@@ -146,7 +146,8 @@ export default function StartGroup() {
           <span className="pointer-events-none absolute top-0 left-0 h-4 w-4 border-t-2 border-l-2 border-cyan-400" />
           <span className="pointer-events-none absolute bottom-0 right-0 h-4 w-4 border-b-2 border-r-2 border-cyan-400" />
           <p className="text-sm leading-relaxed tracking-wide text-on-surface-variant md:text-base">
-            あなたはNexus Dynamicsの新人社員です。入社一ヶ月、突如会社が倒産しました。
+            あなたはNexus
+            Dynamicsの新人社員です。入社一ヶ月、突如会社が倒産しました。
             <br />
             公式の説明は一切なく、残ったのはノイズに埋もれた社内用AIツール「Iris」のみ。
             <br />
