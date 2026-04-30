@@ -3,6 +3,7 @@ import { useMemo, useState } from "react";
 import * as schema from "../../db/schema";
 import { Icon } from "~/components";
 import { DowsingSpectrumChart } from "~/components/dowsing-spectrum-chart";
+import { DowsingTimeChart } from "~/components/dowsing-time-chart";
 import { OperatorShell } from "~/components/operator";
 import {
   type DetectionMethod,
@@ -12,6 +13,7 @@ import {
 } from "~/lib/dowsing/config";
 import { useDetectionMethod } from "~/lib/dowsing/use-detection-method";
 import {
+  type HistoryBuffers,
   type ProximityMetric,
   useProximity,
 } from "~/lib/dowsing/use-proximity";
@@ -110,6 +112,8 @@ export default function OperatorDowsingTest() {
           errorReason={proximity.errorReason}
           getSpectrum={proximity.getSpectrum}
           sampleRate={proximity.sampleRate}
+          getHistory={proximity.getHistory}
+          historyCapacity={proximity.historyCapacity}
           onFreqChange={onRxFreqChange}
           onMethodChange={setMethod}
           onStart={() => void proximity.start()}
@@ -253,6 +257,8 @@ type RxPanelProps = {
   errorReason: string | null;
   getSpectrum: (out: Float32Array) => boolean;
   sampleRate: number;
+  getHistory: (out: HistoryBuffers) => number;
+  historyCapacity: number;
   onFreqChange: (hz: number) => void;
   onMethodChange: (m: DetectionMethod) => void;
   onStart: () => void;
@@ -353,6 +359,18 @@ function ReceiverPanel(props: RxPanelProps) {
               sampleRate={props.sampleRate}
               targetFreqHz={props.freq}
               active={isActive}
+            />
+          </div>
+
+          <div className="mt-5">
+            <p className="mb-2 text-xs font-medium text-gray-700">
+              signalDb の時系列（自動スケール）
+            </p>
+            <DowsingTimeChart
+              getHistory={props.getHistory}
+              historyCapacity={props.historyCapacity}
+              active={isActive}
+              highlight={props.method}
             />
           </div>
 

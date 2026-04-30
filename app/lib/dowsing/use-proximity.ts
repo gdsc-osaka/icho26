@@ -18,6 +18,21 @@ import { useDetectionMethod } from "./use-detection-method";
 /** 0 除算回避用の十分小さい magnitude フロア（≒ -200 dB） */
 const MIN_NOISE_MAG = 1e-10;
 
+/** signalDb 履歴の保持期間（ms） */
+export const HISTORY_DURATION_MS = 30_000;
+/** リングバッファ容量。TICK_MS の余裕分も含む */
+const HISTORY_CAPACITY =
+  Math.ceil(HISTORY_DURATION_MS / 60 /* TICK_MS */) + 16;
+
+export type HistoryBuffers = {
+  /** タイムスタンプ (performance.now() ベース、ms) */
+  time: Float32Array;
+  /** peak 方式の signalDb */
+  peakDb: Float32Array;
+  /** energy_sum 方式の signalDb */
+  energyDb: Float32Array;
+};
+
 export type ProximityState = "idle" | "requesting" | "active" | "unavailable";
 
 export type ProximityMetric = {
@@ -57,6 +72,14 @@ type Result = {
   getSpectrum: (out: Float32Array) => boolean;
   /** AudioContext のサンプルレート。bin → Hz 変換用。idle 時は 0 */
   sampleRate: number;
+  /**
+   * 過去 HISTORY_DURATION_MS 分の signalDb 履歴を時刻昇順で out に書き込む。
+   * 戻り値は書き込んだサンプル数（≤ out.*.length, ≤ historyCapacity）。
+   * 描画ループから毎フレーム呼び出す想定（再レンダなし）。
+   */
+  getHistory: (out: HistoryBuffers) => number;
+  /** 履歴リングバッファの容量。consumer はこのサイズ以上の Float32Array を確保する */
+  historyCapacity: number;
 };
 
 type Options = {
@@ -84,6 +107,13 @@ export function useProximity(targetFreqHz: number, options?: Options): Result {
   const [sampleRate, setSampleRate] = useState(0);
   // 描画コンポーネント側から再レンダ無しで FFT バッファを読み出すための ref
   const getSpectrumRef = useRef<(out: Float32Array) => boolean>(() => false);
+
+  // signalDb 履歴のリングバッファ。tick で書き込み、描画から getHistory で読み出す
+  const histTimeRef = useRef<Float32Array>(new Float32Array(HISTORY_CAPACITY));
+  const histPeakRef = useRef<Float32Array>(new Float32Array(HISTORY_CAPACITY));
+  const histEnergyRef = useRef<Float32Array>(new Float32Array(HISTORY_CAPACITY));
+  const histWriteRef = useRef<number>(0);
+  const histCountRef = useRef<number>(0);
 
   const ctxRef = useRef<AudioContext | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -119,6 +149,8 @@ export function useProximity(targetFreqHz: number, options?: Options): Result {
     getSpectrumRef.current = () => false;
     peakProxRef.current = 0;
     energyProxRef.current = 0;
+    histWriteRef.current = 0;
+    histCountRef.current = 0;
     setProximity(0);
     setMetrics(ZERO_METRICS);
     setSampleRate(0);
@@ -355,6 +387,16 @@ export function useProximity(targetFreqHz: number, options?: Options): Result {
       energyProxRef.current =
         (1 - EMA_ALPHA) * energyProxRef.current + EMA_ALPHA * energyRaw;
 
+      // 履歴リングバッファに書き込み（時系列グラフ用）
+      const widx = histWriteRef.current;
+      histTimeRef.current[widx] = now;
+      histPeakRef.current[widx] = peakSignalDb;
+      histEnergyRef.current[widx] = energySignalDb;
+      histWriteRef.current = (widx + 1) % HISTORY_CAPACITY;
+      if (histCountRef.current < HISTORY_CAPACITY) {
+        histCountRef.current += 1;
+      }
+
       const next: ProximityMetrics = {
         peak: {
           proximity: peakProxRef.current,
@@ -397,6 +439,30 @@ export function useProximity(targetFreqHz: number, options?: Options): Result {
     return getSpectrumRef.current(out);
   }, []);
 
+  // 履歴を時刻昇順で out に書き込んで実サンプル数を返す
+  const getHistory = useCallback((out: HistoryBuffers): number => {
+    const count = histCountRef.current;
+    if (count === 0) return 0;
+    const cap = Math.min(
+      out.time.length,
+      out.peakDb.length,
+      out.energyDb.length,
+      count,
+    );
+    // 古い側の先頭インデックス: バッファが満杯なら write 位置、未満なら 0
+    const startIdx =
+      count < HISTORY_CAPACITY ? 0 : histWriteRef.current;
+    // 末尾 cap 個を取り出す（古いものから新しいものへ昇順）
+    const begin = (startIdx + (count - cap)) % HISTORY_CAPACITY;
+    for (let i = 0; i < cap; i++) {
+      const r = (begin + i) % HISTORY_CAPACITY;
+      out.time[i] = histTimeRef.current[r];
+      out.peakDb[i] = histPeakRef.current[r];
+      out.energyDb[i] = histEnergyRef.current[r];
+    }
+    return cap;
+  }, []);
+
   return {
     state,
     proximity,
@@ -407,5 +473,7 @@ export function useProximity(targetFreqHz: number, options?: Options): Result {
     stop,
     getSpectrum,
     sampleRate,
+    getHistory,
+    historyCapacity: HISTORY_CAPACITY,
   };
 }
