@@ -16,7 +16,6 @@ export default [
   route("q2", "routes/q2.tsx"),
   route("q2/checkpoint", "routes/q2.checkpoint.tsx"),
   route("q3", "routes/q3.tsx"),
-  route("q3/code", "routes/q3.code.tsx"),
   route("q4", "routes/q4.tsx"),
   route("release", "routes/release.tsx"),
   route("complete", "routes/complete.tsx"),
