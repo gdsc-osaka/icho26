@@ -154,13 +154,6 @@ function IrisAvatar() {
           filled
           className="text-7xl text-cyan-300 drop-shadow-[0_0_18px_rgba(0,240,255,0.7)]"
         />
-        <span className="release-spark absolute -top-2 -right-2">
-          <Icon
-            name="colors_spark"
-            filled
-            className="text-xl text-cyan-200 drop-shadow-[0_0_8px_rgba(0,240,255,0.9)]"
-          />
-        </span>
       </div>
     </div>
   );
