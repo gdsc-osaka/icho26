@@ -591,26 +591,26 @@ function CodeSegmentedInput() {
             className="q3-cell-pop relative"
             style={{ animationDelay: `${900 + i * 140}ms` }}
           >
-          {/* Glow halo behind cell */}
-          <div
-            className="q3-cell-glow absolute -inset-px rounded-sm"
-            style={{ animationDelay: `${i * 0.4}s` }}
-          />
-          <input
-            ref={(el) => {
-              refs.current[i] = el;
-            }}
-            name={`code_${i}`}
-            type="text"
-            inputMode="numeric"
-            maxLength={1}
-            autoComplete="off"
-            required
-            placeholder="_"
-            onInput={handleInput(i)}
-            onKeyDown={handleKeyDown(i)}
-            className="relative h-20 w-14 rounded-sm border border-cyan-500/50 bg-surface-container-highest/30 text-center font-display text-3xl font-bold text-cyan-300 shadow-[inset_0_0_18px_rgba(0,240,255,0.08)] outline-none transition-colors placeholder:text-cyan-900/40 focus:border-cyan-300 focus:bg-cyan-500/15 focus:text-cyan-200 focus:ring-2 focus:ring-cyan-400 focus:shadow-[0_0_18px_rgba(0,240,255,0.45),inset_0_0_18px_rgba(0,240,255,0.25)]"
-          />
+            {/* Glow halo behind cell */}
+            <div
+              className="q3-cell-glow absolute -inset-px rounded-sm"
+              style={{ animationDelay: `${i * 0.4}s` }}
+            />
+            <input
+              ref={(el) => {
+                refs.current[i] = el;
+              }}
+              name={`code_${i}`}
+              type="text"
+              inputMode="numeric"
+              maxLength={1}
+              autoComplete="off"
+              required
+              placeholder="_"
+              onInput={handleInput(i)}
+              onKeyDown={handleKeyDown(i)}
+              className="relative h-20 w-14 rounded-sm border border-cyan-500/50 bg-surface-container-highest/30 text-center font-display text-3xl font-bold text-cyan-300 shadow-[inset_0_0_18px_rgba(0,240,255,0.08)] outline-none transition-colors placeholder:text-cyan-900/40 focus:border-cyan-300 focus:bg-cyan-500/15 focus:text-cyan-200 focus:ring-2 focus:ring-cyan-400 focus:shadow-[0_0_18px_rgba(0,240,255,0.45),inset_0_0_18px_rgba(0,240,255,0.25)]"
+            />
           </div>
         </div>
       ))}
