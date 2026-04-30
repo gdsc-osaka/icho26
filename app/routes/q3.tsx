@@ -13,7 +13,7 @@ import {
 import { applyQ3Code, applyQ3Keyword } from "~/lib/participant/transitions";
 import type { Route } from "./+types/q3";
 
-const CODE_LENGTH = 4;
+const CODE_LENGTH = 3;
 
 type ActionResult =
   | { ok: false; phase: "keyword" | "code"; message: string }
@@ -44,12 +44,12 @@ export async function action({
   const rawCode = codeChars.join("");
 
   const db = drizzle(env.DB);
-  let user = await findUserByGroupId(db, groupId);
+  const user = await findUserByGroupId(db, groupId);
   if (!user) throw redirect("/");
 
   const now = new Date().toISOString();
 
-  // Phase 1: keyword（未クリアのときのみ評価）
+  // Phase 1: keyword（未クリアの間は code 入力欄を出さないので、PHASE_01 のみ評価）
   if (user.currentStage === "Q3_KEYWORD") {
     const normalizedKeyword = normalize(rawKeyword);
     const kwCorrect = isCorrect("Q3_KEYWORD", normalizedKeyword);
@@ -69,7 +69,6 @@ export async function action({
       },
       now,
     );
-    user = t.user;
     if (!kwCorrect) {
       return {
         ok: false,
@@ -77,9 +76,11 @@ export async function action({
         message: "PHASE_01 認証失敗。キーワードを再確認してください。",
       };
     }
+    // PHASE_01 突破。loader が再走して PHASE_02 が活性化された画面が出る。
+    throw redirect("/q3");
   }
 
-  // Phase 2: code（keyword 突破後）
+  // Phase 2: code（keyword クリア済みのみ）
   if (user.currentStage === "Q3_CODE") {
     const normalizedCode = normalize(rawCode);
     const codeCorrect = isCorrect("Q3_CODE", normalizedCode);
@@ -99,17 +100,16 @@ export async function action({
       },
       now,
     );
-    user = t.user;
     if (!codeCorrect) {
       return {
         ok: false,
         phase: "code",
-        message: "PHASE_02 コード不一致。4 桁の数字を再確認してください。",
+        message: "PHASE_02 コード不一致。3 桁の数字を再確認してください。",
       };
     }
+    if (t.user.currentStage === "Q4") throw redirect("/q4");
   }
 
-  if (user.currentStage === "Q4") throw redirect("/q4");
   return {
     ok: false,
     phase: "keyword",
@@ -131,12 +131,12 @@ export default function Q3() {
       <Form method="post" className="mx-auto mt-8 w-full max-w-md space-y-8">
         <KeywordPhase cleared={keywordCleared} />
         <CircuitConnector />
-        <CodePhase />
+        <CodePhase enabled={keywordCleared} />
         {errorMessage && <ErrorAlert>{errorMessage}</ErrorAlert>}
         <ExecuteButton />
       </Form>
 
-      <HintChat hint="STAGE 03 / PHASE_01 はことわざ『掃き溜めに鶴』のローマ字（ヘボン式・半角小文字）。PHASE_02 は『黄金』にまつわる定数の最初の 4 桁を、小数点を除いて半角数字で順に入力してください。両方一致したときだけ次に進めます。" />
+      <HintChat hint="STAGE 03 / PHASE_01 はことわざ『掃き溜めに鶴』のローマ字（ヘボン式・半角小文字）。PHASE_01 をクリアすると PHASE_02 が解放されます。PHASE_02 は『√5』を有効数字 3 桁に丸めた値（小数点は除いて半角数字 3 桁）を順に入力してください。" />
     </PageShell>
   );
 }
@@ -264,7 +264,7 @@ function CircuitConnector() {
   );
 }
 
-function CodePhase() {
+function CodePhase({ enabled }: { enabled: boolean }) {
   const refs = useRef<Array<HTMLInputElement | null>>([]);
 
   // 1 桁入力したら次へ自動フォーカス、Backspace で前へ戻る
@@ -285,12 +285,21 @@ function CodePhase() {
     };
 
   return (
-    <div className="relative border border-outline-variant bg-surface-container-low/60 p-6 backdrop-blur-md">
+    <div
+      className={`relative border border-outline-variant bg-surface-container-low/60 p-6 backdrop-blur-md transition-opacity ${enabled ? "" : "opacity-50"}`}
+      aria-disabled={!enabled}
+    >
       <CornerBrackets />
-      <PhaseHeader icon="lock_open" label="PHASE_02" req="REQ: 4_DIGIT_NUM" />
+      <PhaseHeader
+        icon={enabled ? "lock_open" : "lock"}
+        label="PHASE_02"
+        req={enabled ? "REQ: 3_DIGIT_NUM" : "LOCKED"}
+      />
       <div className="space-y-4">
         <p className="font-mono text-sm tracking-wider text-on-surface-variant">
-          Enter 4-significant-digit code
+          {enabled
+            ? "Enter 3-significant-digit code"
+            : "PHASE_01 を先に解除してください"}
         </p>
         <div className="flex justify-between gap-2">
           {Array.from({ length: CODE_LENGTH }).map((_, i) => (
@@ -304,11 +313,12 @@ function CodePhase() {
               inputMode="numeric"
               maxLength={1}
               autoComplete="off"
-              required
+              required={enabled}
+              disabled={!enabled}
               placeholder="0"
               onInput={handleInput(i)}
               onKeyDown={handleKeyDown(i)}
-              className="w-full bg-surface border border-outline-variant py-4 text-center font-display text-3xl font-bold text-cyan-400 shadow-[inset_0_0_10px_rgba(0,0,0,0.5)] outline-none transition-colors placeholder:text-surface-bright focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 md:text-5xl"
+              className="w-full bg-surface border border-outline-variant py-4 text-center font-display text-3xl font-bold text-cyan-400 shadow-[inset_0_0_10px_rgba(0,0,0,0.5)] outline-none transition-colors placeholder:text-surface-bright focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 disabled:cursor-not-allowed disabled:placeholder:text-cyan-900 md:text-5xl"
             />
           ))}
         </div>
