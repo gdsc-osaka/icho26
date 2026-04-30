@@ -280,6 +280,38 @@ rm -rf .wrangler/state/v3/d1
 # 上記の "ローカル D1 をクリーンスタート" 手順で再構築
 ```
 
+## 備考: dev で HTTPS 通信を行う場合
+
+通常開発では `http://localhost:5173` で十分だが、**Web Bluetooth / Web NFC / Service Worker / カメラ等の Secure Context が必要な API** を実機(スマホ)から検証したいときは HTTPS で立ち上げる必要がある。その場合は専用の Vite 設定 [`vite.config.https.ts`](./vite.config.https.ts) を使う:
+
+```sh
+pnpm dev --config vite.config.https.ts
+```
+
+`vite.config.https.ts` は通常設定 (`vite.config.ts`) を継承し、以下を追加するだけのオプトイン構成:
+
+- `server.https`: ローカル証明書(`localhost+1.pem` / `localhost+1-key.pem`)を読み込む
+- `server.host: true`: LAN 内の他端末(スマホ等)からアクセス可能にする
+- `inject-host-from-authority` プラグイン: HTTP/2 で欠落する `Host` ヘッダーを `:authority` から復元する(React Router の CSRF 保護が `Host` を要求するため。本番 Cloudflare Workers では不要)
+
+### 証明書の用意
+
+リポジトリ直下に `localhost+1.pem` / `localhost+1-key.pem` が無ければ [mkcert](https://github.com/FiloSottile/mkcert) などで生成する。例:
+
+```sh
+# mkcert 導入後、リポジトリ直下で実行(<LAN-IP> は自端末の LAN IP、例: 192.168.1.10)
+mkcert localhost <LAN-IP>
+# → localhost+1.pem / localhost+1-key.pem が生成される
+```
+
+`*.pem` は `.gitignore` 済み(秘密鍵を含むためコミットされない)。
+
+### 証明書エラーについて
+
+ローカル CA をクライアント端末にインストールしないと、ブラウザは証明書警告を出す。**警告を無視して進めば動作はする**(自己責任)。常用するなら mkcert の `mkcert -install` でローカル CA をシステムに登録するのが正攻法だが、本プロジェクトでは詳細は割愛する。
+
+---
+
 ## 参考リンク
 
 - React Router v7: https://reactrouter.com
