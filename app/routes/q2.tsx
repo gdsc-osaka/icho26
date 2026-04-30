@@ -116,10 +116,9 @@ export default function Q2() {
       </StageHeader>
 
       <div className="mt-8 flex flex-col gap-6 lg:flex-row lg:items-start">
-        {/* Sidebar: Iris message / recovered memo / warning */}
+        {/* Sidebar: Iris message / warning */}
         <aside className="w-full space-y-6 lg:w-1/3">
           <IrisMessageCard />
-          <RecoveredMemoCard />
           <AttemptLimitCard />
         </aside>
 
@@ -185,35 +184,6 @@ function IrisMessageCard() {
   );
 }
 
-function RecoveredMemoCard() {
-  return (
-    <SystemPanel className="border-l-2 border-cyan-400/40 bg-cyan-950/10">
-      <div className="mb-4 flex items-center gap-2 text-cyan-400/70">
-        <Icon name="description" className="text-sm" />
-        <span className="font-mono text-[10px] uppercase tracking-widest">
-          RECOVERED_MEMO: SATO_W
-        </span>
-      </div>
-      <div className="space-y-3 font-mono text-xs">
-        <div className="flex flex-col gap-1 border-b border-cyan-900/30 pb-2">
-          <span className="text-cyan-700">佐藤渉（さとうわたる）</span>
-          <span className="ml-2 text-sm text-cyan-400">→ xs40q.</span>
-        </div>
-        <div className="flex flex-col gap-1 border-b border-cyan-900/30 pb-2">
-          <span className="text-cyan-700">石油（せきゆ）</span>
-          <span className="ml-2 text-sm text-cyan-400">→ pru</span>
-        </div>
-        <div className="flex flex-col gap-1">
-          <span className="text-cyan-700">そらははいいそなせ</span>
-          <span className="ml-2 text-sm text-cyan-400">
-            → ？？？？？？？？？
-          </span>
-        </div>
-      </div>
-    </SystemPanel>
-  );
-}
-
 function AttemptLimitCard() {
   return (
     <SystemPanel className="border-l-4 border-l-error/60">
@@ -236,6 +206,18 @@ function DecodePanel({ errorMessage }: { errorMessage: string | null }) {
     <div className="relative bg-[#05070A]/40 backdrop-blur-md border border-cyan-900/40 p-6 md:p-8">
       <span className="pointer-events-none absolute -top-2 -left-2 h-6 w-6 border-t-2 border-l-2 border-cyan-400" />
       <span className="pointer-events-none absolute -bottom-2 -right-2 h-6 w-6 border-b-2 border-r-2 border-cyan-400" />
+
+      {/* DECODE_TARGET_WORD: 変換前のかな文字列を中央大表示 */}
+      <div className="mb-12 text-center">
+        <h3 className="mb-4 font-mono text-[10px] uppercase tracking-[0.3em] text-cyan-500/50">
+          DECODE_TARGET_WORD
+        </h3>
+        <div className="inline-block rounded-2xl border border-cyan-400/20 bg-cyan-950/10 p-6 shadow-[inset_0_0_20px_rgba(0,240,255,0.05)] md:p-8">
+          <div className="font-display text-4xl tracking-widest text-cyan-400 brightness-125 drop-shadow-[0_0_15px_rgba(0,240,255,0.5)] md:text-5xl">
+            そらははいいそなせ
+          </div>
+        </div>
+      </div>
 
       <Form method="post" className="mx-auto max-w-md space-y-8">
         <div>
