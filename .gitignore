@@ -30,3 +30,6 @@ terraform/*.tfplan
 
 # Reference / mockup images (keep outside repo)
 /img/
+
+# Local dev TLS certs (mkcert)
+*.pem
