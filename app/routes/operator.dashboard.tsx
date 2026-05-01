@@ -507,7 +507,7 @@ function GroupRow({
         className="whitespace-nowrap px-4 py-2 font-mono tabular-nums text-xs text-gray-700"
         title={
           elapsedMs !== null && fakeEndAt
-            ? `偽エンド到達: ${fakeEndAt}`
+            ? `偽エンド到達: ${formatDateTime(fakeEndAt)}`
             : undefined
         }
       >
@@ -571,4 +571,17 @@ function formatTime(iso: string): string {
   const HH = String(d.getHours()).padStart(2, "0");
   const MM = String(d.getMinutes()).padStart(2, "0");
   return `${mm}/${dd} ${HH}:${MM}`;
+}
+
+/** 詳細表示向け（年つき・秒つき）。 */
+function formatDateTime(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  const HH = String(d.getHours()).padStart(2, "0");
+  const MM = String(d.getMinutes()).padStart(2, "0");
+  const SS = String(d.getSeconds()).padStart(2, "0");
+  return `${yyyy}/${mm}/${dd} ${HH}:${MM}:${SS}`;
 }
