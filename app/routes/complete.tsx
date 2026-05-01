@@ -35,6 +35,14 @@ export default function Complete() {
         />
         <ActionCard
           index="03"
+          icon="how_to_vote"
+          label="アンケートに回答してブースに投票する"
+          subLabel="Vote for Our Booth"
+          href="https://ichosai.com/26/search/88/"
+          highlight
+        />
+        <ActionCard
+          index="04"
           icon="assignment"
           label="スタッフに報告する"
           subLabel="Report to Staff"
@@ -45,43 +53,76 @@ export default function Complete() {
   );
 }
 
+type ActionCardProps = {
+  index: string;
+  icon: string;
+  label: string;
+  subLabel: string;
+  highlight?: boolean;
+} & ({ to: string; href?: never } | { href: string; to?: never });
+
 function ActionCard({
   index,
   icon,
   label,
   subLabel,
   to,
-}: {
-  index: string;
-  icon: string;
-  label: string;
-  subLabel: string;
-  to: string;
-}) {
-  return (
-    <Link to={to} className="group block">
-      <SystemPanel className="flex items-center justify-between transition-colors group-hover:border-cyan-400/60">
-        <div className="flex items-center gap-5">
-          <div className="flex h-12 w-12 items-center justify-center border border-cyan-500/30 bg-surface-container transition-colors group-hover:border-cyan-400 group-hover:bg-cyan-950">
-            <Icon name={icon} className="text-2xl text-cyan-400" />
-          </div>
-          <div>
-            <span className="block font-mono text-[10px] uppercase tracking-widest text-cyan-400">
-              ACTION // {index}
-            </span>
-            <span className="block font-body text-base text-on-surface">
-              {label}
-            </span>
-            <span className="block font-mono text-[10px] uppercase tracking-widest text-cyan-900">
-              {subLabel}
-            </span>
-          </div>
+  href,
+  highlight = false,
+}: ActionCardProps) {
+  const inner = (
+    <SystemPanel
+      className={`flex items-center justify-between transition-colors ${
+        highlight
+          ? "border-cyan-400/70 bg-cyan-500/[0.06] shadow-[0_0_20px_rgba(0,240,255,0.12)] group-hover:border-cyan-300"
+          : "group-hover:border-cyan-400/60"
+      }`}
+    >
+      <div className="flex items-center gap-5">
+        <div
+          className={`flex h-12 w-12 items-center justify-center border bg-surface-container transition-colors ${
+            highlight
+              ? "border-cyan-400/70 bg-cyan-950 group-hover:border-cyan-300"
+              : "border-cyan-500/30 group-hover:border-cyan-400 group-hover:bg-cyan-950"
+          }`}
+        >
+          <Icon name={icon} className="text-2xl text-cyan-400" />
         </div>
-        <Icon
-          name="arrow_forward_ios"
-          className="text-cyan-500/60 transition-transform group-hover:translate-x-1 group-hover:text-cyan-400"
-        />
-      </SystemPanel>
+        <div>
+          <span className="block font-mono text-[10px] uppercase tracking-widest text-cyan-400">
+            ACTION // {index}
+          </span>
+          <span className="block font-body text-base text-on-surface">
+            {label}
+          </span>
+          <span className="block font-mono text-[10px] uppercase tracking-widest text-cyan-900">
+            {subLabel}
+          </span>
+        </div>
+      </div>
+      <Icon
+        name={href ? "open_in_new" : "arrow_forward_ios"}
+        className="text-cyan-500/60 transition-transform group-hover:translate-x-1 group-hover:text-cyan-400"
+      />
+    </SystemPanel>
+  );
+
+  if (href) {
+    return (
+      <a
+        href={href}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="group block"
+      >
+        {inner}
+      </a>
+    );
+  }
+
+  return (
+    <Link to={to!} className="group block">
+      {inner}
     </Link>
   );
 }
