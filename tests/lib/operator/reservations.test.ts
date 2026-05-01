@@ -25,8 +25,12 @@ describe("computeEstimatedStartAt", () => {
 
   it("clamps to now even for later positions if every prior slot has passed", () => {
     const reserved = "2026-05-01T09:00:00.000Z";
-    // 90 minutes after reserved; positions 1..9 (each 10min) all already passed.
-    const now = "2026-05-01T10:30:00.000Z";
+    // now is far enough past reserved that position 5's slot has already
+    // passed regardless of the configured slot duration.
+    const slotsPast = 5 * RESERVATION_SLOT_MINUTES + 10;
+    const now = new Date(
+      Date.parse(reserved) + slotsPast * MS_PER_MIN,
+    ).toISOString();
     expect(computeEstimatedStartAt(reserved, 5, now)).toBe(now);
   });
 

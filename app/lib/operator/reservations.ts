@@ -3,7 +3,7 @@ import type { DrizzleD1Database } from "drizzle-orm/d1";
 import * as schema from "../../../db/schema";
 import { users } from "../../../db/schema";
 
-export const RESERVATION_SLOT_MINUTES = 10;
+export const RESERVATION_SLOT_MINUTES = 30;
 
 export type WaitingReservation = {
   groupId: string;
