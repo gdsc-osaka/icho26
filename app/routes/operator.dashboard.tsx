@@ -1,3 +1,4 @@
+import { eq, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { useCallback, useMemo, useState } from "react";
 import {
@@ -30,8 +31,23 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   const env = context.cloudflare.env;
   const db = drizzle(env.DB, { schema });
   await requireOperatorSession(request, db);
-  const [users, stats] = await Promise.all([listUsers(db), getStats(db)]);
-  return { users, stats };
+  const [users, stats, fakeEndRows] = await Promise.all([
+    listUsers(db),
+    getStats(db),
+    db
+      .select({
+        groupId: schema.progressLogs.groupId,
+        reachedAt: sql<string>`MIN(${schema.progressLogs.createdAt})`.as(
+          "reached_at",
+        ),
+      })
+      .from(schema.progressLogs)
+      .where(eq(schema.progressLogs.toStage, "FAKE_END"))
+      .groupBy(schema.progressLogs.groupId),
+  ]);
+  const fakeEndAt: Record<string, string> = {};
+  for (const r of fakeEndRows) fakeEndAt[r.groupId] = r.reachedAt;
+  return { users, stats, fakeEndAt };
 }
 
 type ActionResult =
@@ -71,7 +87,7 @@ export async function action({
 type ReportedFilter = "all" | "reported" | "not_reported";
 
 export default function OperatorDashboard() {
-  const { users, stats } = useLoaderData<typeof loader>();
+  const { users, stats, fakeEndAt } = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
   const { printer } = usePrinterContext();
 
@@ -267,6 +283,7 @@ export default function OperatorDashboard() {
                 <th className="px-4 py-2">ステージ</th>
                 <th className="px-4 py-2 tabular-nums">試行</th>
                 <th className="px-4 py-2">報告</th>
+                <th className="px-4 py-2 tabular-nums">クリアタイム</th>
                 <th className="px-4 py-2">最終更新</th>
                 <th className="px-4 py-2 text-right">操作</th>
               </tr>
@@ -275,7 +292,7 @@ export default function OperatorDashboard() {
               {filtered.length === 0 && (
                 <tr>
                   <td
-                    colSpan={8}
+                    colSpan={9}
                     className="px-4 py-8 text-center text-gray-500"
                   >
                     該当するグループがありません
@@ -283,7 +300,11 @@ export default function OperatorDashboard() {
                 </tr>
               )}
               {filtered.map((u) => (
-                <GroupRow key={u.groupId} user={u} />
+                <GroupRow
+                  key={u.groupId}
+                  user={u}
+                  fakeEndAt={fakeEndAt[u.groupId] ?? null}
+                />
               ))}
             </tbody>
           </table>
@@ -440,7 +461,21 @@ function FilterChip({
   );
 }
 
-function GroupRow({ user }: { user: DashboardRow }) {
+function GroupRow({
+  user,
+  fakeEndAt,
+}: {
+  user: DashboardRow;
+  fakeEndAt: string | null;
+}) {
+  const elapsedMs =
+    fakeEndAt && user.startedAt
+      ? Math.max(
+          0,
+          new Date(fakeEndAt).getTime() - new Date(user.startedAt).getTime(),
+        )
+      : null;
+
   return (
     <tr className="hover:bg-gray-50">
       <td className="whitespace-nowrap px-4 py-2 font-medium text-gray-900">
@@ -467,6 +502,16 @@ function GroupRow({ user }: { user: DashboardRow }) {
         ) : (
           <span className="text-xs text-gray-400">—</span>
         )}
+      </td>
+      <td
+        className="whitespace-nowrap px-4 py-2 font-mono tabular-nums text-xs text-gray-700"
+        title={
+          elapsedMs !== null && fakeEndAt
+            ? `偽エンド到達: ${fakeEndAt}`
+            : undefined
+        }
+      >
+        {elapsedMs !== null ? formatElapsed(elapsedMs) : "—"}
       </td>
       <td className="whitespace-nowrap px-4 py-2 font-mono text-xs text-gray-500">
         {formatTime(user.updatedAt)}
