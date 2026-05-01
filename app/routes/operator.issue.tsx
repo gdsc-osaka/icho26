@@ -110,13 +110,21 @@ export async function action({
   if (intent === "cancel-reservation") {
     const groupId = String(formData.get("group_id") ?? "").trim();
     if (!groupId) return { ok: false, error: "groupId が指定されていません" };
-    await cancelReservation(db, {
-      operatorId: session.operatorId,
-      groupId,
-      reasonCode: "OPERATOR_CANCEL",
-      note: null,
-      now: new Date().toISOString(),
-    });
+    try {
+      await cancelReservation(db, {
+        operatorId: session.operatorId,
+        groupId,
+        reasonCode: "OPERATOR_CANCEL",
+        note: null,
+        now: new Date().toISOString(),
+      });
+    } catch (err) {
+      return {
+        ok: false,
+        error:
+          err instanceof Error ? err.message : "キャンセル処理に失敗しました",
+      };
+    }
     return null;
   }
 
@@ -500,9 +508,17 @@ function WaitingQueuePanel({
 }
 
 function WaitingRow({ reservation }: { reservation: WaitingReservation }) {
-  const admitFetcher = useFetcher();
-  const cancelFetcher = useFetcher();
+  const admitFetcher = useFetcher<typeof action>();
+  const cancelFetcher = useFetcher<typeof action>();
   const busy = admitFetcher.state !== "idle" || cancelFetcher.state !== "idle";
+  const admitError =
+    admitFetcher.data && admitFetcher.data.ok === false
+      ? admitFetcher.data.error
+      : null;
+  const cancelError =
+    cancelFetcher.data && cancelFetcher.data.ok === false
+      ? cancelFetcher.data.error
+      : null;
 
   return (
     <li className="flex flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
@@ -524,31 +540,43 @@ function WaitingRow({ reservation }: { reservation: WaitingReservation }) {
         </div>
       </div>
 
-      <div className="flex items-center gap-2">
-        <admitFetcher.Form method="post">
-          <input type="hidden" name="_action" value="admit-reservation" />
-          <input type="hidden" name="group_id" value={reservation.groupId} />
-          <button
-            type="submit"
-            disabled={busy}
-            className="inline-flex items-center gap-1 rounded-md bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            <Icon name="login" className="text-sm" />
-            入室
-          </button>
-        </admitFetcher.Form>
-        <cancelFetcher.Form method="post">
-          <input type="hidden" name="_action" value="cancel-reservation" />
-          <input type="hidden" name="group_id" value={reservation.groupId} />
-          <button
-            type="submit"
-            disabled={busy}
-            className="inline-flex items-center gap-1 rounded-md border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            <Icon name="cancel" className="text-sm" />
-            キャンセル
-          </button>
-        </cancelFetcher.Form>
+      <div className="flex flex-col items-stretch gap-2 sm:items-end">
+        <div className="flex items-center gap-2">
+          <admitFetcher.Form method="post">
+            <input type="hidden" name="_action" value="admit-reservation" />
+            <input type="hidden" name="group_id" value={reservation.groupId} />
+            <button
+              type="submit"
+              disabled={busy}
+              className="inline-flex items-center gap-1 rounded-md bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <Icon name="login" className="text-sm" />
+              入室
+            </button>
+          </admitFetcher.Form>
+          <cancelFetcher.Form method="post">
+            <input type="hidden" name="_action" value="cancel-reservation" />
+            <input type="hidden" name="group_id" value={reservation.groupId} />
+            <button
+              type="submit"
+              disabled={busy}
+              className="inline-flex items-center gap-1 rounded-md border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <Icon name="cancel" className="text-sm" />
+              キャンセル
+            </button>
+          </cancelFetcher.Form>
+        </div>
+        {admitError && (
+          <div className="rounded border border-red-200 bg-red-50 px-2 py-1 text-[11px] text-red-700">
+            入室: {admitError}
+          </div>
+        )}
+        {cancelError && (
+          <div className="rounded border border-red-200 bg-red-50 px-2 py-1 text-[11px] text-red-700">
+            キャンセル: {cancelError}
+          </div>
+        )}
       </div>
     </li>
   );

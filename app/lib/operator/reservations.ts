@@ -66,7 +66,7 @@ export async function listWaitingReservations(
     })
     .from(users)
     .where(waitingFilter())
-    .orderBy(asc(users.reservedAt));
+    .orderBy(asc(users.reservedAt), asc(users.groupId));
 
   return rows.map((row, idx) => {
     const position = idx + 1;
