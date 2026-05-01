@@ -255,8 +255,6 @@ export default function OperatorDashboard() {
 type RankedRow = DashboardRow & { elapsedMs: number };
 
 function ClearTimeRanking({ users }: { users: DashboardRow[] }) {
-  const [showAll, setShowAll] = useState(false);
-
   const ranked: RankedRow[] = useMemo(() => {
     return users
       .filter(
@@ -273,7 +271,7 @@ function ClearTimeRanking({ users }: { users: DashboardRow[] }) {
       .sort((a, b) => a.elapsedMs - b.elapsedMs);
   }, [users]);
 
-  const visible = showAll ? ranked : ranked.slice(0, 10);
+  const visible = ranked.slice(0, 3);
 
   return (
     <section className="mt-6 rounded-lg border border-gray-200 bg-white shadow-sm">
@@ -281,21 +279,12 @@ function ClearTimeRanking({ users }: { users: DashboardRow[] }) {
         <div className="flex items-center gap-2">
           <Icon name="emoji_events" className="text-base text-amber-500" />
           <h2 className="text-sm font-semibold text-gray-900">
-            クリアタイム ランキング
+            クリアタイム ランキング TOP 3
           </h2>
           <span className="text-xs text-gray-500">
             （クリア済み {ranked.length} グループ）
           </span>
         </div>
-        {ranked.length > 10 && (
-          <button
-            type="button"
-            onClick={() => setShowAll((v) => !v)}
-            className="inline-flex items-center gap-1 rounded-md border border-gray-300 bg-white px-2.5 py-1 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-50"
-          >
-            {showAll ? "TOP 10 のみ" : "すべて表示"}
-          </button>
-        )}
       </header>
       <div className="overflow-x-auto">
         <table className="min-w-full divide-y divide-gray-200 text-sm">
