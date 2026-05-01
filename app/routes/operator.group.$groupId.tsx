@@ -2,7 +2,7 @@ import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { Form, Link, useActionData, useLoaderData } from "react-router";
 import * as schema from "../../db/schema";
-import { STAGES, type Stage } from "../../db/schema";
+import { Q1_ORDERS, STAGES, type Q1Order, type Stage } from "../../db/schema";
 import { Icon } from "~/components";
 import {
   CopyButton,
@@ -69,6 +69,23 @@ export async function action({
       return { ok: false, error: "reason_code は必須です" };
     }
 
+    const parseFlag = (key: string): 0 | 1 | undefined => {
+      const v = formData.get(key);
+      if (v === null) return undefined;
+      const s = String(v);
+      if (s === "1") return 1;
+      if (s === "0") return 0;
+      return undefined;
+    };
+
+    const q1OrderRaw = String(formData.get("q1_order") ?? "");
+    let q1Order: Q1Order | null | undefined;
+    if (q1OrderRaw === "") q1Order = undefined;
+    else if (q1OrderRaw === "__null__") q1Order = null;
+    else if (Q1_ORDERS.includes(q1OrderRaw as Q1Order))
+      q1Order = q1OrderRaw as Q1Order;
+    else return { ok: false, error: "q1_order が不正です" };
+
     await correctStatus(db, {
       operatorId: session.operatorId,
       groupId: params.groupId,
@@ -78,6 +95,10 @@ export async function action({
       toStage: toStage as Stage,
       reasonCode,
       note,
+      q1_1Cleared: parseFlag("q1_1_cleared"),
+      q1_2Cleared: parseFlag("q1_2_cleared"),
+      q2Cleared: parseFlag("q2_cleared"),
+      q1Order,
       now,
     });
     return { ok: true, intent: "status-correction" };
@@ -146,7 +167,7 @@ export default function OperatorGroupDetail() {
       </div>
 
       <div className="mt-4">
-        <StatusCorrectionForm currentStage={data.user.currentStage as Stage} />
+        <StatusCorrectionForm user={data.user} />
       </div>
 
       <div className="mt-4 space-y-4">
@@ -344,7 +365,12 @@ function SummaryField({
   );
 }
 
-function StatusCorrectionForm({ currentStage }: { currentStage: Stage }) {
+function StatusCorrectionForm({
+  user,
+}: {
+  user: typeof schema.users.$inferSelect;
+}) {
+  const currentStage = user.currentStage as Stage;
   return (
     <Card title="ステータス補正" icon="tune">
       <Form method="post" className="grid gap-3 md:grid-cols-2">
@@ -369,6 +395,45 @@ function StatusCorrectionForm({ currentStage }: { currentStage: Stage }) {
             ))}
           </select>
         </FormField>
+
+        <div className="md:col-span-2 mt-1 rounded-md border border-gray-200 bg-gray-50 p-3">
+          <p className="mb-2 text-[11px] font-medium text-gray-700">
+            詳細フラグ補正（変更しない場合は「変更なし」のまま）
+          </p>
+          <div className="grid gap-3 md:grid-cols-2">
+            <FlagField
+              label="q1_1_cleared"
+              name="q1_1_cleared"
+              currentValue={user.q1_1Cleared}
+            />
+            <FlagField
+              label="q1_2_cleared"
+              name="q1_2_cleared"
+              currentValue={user.q1_2Cleared}
+            />
+            <FlagField
+              label="q2_cleared"
+              name="q2_cleared"
+              currentValue={user.q2Cleared}
+            />
+            <FormField label={`q1_order（現在: ${user.q1Order ?? "—"}）`}>
+              <select
+                name="q1_order"
+                defaultValue=""
+                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-gray-900 focus:outline-none focus:ring-1 focus:ring-gray-900"
+              >
+                <option value="">変更なし</option>
+                <option value="__null__">未割当 (null)</option>
+                {Q1_ORDERS.map((o) => (
+                  <option key={o} value={o}>
+                    {o}
+                  </option>
+                ))}
+              </select>
+            </FormField>
+          </div>
+        </div>
+
         <FormField label="reason_code">
           <input
             type="text"
@@ -395,6 +460,32 @@ function StatusCorrectionForm({ currentStage }: { currentStage: Stage }) {
         </div>
       </Form>
     </Card>
+  );
+}
+
+function FlagField({
+  label,
+  name,
+  currentValue,
+}: {
+  label: string;
+  name: string;
+  currentValue: number;
+}) {
+  return (
+    <FormField
+      label={`${label}（現在: ${currentValue === 1 ? "1 (済)" : "0 (未)"}）`}
+    >
+      <select
+        name={name}
+        defaultValue=""
+        className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-gray-900 focus:outline-none focus:ring-1 focus:ring-gray-900"
+      >
+        <option value="">変更なし</option>
+        <option value="1">1 (クリア済)</option>
+        <option value="0">0 (未クリア)</option>
+      </select>
+    </FormField>
   );
 }
 

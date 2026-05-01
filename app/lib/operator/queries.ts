@@ -77,6 +77,10 @@ export type DashboardStats = {
   startedGroups: number; // currentStage !== "START"
   completedGroups: number; // currentStage === "COMPLETE"
   reportedGroups: number;
+  /** currentStage !== "START" かつ reportedAt === null の人数（参加者の合計人数）。 */
+  activeUnreportedParticipants: number;
+  /** currentStage !== "START" かつ reportedAt === null のグループ数。 */
+  activeUnreportedGroups: number;
   totalAttempts: number;
   averageAttemptsPerGroup: number;
   stageBreakdown: StageBreakdown;
@@ -118,6 +122,8 @@ export async function getStats(
   let startedGroups = 0;
   let completedGroups = 0;
   let reportedGroups = 0;
+  let activeUnreportedGroups = 0;
+  let activeUnreportedParticipants = 0;
   const hourlyMap = new Map<number, number>();
 
   for (const u of users) {
@@ -127,6 +133,10 @@ export async function getStats(
     if (stage !== "START") startedGroups += 1;
     if (stage === "COMPLETE") completedGroups += 1;
     if (u.reportedAt !== null) reportedGroups += 1;
+    if (stage !== "START" && u.reportedAt === null) {
+      activeUnreportedGroups += 1;
+      if (u.groupSize) activeUnreportedParticipants += u.groupSize;
+    }
     if (u.startedAt) {
       const hour = new Date(u.startedAt).getHours();
       hourlyMap.set(hour, (hourlyMap.get(hour) ?? 0) + 1);
@@ -147,6 +157,8 @@ export async function getStats(
     startedGroups,
     completedGroups,
     reportedGroups,
+    activeUnreportedGroups,
+    activeUnreportedParticipants,
     totalAttempts,
     averageAttemptsPerGroup:
       totalGroups === 0 ? 0 : totalAttempts / totalGroups,
