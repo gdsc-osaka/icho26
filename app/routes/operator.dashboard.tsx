@@ -206,6 +206,9 @@ export default function OperatorDashboard() {
         </div>
       )}
 
+      {/* Clear time ranking */}
+      <ClearTimeRanking users={users} />
+
       {/* Groups table */}
       <section className="mt-4 rounded-lg border border-gray-200 bg-white shadow-sm">
         <header className="flex items-center justify-between border-b border-gray-200 px-4 py-3">
@@ -247,6 +250,129 @@ export default function OperatorDashboard() {
       </section>
     </OperatorShell>
   );
+}
+
+type RankedRow = DashboardRow & { elapsedMs: number };
+
+function ClearTimeRanking({ users }: { users: DashboardRow[] }) {
+  const ranked: RankedRow[] = useMemo(() => {
+    return users
+      .filter(
+        (u): u is DashboardRow & { startedAt: string; completedAt: string } =>
+          u.startedAt !== null && u.completedAt !== null,
+      )
+      .map((u) => ({
+        ...u,
+        elapsedMs: Math.max(
+          0,
+          new Date(u.completedAt).getTime() - new Date(u.startedAt).getTime(),
+        ),
+      }))
+      .sort((a, b) => a.elapsedMs - b.elapsedMs);
+  }, [users]);
+
+  const visible = ranked.slice(0, 3);
+
+  return (
+    <section className="mt-6 rounded-lg border border-gray-200 bg-white shadow-sm">
+      <header className="flex items-center justify-between border-b border-gray-200 px-4 py-3">
+        <div className="flex items-center gap-2">
+          <Icon name="emoji_events" className="text-base text-amber-500" />
+          <h2 className="text-sm font-semibold text-gray-900">
+            クリアタイム ランキング TOP 3
+          </h2>
+          <span className="text-xs text-gray-500">
+            （クリア済み {ranked.length} グループ）
+          </span>
+        </div>
+      </header>
+      <div className="overflow-x-auto">
+        <table className="min-w-full divide-y divide-gray-200 text-sm">
+          <thead className="bg-gray-50">
+            <tr className="text-left text-[10px] font-medium uppercase tracking-widest text-gray-500">
+              <th className="px-4 py-2 w-12">順位</th>
+              <th className="px-4 py-2">グループ名</th>
+              <th className="px-4 py-2">groupId</th>
+              <th className="px-4 py-2 tabular-nums">クリアタイム</th>
+              <th className="px-4 py-2">クリア時刻</th>
+              <th className="px-4 py-2 text-right">操作</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-100 bg-white">
+            {visible.length === 0 && (
+              <tr>
+                <td colSpan={6} className="px-4 py-8 text-center text-gray-500">
+                  まだクリア済みのグループがありません
+                </td>
+              </tr>
+            )}
+            {visible.map((u, i) => (
+              <RankingRow key={u.groupId} rank={i + 1} user={u} />
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  );
+}
+
+function RankingRow({ rank, user }: { rank: number; user: RankedRow }) {
+  return (
+    <tr className="hover:bg-gray-50">
+      <td className="whitespace-nowrap px-4 py-2">
+        <RankBadge rank={rank} />
+      </td>
+      <td className="whitespace-nowrap px-4 py-2 font-medium text-gray-900">
+        {user.groupName ?? "—"}
+      </td>
+      <td className="px-4 py-2">
+        <CopyButton value={user.groupId} label={shortId(user.groupId)} />
+      </td>
+      <td className="whitespace-nowrap px-4 py-2 font-mono tabular-nums text-gray-900">
+        {formatElapsed(user.elapsedMs)}
+      </td>
+      <td className="whitespace-nowrap px-4 py-2 font-mono text-xs text-gray-500">
+        {user.completedAt ? formatTime(user.completedAt) : "—"}
+      </td>
+      <td className="whitespace-nowrap px-4 py-2 text-right">
+        <Link
+          to={`/operator/group/${user.groupId}`}
+          className="inline-flex items-center gap-1 rounded-md border border-gray-300 bg-white px-2 py-1 text-xs font-medium text-gray-800 transition-colors hover:bg-gray-50"
+        >
+          <Icon name="visibility" className="text-sm" />
+          詳細
+        </Link>
+      </td>
+    </tr>
+  );
+}
+
+function RankBadge({ rank }: { rank: number }) {
+  const styles =
+    rank === 1
+      ? "bg-amber-100 text-amber-800 border-amber-300"
+      : rank === 2
+        ? "bg-gray-100 text-gray-800 border-gray-300"
+        : rank === 3
+          ? "bg-orange-100 text-orange-800 border-orange-300"
+          : "bg-white text-gray-600 border-gray-200";
+  const icon = rank <= 3 ? "emoji_events" : null;
+  return (
+    <span
+      className={`inline-flex items-center justify-center gap-1 rounded-full border px-2 py-0.5 text-xs font-bold tabular-nums ${styles}`}
+    >
+      {icon && <Icon name={icon} className="text-sm" />}#{rank}
+    </span>
+  );
+}
+
+function formatElapsed(ms: number): string {
+  const totalSeconds = Math.floor(ms / 1000);
+  const h = Math.floor(totalSeconds / 3600);
+  const m = Math.floor((totalSeconds % 3600) / 60);
+  const s = totalSeconds % 60;
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return h > 0 ? `${h}:${pad(m)}:${pad(s)}` : `${pad(m)}:${pad(s)}`;
 }
 
 function FilterChip({

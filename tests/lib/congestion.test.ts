@@ -12,9 +12,9 @@ describe("buildCongestionSnapshot", () => {
   });
 
   it("computes proportional rate below capacity", () => {
-    const snap = buildCongestionSnapshot(10);
-    expect(snap.activeParticipants).toBe(10);
-    expect(snap.rate).toBe(0.5);
+    const snap = buildCongestionSnapshot(15);
+    expect(snap.activeParticipants).toBe(15);
+    expect(snap.rate).toBe(15 / CONGESTION_CAPACITY);
     expect(snap.overCapacity).toBe(false);
   });
 
