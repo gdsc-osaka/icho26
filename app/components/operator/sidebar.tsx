@@ -11,6 +11,7 @@ const NAV_ITEMS: NavItem[] = [
   { to: "/operator/dashboard", icon: "dashboard", label: "ダッシュボード" },
   { to: "/operator/issue", icon: "badge", label: "ID 発行" },
   { to: "/operator/analytics", icon: "monitoring", label: "分析" },
+  { to: "/operator/dowsing-test", icon: "radar", label: "ダウジングテスト" },
 ];
 
 /**

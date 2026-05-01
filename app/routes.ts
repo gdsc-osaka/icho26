@@ -29,6 +29,7 @@ export default [
     route("operator/dashboard", "routes/operator.dashboard.tsx"),
     route("operator/issue", "routes/operator.issue.tsx"),
     route("operator/analytics", "routes/operator.analytics.tsx"),
+    route("operator/dowsing-test", "routes/operator.dowsing-test.tsx"),
     route("operator/group/:groupId", "routes/operator.group.$groupId.tsx"),
   ]),
 ] satisfies RouteConfig;
