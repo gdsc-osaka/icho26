@@ -23,11 +23,15 @@ export function getGroupIdFromRequest(request: Request): string | null {
 }
 
 export function setGroupIdCookie(groupId: string): string {
-  return `${COOKIE_NAME}=${encodeURIComponent(groupId)}; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=${COOKIE_MAX_AGE_SECONDS}`;
+  // SameSite=Lax: QR-launched URLs are cross-site top-level navigations.
+  // Strict drops the cookie on the cross-site → same-site redirect chain
+  // (`/start/:groupId` → `/q1`), causing the next request to be treated as
+  // an unauthenticated session and bouncing the user back to `/`.
+  return `${COOKIE_NAME}=${encodeURIComponent(groupId)}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=${COOKIE_MAX_AGE_SECONDS}`;
 }
 
 export function clearGroupIdCookie(): string {
-  return `${COOKIE_NAME}=; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=0`;
+  return `${COOKIE_NAME}=; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=0`;
 }
 
 /* --------------------------- Stage → allowed paths ------------------------ */
