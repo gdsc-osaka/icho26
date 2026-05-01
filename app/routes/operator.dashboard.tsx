@@ -312,10 +312,7 @@ function ClearTimeRanking({ users }: { users: DashboardRow[] }) {
           <tbody className="divide-y divide-gray-100 bg-white">
             {visible.length === 0 && (
               <tr>
-                <td
-                  colSpan={6}
-                  className="px-4 py-8 text-center text-gray-500"
-                >
+                <td colSpan={6} className="px-4 py-8 text-center text-gray-500">
                   まだクリア済みのグループがありません
                 </td>
               </tr>
