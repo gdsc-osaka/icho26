@@ -2,7 +2,7 @@ import type { AnswerStage } from "./types";
 
 const ANSWERS: Record<AnswerStage, string> = {
   Q1_1: "4,6",
-  Q1_2: "2,3",
+  Q1_2: "2,2",
   Q2: "coffeecup",
   Q3_KEYWORD: "はきだめにつる",
   Q3_CODE: "2236",
