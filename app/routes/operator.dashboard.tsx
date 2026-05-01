@@ -241,11 +241,6 @@ export default function OperatorDashboard() {
         </div>
       )}
 
-      {printer.printState === "success" && (
-        <div className="mt-4 rounded border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
-          混雑状況QRを印刷しました
-        </div>
-      )}
       {printer.printState === "error" && printer.errorMessage && (
         <div className="mt-4 rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
           印刷失敗: {printer.errorMessage}
