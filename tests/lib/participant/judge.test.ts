@@ -7,7 +7,7 @@ describe("isCorrect", () => {
     ["Q1_1", "4,6", true],
     ["Q1_1", "6,4", false],
     ["Q1_1", "4", false],
-    ["Q1_2", "2,3", true],
+    ["Q1_2", "2,2", true],
     ["Q1_2", "3,2", false],
     ["Q1_2", "2", false],
     ["Q2", "coffeecup", true],
