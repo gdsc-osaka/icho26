@@ -1,7 +1,7 @@
 import { and, eq, isNull } from "drizzle-orm";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
 import * as schema from "../../../db/schema";
-import type { Stage } from "../../../db/schema";
+import type { Q1Order, Stage } from "../../../db/schema";
 
 export async function createSession(
   db: DrizzleD1Database<typeof schema>,
@@ -33,6 +33,17 @@ export async function revokeSession(
 
 // `createUser` lives in `~/lib/shared/users.ts` — see that module.
 
+export type StatusCorrectionFlags = {
+  /** Q1_1 のクリアフラグ。undefined のときは変更しない。 */
+  q1_1Cleared?: 0 | 1;
+  /** Q1_2 のクリアフラグ。undefined のときは変更しない。 */
+  q1_2Cleared?: 0 | 1;
+  /** Q2 のクリアフラグ。undefined のときは変更しない。 */
+  q2Cleared?: 0 | 1;
+  /** Q1 の出題順序。undefined のときは変更しない。null を指定すると未割当に戻す。 */
+  q1Order?: Q1Order | null;
+};
+
 export async function correctStatus(
   db: DrizzleD1Database<typeof schema>,
   params: {
@@ -43,15 +54,26 @@ export async function correctStatus(
     reasonCode: string;
     note: string | null;
     now: string;
-  },
+  } & StatusCorrectionFlags,
 ): Promise<void> {
   const actionId = crypto.randomUUID();
   const progressId = crypto.randomUUID();
 
+  const userUpdate: Partial<typeof schema.users.$inferInsert> = {
+    currentStage: params.toStage,
+    updatedAt: params.now,
+  };
+  if (params.q1_1Cleared !== undefined)
+    userUpdate.q1_1Cleared = params.q1_1Cleared;
+  if (params.q1_2Cleared !== undefined)
+    userUpdate.q1_2Cleared = params.q1_2Cleared;
+  if (params.q2Cleared !== undefined) userUpdate.q2Cleared = params.q2Cleared;
+  if (params.q1Order !== undefined) userUpdate.q1Order = params.q1Order;
+
   await db.batch([
     db
       .update(schema.users)
-      .set({ currentStage: params.toStage, updatedAt: params.now })
+      .set(userUpdate)
       .where(eq(schema.users.groupId, params.groupId)),
     db.insert(schema.operatorActions).values({
       id: actionId,
@@ -73,6 +95,10 @@ export async function correctStatus(
       detail: JSON.stringify({
         source: "operator_correction",
         reasonCode: params.reasonCode,
+        q1_1Cleared: params.q1_1Cleared,
+        q1_2Cleared: params.q1_2Cleared,
+        q2Cleared: params.q2Cleared,
+        q1Order: params.q1Order,
       }),
       createdAt: params.now,
     }),

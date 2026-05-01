@@ -157,10 +157,10 @@ export default function OperatorDashboard() {
           accent="info"
         />
         <StatCard
-          icon="check_circle"
-          label="クリア"
-          value={stats.completedGroups}
-          hint={percent(stats.completedGroups, stats.totalGroups)}
+          icon="hourglass_top"
+          label="進行中・未報告"
+          value={stats.activeUnreportedGroups}
+          hint={`参加者 ${stats.activeUnreportedParticipants} 名`}
           accent="success"
         />
         <StatCard
