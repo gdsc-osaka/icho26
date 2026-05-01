@@ -160,7 +160,7 @@ export default function OperatorGroupDetail() {
         ) : (
           <Card title="報告済み" icon="task_alt">
             <p className="font-mono text-sm text-gray-700">
-              {data.user.reportedAt}
+              {formatDateTime(data.user.reportedAt)}
             </p>
           </Card>
         )}
@@ -189,7 +189,7 @@ export default function OperatorGroupDetail() {
                 {data.attempts.map((a) => (
                   <tr key={a.id} className="hover:bg-gray-50">
                     <td className="px-3 py-2 font-mono text-xs text-gray-500">
-                      {a.createdAt}
+                      {formatDateTime(a.createdAt)}
                     </td>
                     <td className="px-3 py-2 font-mono text-gray-900">
                       {a.stage}
@@ -232,7 +232,7 @@ export default function OperatorGroupDetail() {
                 {data.progress.map((p) => (
                   <tr key={p.id} className="hover:bg-gray-50">
                     <td className="px-3 py-2 font-mono text-xs text-gray-500">
-                      {p.createdAt}
+                      {formatDateTime(p.createdAt)}
                     </td>
                     <td className="px-3 py-2 font-mono text-gray-900">
                       {p.eventType}
@@ -270,7 +270,7 @@ export default function OperatorGroupDetail() {
                 {data.actions.map((a) => (
                   <tr key={a.id} className="hover:bg-gray-50">
                     <td className="px-3 py-2 font-mono text-xs text-gray-500">
-                      {a.createdAt}
+                      {formatDateTime(a.createdAt)}
                     </td>
                     <td className="px-3 py-2 font-mono text-gray-900">
                       {a.actionType}
@@ -331,13 +331,25 @@ function UserSummary({ user }: { user: UserDetail["user"] }) {
           label="q1_1 / q1_2 / q2"
           value={`${user.q1_1Cleared} / ${user.q1_2Cleared} / ${user.q2Cleared}`}
         />
-        <SummaryField label="started_at" value={user.startedAt ?? "—"} />
-        <SummaryField label="updated_at" value={user.updatedAt} />
-        <SummaryField label="reported_at" value={user.reportedAt ?? "—"} />
-        <SummaryField label="completed_at" value={user.completedAt ?? "—"} />
+        <SummaryField
+          label="started_at"
+          value={formatDateTime(user.startedAt)}
+        />
+        <SummaryField
+          label="updated_at"
+          value={formatDateTime(user.updatedAt)}
+        />
+        <SummaryField
+          label="reported_at"
+          value={formatDateTime(user.reportedAt)}
+        />
+        <SummaryField
+          label="completed_at"
+          value={formatDateTime(user.completedAt)}
+        />
         <SummaryField
           label="epilogue_viewed_at"
-          value={user.epilogueViewedAt ?? "—"}
+          value={formatDateTime(user.epilogueViewedAt)}
         />
       </div>
     </Card>
@@ -625,4 +637,18 @@ function ReprintPanel({ user }: { user: UserDetail["user"] }) {
 function shortId(groupId: string): string {
   const tail = groupId.replace(/^g_/, "").replace(/-/g, "").slice(-8);
   return `IC-${tail.slice(0, 4).toUpperCase()}-${tail.slice(4).toUpperCase()}`;
+}
+
+/** ISO8601 を `YYYY/MM/DD HH:MM:SS` に整形。null/未設定時は `—`。 */
+function formatDateTime(iso: string | null | undefined): string {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  const HH = String(d.getHours()).padStart(2, "0");
+  const MM = String(d.getMinutes()).padStart(2, "0");
+  const SS = String(d.getSeconds()).padStart(2, "0");
+  return `${yyyy}/${mm}/${dd} ${HH}:${MM}:${SS}`;
 }
