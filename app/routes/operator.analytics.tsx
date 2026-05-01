@@ -1,3 +1,4 @@
+import { eq, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { useLoaderData } from "react-router";
 import * as schema from "../../db/schema";
@@ -21,17 +22,37 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   const env = context.cloudflare.env;
   const db = drizzle(env.DB, { schema });
   await requireOperatorSession(request, db);
+  // FAKE_END に到達したタイミングは progress_logs から取得（最初の遷移を採用）
+  const fakeEndRows = await db
+    .select({
+      groupId: schema.progressLogs.groupId,
+      reachedAt: sql<string>`MIN(${schema.progressLogs.createdAt})`.as(
+        "reached_at",
+      ),
+    })
+    .from(schema.progressLogs)
+    .where(eq(schema.progressLogs.toStage, "FAKE_END"))
+    .groupBy(schema.progressLogs.groupId);
+
   const [stats, users] = await Promise.all([getStats(db), listUsers(db)]);
 
-  // 平均クリア所要時間 = (completedAt - startedAt) の平均（分）
-  const completed = users.filter((u) => u.completedAt && u.startedAt);
+  const fakeEndMap = new Map(
+    fakeEndRows.map((r) => [r.groupId, r.reachedAt] as const),
+  );
+
+  // 平均クリア所要時間 = (FAKE_END 到達時刻 - startedAt) の平均（分）
+  const completed = users.flatMap((u) => {
+    const reachedAt = fakeEndMap.get(u.groupId);
+    return reachedAt && u.startedAt
+      ? [{ startedAt: u.startedAt, reachedAt }]
+      : [];
+  });
   const avgClearMinutes =
     completed.length === 0
       ? 0
       : completed.reduce((sum, u) => {
           const ms =
-            new Date(u.completedAt!).getTime() -
-            new Date(u.startedAt!).getTime();
+            new Date(u.reachedAt).getTime() - new Date(u.startedAt).getTime();
           return sum + Math.max(0, ms);
         }, 0) /
         completed.length /
@@ -149,7 +170,7 @@ export default function OperatorAnalytics() {
           icon="schedule"
           label="平均クリア所要"
           value={fmtMinutes(avgClearMinutes)}
-          hint="開始→COMPLETE"
+          hint="開始→偽エンド"
         />
         <StatCard
           icon="forward_to_inbox"
