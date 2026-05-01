@@ -1,4 +1,4 @@
-import { and, eq, isNotNull, isNull, sql } from "drizzle-orm";
+import { and, eq, count, isNotNull } from "drizzle-orm";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
 import { users } from "../../db/schema";
 
@@ -29,16 +29,8 @@ export async function countActiveParticipants(
   db: DrizzleD1Database,
 ): Promise<number> {
   const [row] = await db
-    .select({
-      total: sql<number>`COALESCE(SUM(${users.groupSize}), 0)`.as("total"),
-    })
+    .select({ total: count() })
     .from(users)
-    .where(
-      and(
-        eq(users.isDeleted, 0),
-        isNotNull(users.startedAt),
-        isNull(users.completedAt),
-      ),
-    );
+    .where(and(isNotNull(users.reportedAt), eq(users.isDeleted, 0)));
   return Number(row?.total ?? 0);
 }
