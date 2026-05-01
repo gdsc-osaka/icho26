@@ -65,6 +65,7 @@ export function PrinterProvider({
     disconnect,
     setDensity,
     printBadge,
+    printCongestion,
   } = printer;
 
   // Tear down the GATT connection when the operator section unmounts
@@ -88,6 +89,7 @@ export function PrinterProvider({
         disconnect,
         setDensity,
         printBadge,
+        printCongestion,
       },
       assetsReady,
       assetError,
@@ -102,6 +104,7 @@ export function PrinterProvider({
       disconnect,
       setDensity,
       printBadge,
+      printCongestion,
       assetsReady,
       assetError,
     ],

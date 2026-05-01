@@ -3,6 +3,7 @@ import type { LXD02Printer, PrinterStatus } from "lx-printer/lx-d02";
 import { useLocalStorageNumber } from "../hooks/useLocalStorageNumber";
 import { renderBadgeToCanvas, type BadgeArgs } from "./badge-renderer";
 import { canvasToPackedBitmap } from "./canvas-pack";
+import { loadCongestionPackedBitmap } from "./congestion";
 
 export type PrintState = "idle" | "printing" | "success" | "error";
 
@@ -21,6 +22,7 @@ export type UsePrinterReturn = {
   disconnect: () => void;
   setDensity: (next: number) => void;
   printBadge: (args: BadgeArgs) => Promise<void>;
+  printCongestion: () => Promise<void>;
 };
 
 const initialStatus: PrinterStatus = {
@@ -118,6 +120,24 @@ export function usePrinter(): UsePrinterReturn {
     [ensurePrinter, density],
   );
 
+  const printCongestion = useCallback(async () => {
+    setErrorMessage(null);
+    setPrintState("printing");
+    try {
+      const printer = await ensurePrinter();
+      // Pass the packed Uint8Array directly to bypass the SDK's
+      // Floyd-Steinberg dithering — the source PNG is already a 1-bpp
+      // 384px-wide black/white asset.
+      const packed = await loadCongestionPackedBitmap();
+      await printer.print(packed, { density });
+      setPrintState("success");
+    } catch (err) {
+      setPrintState("error");
+      setErrorMessage(err instanceof Error ? err.message : String(err));
+      throw err;
+    }
+  }, [ensurePrinter, density]);
+
   return {
     status,
     printState,
@@ -128,5 +148,6 @@ export function usePrinter(): UsePrinterReturn {
     disconnect,
     setDensity,
     printBadge,
+    printCongestion,
   };
 }

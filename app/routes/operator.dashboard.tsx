@@ -1,5 +1,5 @@
 import { drizzle } from "drizzle-orm/d1";
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import {
   Form,
   Link,
@@ -19,6 +19,7 @@ import {
 import { softDeleteUser } from "~/lib/operator/mutations";
 import { getStats, listUsers, type DashboardRow } from "~/lib/operator/queries";
 import { requireOperatorSession } from "~/lib/operator/session";
+import { usePrinterContext } from "~/lib/printer/printer-context";
 import type { Route } from "./+types/operator.dashboard";
 
 export function meta() {
@@ -72,10 +73,33 @@ type ReportedFilter = "all" | "reported" | "not_reported";
 export default function OperatorDashboard() {
   const { users, stats } = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
+  const { printer } = usePrinterContext();
 
   const [stageFilter, setStageFilter] = useState<Stage | "ALL">("ALL");
   const [reportedFilter, setReportedFilter] = useState<ReportedFilter>("all");
   const [search, setSearch] = useState("");
+
+  const handlePrintCongestion = useCallback(() => {
+    const print = () => printer.printCongestion();
+    if (printer.status.isConnected) {
+      void print().catch(() => {});
+    } else {
+      void printer
+        .connect()
+        .then(print)
+        .catch(() => {});
+    }
+  }, [printer]);
+
+  const printDisabled =
+    printer.isConnecting || printer.printState === "printing";
+
+  let printButtonLabel = "混雑状況QRを印刷";
+  if (printer.printState === "printing") {
+    printButtonLabel = "印刷中...";
+  } else if (printer.isConnecting) {
+    printButtonLabel = "接続中...";
+  }
 
   const filtered = useMemo(() => {
     return users.filter((u) => {
@@ -98,12 +122,23 @@ export default function OperatorDashboard() {
       title="ダッシュボード"
       eyebrow="DASHBOARD"
       actions={
-        <Link
-          to="/operator/issue"
-          className="inline-flex items-center gap-1 rounded-md bg-gray-900 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-gray-800"
-        >
-          <Icon name="add" className="text-sm" /> ID 発行
-        </Link>
+        <>
+          <button
+            type="button"
+            onClick={handlePrintCongestion}
+            disabled={printDisabled}
+            className="inline-flex items-center gap-1 rounded-md border border-gray-300 bg-white px-3 py-1.5 text-xs font-semibold text-gray-800 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <Icon name="print" className="text-sm" />
+            {printButtonLabel}
+          </button>
+          <Link
+            to="/operator/issue"
+            className="inline-flex items-center gap-1 rounded-md bg-gray-900 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-gray-800"
+          >
+            <Icon name="add" className="text-sm" /> ID 発行
+          </Link>
+        </>
       }
     >
       {/* KPI cards */}
@@ -203,6 +238,17 @@ export default function OperatorDashboard() {
       {actionData && !actionData.ok && (
         <div className="mt-4 rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
           {actionData.error}
+        </div>
+      )}
+
+      {printer.printState === "success" && (
+        <div className="mt-4 rounded border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
+          混雑状況QRを印刷しました
+        </div>
+      )}
+      {printer.printState === "error" && printer.errorMessage && (
+        <div className="mt-4 rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+          印刷失敗: {printer.errorMessage}
         </div>
       )}
 
