@@ -15,6 +15,10 @@ export const users = sqliteTable(
     completedAt: text("completed_at"),
     reportedAt: text("reported_at"),
     epilogueViewedAt: text("epilogue_viewed_at"),
+    // 予約発行された行は reserved_at に発行時刻が入る。即時発行 (NULL) との見分け用。
+    reservedAt: text("reserved_at"),
+    // 予約済みグループが運営から admit されたときに admit 時刻が入る。NULL の間は待機列。
+    admittedAt: text("admitted_at"),
     // 論理削除フラグ。0 = 有効、1 = 削除済み（dashboard には表示しない）。
     isDeleted: integer("is_deleted").notNull().default(0),
     createdAt: text("created_at").notNull(),
@@ -23,5 +27,6 @@ export const users = sqliteTable(
   (table) => [
     index("idx_users_updated_at").on(table.updatedAt),
     index("idx_users_is_deleted").on(table.isDeleted),
+    index("idx_users_reserved_at").on(table.reservedAt),
   ],
 );

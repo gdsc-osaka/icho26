@@ -1,7 +1,14 @@
 import { drizzle } from "drizzle-orm/d1";
 import { useEffect, useState } from "react";
-import { Form, redirect, useLoaderData } from "react-router";
+import {
+  Form,
+  redirect,
+  useLoaderData,
+  useRevalidator,
+} from "react-router";
+import * as schema from "../../db/schema";
 import { Icon } from "~/components";
+import { getReservationStatus } from "~/lib/operator/reservations";
 import { applyTransition } from "~/lib/participant/mutations";
 import { findUserByGroupId } from "~/lib/participant/queries";
 import {
@@ -45,18 +52,32 @@ export async function loader({ params, context }: Route.LoaderArgs) {
     });
   }
 
-  return new Response(
-    JSON.stringify({
-      groupId,
-      groupName: user.groupName ?? null,
-    }),
-    {
-      headers: {
-        "Content-Type": "application/json",
-        "Set-Cookie": setGroupIdCookie(groupId),
-      },
+  // 予約発行された行は admit されるまで待機画面を表示する。
+  let reservation: LoaderReservation = null;
+  if (user.reservedAt && !user.admittedAt) {
+    const schemaDb = drizzle(env.DB, { schema });
+    const status = await getReservationStatus(schemaDb, groupId, now);
+    if (status.kind === "waiting") {
+      reservation = {
+        position: status.position,
+        estimatedStartAt: status.estimatedStartAt,
+        slotMinutes: status.slotMinutes,
+      };
+    }
+  }
+
+  const payload: LoaderData = {
+    groupId,
+    groupName: user.groupName ?? null,
+    reservation,
+  };
+
+  return new Response(JSON.stringify(payload), {
+    headers: {
+      "Content-Type": "application/json",
+      "Set-Cookie": setGroupIdCookie(groupId),
     },
-  );
+  });
 }
 
 export async function action({ request, context }: Route.ActionArgs) {
@@ -69,6 +90,11 @@ export async function action({ request, context }: Route.ActionArgs) {
   if (!user) throw redirect("/");
 
   const now = new Date().toISOString();
+  // 予約発行で待機中の場合は、運営が admit するまで再度待機画面に戻す。
+  if (user.reservedAt && !user.admittedAt) {
+    throw redirect(`/start/${cookieGroupId}`);
+  }
+
   const transition = startOrResume(user, pickQ1Order(), now);
   if (transition.events.length > 0) {
     await applyTransition(db, transition.user, transition.events, null, now);
@@ -97,12 +123,25 @@ function stageEntryPath(stage: string): string {
   }
 }
 
-type LoaderData = { groupId: string; groupName: string | null };
+type LoaderReservation = {
+  position: number;
+  estimatedStartAt: string;
+  slotMinutes: number;
+} | null;
+
+type LoaderData = {
+  groupId: string;
+  groupName: string | null;
+  reservation: LoaderReservation;
+};
+
+const RESERVATION_POLL_MS = 5_000;
 
 export default function StartGroup() {
-  const { groupId } = useLoaderData<LoaderData>();
+  const { groupId, reservation } = useLoaderData<LoaderData>();
   const shortId = formatShortId(groupId);
   const localTime = useLocalClock();
+  useReservationRevalidator(reservation !== null);
 
   return (
     <div className="start-root relative min-h-screen overflow-hidden">
@@ -155,42 +194,46 @@ export default function StartGroup() {
           </p>
         </div>
 
-        <Form
-          method="post"
-          className="start-fade-up flex flex-col items-center gap-6"
-          style={{ animationDelay: "1000ms" }}
-        >
-          <button
-            type="submit"
-            className="group relative overflow-hidden border-2 border-cyan-400 bg-transparent px-16 py-4 text-cyan-400 transition-all duration-300 hover:bg-cyan-400/10 active:scale-95"
+        {reservation ? (
+          <WaitingScreen reservation={reservation} />
+        ) : (
+          <Form
+            method="post"
+            className="start-fade-up flex flex-col items-center gap-6"
+            style={{ animationDelay: "1000ms" }}
           >
-            <span className="relative z-10 flex items-center gap-3">
-              <Icon name="power_settings_new" className="text-2xl" />
-              <span className="font-mono text-xl font-bold uppercase tracking-widest">
-                START
+            <button
+              type="submit"
+              className="group relative overflow-hidden border-2 border-cyan-400 bg-transparent px-16 py-4 text-cyan-400 transition-all duration-300 hover:bg-cyan-400/10 active:scale-95"
+            >
+              <span className="relative z-10 flex items-center gap-3">
+                <Icon name="power_settings_new" className="text-2xl" />
+                <span className="font-mono text-xl font-bold uppercase tracking-widest">
+                  START
+                </span>
               </span>
-            </span>
-            <div className="absolute inset-0 bg-cyan-400 opacity-0 transition-opacity group-hover:opacity-5" />
-          </button>
-          <div className="flex items-center gap-8 opacity-50">
-            <div className="flex items-center gap-2">
-              <Icon
-                name="check_circle"
-                filled
-                className="text-xs text-cyan-400"
-              />
-              <span className="font-mono text-[10px] uppercase tracking-widest">
-                Core Online
-              </span>
+              <div className="absolute inset-0 bg-cyan-400 opacity-0 transition-opacity group-hover:opacity-5" />
+            </button>
+            <div className="flex items-center gap-8 opacity-50">
+              <div className="flex items-center gap-2">
+                <Icon
+                  name="check_circle"
+                  filled
+                  className="text-xs text-cyan-400"
+                />
+                <span className="font-mono text-[10px] uppercase tracking-widest">
+                  Core Online
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Icon name="warning" className="text-xs text-cyan-300" />
+                <span className="font-mono text-[10px] uppercase tracking-widest">
+                  Memory Fragmented
+                </span>
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              <Icon name="warning" className="text-xs text-cyan-300" />
-              <span className="font-mono text-[10px] uppercase tracking-widest">
-                Memory Fragmented
-              </span>
-            </div>
-          </div>
-        </Form>
+          </Form>
+        )}
       </main>
 
       {/* Bottom-left: System integrity */}
@@ -322,6 +365,84 @@ function formatShortId(groupId: string): string {
   // groupId は "g_<uuid>" 形式。表示用に末尾 8 桁だけ切り出して大文字化。
   const tail = groupId.replace(/^g_/, "").replace(/-/g, "").slice(-8);
   return `IC-${tail.slice(0, 4).toUpperCase()}-${tail.slice(4).toUpperCase()}`;
+}
+
+function WaitingScreen({
+  reservation,
+}: {
+  reservation: NonNullable<LoaderReservation>;
+}) {
+  const { position, estimatedStartAt, slotMinutes } = reservation;
+  const startLabel = formatHHMM(estimatedStartAt);
+
+  return (
+    <div
+      className="start-fade-up flex w-full max-w-xl flex-col items-center gap-6 rounded-lg border border-amber-400/40 bg-amber-950/20 p-6 backdrop-blur-md"
+      style={{ animationDelay: "1000ms" }}
+    >
+      <div className="flex items-center gap-2 text-amber-300">
+        <Icon name="hourglass_top" className="text-base" />
+        <span className="font-mono text-[10px] uppercase tracking-[0.4em]">
+          ADMISSION PENDING
+        </span>
+      </div>
+
+      <div className="space-y-1 text-center">
+        <p className="font-mono text-[10px] uppercase tracking-widest text-amber-200/60">
+          Queue position
+        </p>
+        <p className="font-display text-5xl font-bold tabular-nums text-amber-300 drop-shadow-[0_0_10px_rgba(252,211,77,0.4)]">
+          {position}
+          <span className="ml-2 align-top text-xl text-amber-200/70">番目</span>
+        </p>
+      </div>
+
+      <div className="grid grid-cols-2 gap-6 text-center">
+        <div>
+          <p className="font-mono text-[10px] uppercase tracking-widest text-amber-200/60">
+            予想開始時刻
+          </p>
+          <p className="mt-1 font-mono text-2xl tabular-nums text-amber-100">
+            {startLabel}
+          </p>
+        </div>
+        <div>
+          <p className="font-mono text-[10px] uppercase tracking-widest text-amber-200/60">
+            スロット長
+          </p>
+          <p className="mt-1 font-mono text-2xl tabular-nums text-amber-100">
+            {slotMinutes}m
+          </p>
+        </div>
+      </div>
+
+      <p className="text-center font-mono text-xs leading-relaxed text-amber-100/70">
+        運営から呼び出されるまで、しばらくお待ちください。
+        <br />
+        この画面は自動で更新されます。
+      </p>
+    </div>
+  );
+}
+
+function useReservationRevalidator(active: boolean) {
+  const revalidator = useRevalidator();
+  useEffect(() => {
+    if (!active) return;
+    const id = window.setInterval(
+      () => revalidator.revalidate(),
+      RESERVATION_POLL_MS,
+    );
+    return () => window.clearInterval(id);
+  }, [active, revalidator]);
+}
+
+function formatHHMM(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "--:--";
+  return `${String(d.getHours()).padStart(2, "0")}:${String(
+    d.getMinutes(),
+  ).padStart(2, "0")}`;
 }
 
 function useLocalClock(): string {

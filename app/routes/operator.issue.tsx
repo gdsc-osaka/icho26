@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef } from "react";
 import { drizzle } from "drizzle-orm/d1";
-import { Form, useActionData } from "react-router";
+import { Form, useActionData, useFetcher, useLoaderData } from "react-router";
 import * as schema from "../../db/schema";
 import { Icon } from "~/components";
 import {
@@ -9,6 +9,15 @@ import {
   OperatorShell,
 } from "~/components/operator";
 import { useLocalStorageBoolean } from "~/lib/hooks/useLocalStorageBoolean";
+import {
+  admitReservation,
+  cancelReservation,
+} from "~/lib/operator/mutations";
+import {
+  RESERVATION_SLOT_MINUTES,
+  listWaitingReservations,
+  type WaitingReservation,
+} from "~/lib/operator/reservations";
 import { requireOperatorSession } from "~/lib/operator/session";
 import { usePrinterContext } from "~/lib/printer/printer-context";
 import { createUser } from "~/lib/shared/users";
@@ -24,7 +33,9 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   const env = context.cloudflare.env;
   const db = drizzle(env.DB, { schema });
   await requireOperatorSession(request, db);
-  return null;
+  const now = new Date().toISOString();
+  const waitingReservations = await listWaitingReservations(db, now);
+  return { waitingReservations };
 }
 
 type ActionResult =
@@ -34,6 +45,7 @@ type ActionResult =
       groupName: string;
       groupSize: number;
       issuedAt: string;
+      reserved: boolean;
     }
   | { ok: false; error: string };
 
@@ -43,12 +55,12 @@ export async function action({
 }: Route.ActionArgs): Promise<ActionResult | null> {
   const env = context.cloudflare.env;
   const db = drizzle(env.DB, { schema });
-  await requireOperatorSession(request, db);
+  const session = await requireOperatorSession(request, db);
 
   const formData = await request.formData();
   const intent = String(formData.get("_action") ?? "");
 
-  if (intent === "create-user") {
+  if (intent === "create-user" || intent === "reserve-user") {
     const groupName = String(formData.get("group_name") ?? "").trim();
     const groupSizeRaw = String(formData.get("group_size") ?? "").trim();
     const groupSize = Number(groupSizeRaw);
@@ -62,9 +74,11 @@ export async function action({
 
     const groupId = `g_${crypto.randomUUID()}`;
     const issuedAt = new Date().toISOString();
+    const reserved = intent === "reserve-user";
     await createUser(db, groupId, issuedAt, {
       groupName,
       groupSize,
+      reservedAt: reserved ? issuedAt : null,
     });
     return {
       ok: true,
@@ -72,13 +86,51 @@ export async function action({
       groupName,
       groupSize,
       issuedAt,
+      reserved,
     };
+  }
+
+  if (intent === "admit-reservation") {
+    const groupId = String(formData.get("group_id") ?? "").trim();
+    if (!groupId) return { ok: false, error: "groupId が指定されていません" };
+    try {
+      await admitReservation(db, {
+        operatorId: session.operatorId,
+        groupId,
+        reasonCode: "OPERATOR_ADMIT",
+        note: null,
+        now: new Date().toISOString(),
+      });
+    } catch (err) {
+      return {
+        ok: false,
+        error:
+          err instanceof Error
+            ? err.message
+            : "入室処理に失敗しました",
+      };
+    }
+    return null;
+  }
+
+  if (intent === "cancel-reservation") {
+    const groupId = String(formData.get("group_id") ?? "").trim();
+    if (!groupId) return { ok: false, error: "groupId が指定されていません" };
+    await cancelReservation(db, {
+      operatorId: session.operatorId,
+      groupId,
+      reasonCode: "OPERATOR_CANCEL",
+      note: null,
+      now: new Date().toISOString(),
+    });
+    return null;
   }
 
   return null;
 }
 
 export default function OperatorIssue() {
+  const { waitingReservations } = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
   const { printer, assetsReady, assetError } = usePrinterContext();
   const [autoPrintEnabled, setAutoPrintEnabled] = useLocalStorageBoolean(
@@ -182,7 +234,6 @@ export default function OperatorIssue() {
                 }
               }}
             >
-              <input type="hidden" name="_action" value="create-user" />
               <FormField label="社員名 (代表者の本名 or ニックネーム)">
                 <input
                   name="group_name"
@@ -228,13 +279,26 @@ export default function OperatorIssue() {
                 </p>
               )}
 
-              <button
-                type="submit"
-                className="inline-flex items-center gap-2 rounded-md bg-gray-900 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-gray-800"
-              >
-                <Icon name="qr_code_2" className="text-base" />
-                ID を発行
-              </button>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="submit"
+                  name="_action"
+                  value="create-user"
+                  className="inline-flex items-center gap-2 rounded-md bg-gray-900 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-gray-800"
+                >
+                  <Icon name="qr_code_2" className="text-base" />
+                  ID を発行
+                </button>
+                <button
+                  type="submit"
+                  name="_action"
+                  value="reserve-user"
+                  className="inline-flex items-center gap-2 rounded-md border border-gray-900 bg-white px-4 py-2 text-sm font-semibold text-gray-900 transition-colors hover:bg-gray-100"
+                >
+                  <Icon name="schedule" className="text-base" />
+                  ID を予約発行
+                </button>
+              </div>
             </Form>
           </div>
         </section>
@@ -251,6 +315,7 @@ export default function OperatorIssue() {
               groupId={actionData.issuedGroupId}
               groupName={actionData.groupName}
               groupSize={actionData.groupSize}
+              reserved={actionData.reserved}
               printState={printer.printState}
               printerConnected={printer.status.isConnected}
               autoPrintEnabled={autoPrintEnabled}
@@ -265,6 +330,8 @@ export default function OperatorIssue() {
           )}
         </section>
       </div>
+
+      <WaitingQueuePanel reservations={waitingReservations} />
     </OperatorShell>
   );
 }
@@ -290,6 +357,7 @@ function IssuedCard({
   groupId,
   groupName,
   groupSize,
+  reserved,
   printState,
   printerConnected,
   autoPrintEnabled,
@@ -300,6 +368,7 @@ function IssuedCard({
   groupId: string;
   groupName: string;
   groupSize: number;
+  reserved: boolean;
   printState: "idle" | "printing" | "success" | "error";
   printerConnected: boolean;
   autoPrintEnabled: boolean;
@@ -313,10 +382,18 @@ function IssuedCard({
 
   return (
     <div className="space-y-3 p-4 text-sm">
-      <div className="flex items-center gap-2 text-emerald-600">
-        <Icon name="check_circle" filled className="text-base" />
+      <div
+        className={`flex items-center gap-2 ${
+          reserved ? "text-amber-600" : "text-emerald-600"
+        }`}
+      >
+        <Icon
+          name={reserved ? "schedule" : "check_circle"}
+          filled
+          className="text-base"
+        />
         <span className="font-mono text-[10px] uppercase tracking-widest">
-          ISSUED
+          {reserved ? "RESERVED" : "ISSUED"}
         </span>
       </div>
 
@@ -391,4 +468,103 @@ function IssuedCard({
       </button>
     </div>
   );
+}
+
+function WaitingQueuePanel({
+  reservations,
+}: {
+  reservations: WaitingReservation[];
+}) {
+  return (
+    <section className="mt-6 rounded-lg border border-gray-200 bg-white shadow-sm">
+      <header className="flex items-center justify-between gap-2 border-b border-gray-200 px-4 py-3">
+        <div className="flex items-center gap-2">
+          <Icon name="hourglass_top" className="text-base text-gray-700" />
+          <h2 className="text-sm font-semibold text-gray-900">待機列</h2>
+          <span className="rounded-full bg-gray-100 px-2 py-0.5 font-mono text-[10px] text-gray-700">
+            {reservations.length}
+          </span>
+        </div>
+        <span className="font-mono text-[10px] uppercase tracking-widest text-gray-500">
+          slot {RESERVATION_SLOT_MINUTES} min
+        </span>
+      </header>
+
+      {reservations.length === 0 ? (
+        <div className="p-8 text-center text-sm text-gray-500">
+          待機中の予約はありません
+        </div>
+      ) : (
+        <ul className="divide-y divide-gray-200">
+          {reservations.map((r) => (
+            <WaitingRow key={r.groupId} reservation={r} />
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}
+
+function WaitingRow({ reservation }: { reservation: WaitingReservation }) {
+  const admitFetcher = useFetcher();
+  const cancelFetcher = useFetcher();
+  const busy =
+    admitFetcher.state !== "idle" || cancelFetcher.state !== "idle";
+
+  return (
+    <li className="flex flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex items-center gap-3">
+        <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-gray-900 font-mono text-xs font-bold text-white">
+          {reservation.position}
+        </span>
+        <div className="min-w-0">
+          <div className="truncate text-sm font-semibold text-gray-900">
+            {reservation.groupName ?? "(無名)"}
+            <span className="ml-2 text-xs font-normal text-gray-500">
+              {reservation.groupSize ?? "?"} 名
+            </span>
+          </div>
+          <div className="font-mono text-[10px] text-gray-500">
+            予約: {formatTime(reservation.reservedAt)} / 予想開始:{" "}
+            {formatTime(reservation.estimatedStartAt)}
+          </div>
+        </div>
+      </div>
+
+      <div className="flex items-center gap-2">
+        <admitFetcher.Form method="post">
+          <input type="hidden" name="_action" value="admit-reservation" />
+          <input type="hidden" name="group_id" value={reservation.groupId} />
+          <button
+            type="submit"
+            disabled={busy}
+            className="inline-flex items-center gap-1 rounded-md bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <Icon name="login" className="text-sm" />
+            入室
+          </button>
+        </admitFetcher.Form>
+        <cancelFetcher.Form method="post">
+          <input type="hidden" name="_action" value="cancel-reservation" />
+          <input type="hidden" name="group_id" value={reservation.groupId} />
+          <button
+            type="submit"
+            disabled={busy}
+            className="inline-flex items-center gap-1 rounded-md border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <Icon name="cancel" className="text-sm" />
+            キャンセル
+          </button>
+        </cancelFetcher.Form>
+      </div>
+    </li>
+  );
+}
+
+function formatTime(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  return `${String(d.getHours()).padStart(2, "0")}:${String(
+    d.getMinutes(),
+  ).padStart(2, "0")}`;
 }

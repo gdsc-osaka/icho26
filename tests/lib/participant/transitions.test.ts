@@ -30,6 +30,8 @@ function makeUser(overrides: Partial<UserRow> = {}): UserRow {
     completedAt: null,
     reportedAt: null,
     epilogueViewedAt: null,
+    reservedAt: null,
+    admittedAt: null,
     isDeleted: 0,
     createdAt: NOW,
     updatedAt: NOW,
@@ -58,6 +60,30 @@ describe("startOrResume", () => {
     expect(updated.q1Order).toBe("Q1_2_FIRST");
     expect(updated.currentStage).toBe("Q1");
     expect(events).toEqual([]);
+  });
+
+  it("rejects un-admitted reservations with NOT_ADMITTED", () => {
+    const user = makeUser({ reservedAt: NOW, admittedAt: null });
+    expect(() => startOrResume(user, "Q1_1_FIRST", NOW)).toThrow(
+      TransitionError,
+    );
+    try {
+      startOrResume(user, "Q1_1_FIRST", NOW);
+    } catch (err) {
+      expect(err).toBeInstanceOf(TransitionError);
+      expect((err as TransitionError).code).toBe("NOT_ADMITTED");
+    }
+  });
+
+  it("allows admitted reservations to transition START → Q1", () => {
+    const user = makeUser({
+      reservedAt: NOW,
+      admittedAt: "2026-04-29T00:01:00.000Z",
+    });
+    const { user: updated, events } = startOrResume(user, "Q1_1_FIRST", NOW);
+    expect(updated.currentStage).toBe("Q1");
+    expect(updated.q1Order).toBe("Q1_1_FIRST");
+    expect(events).toHaveLength(2);
   });
 });
 

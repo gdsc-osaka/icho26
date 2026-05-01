@@ -10,7 +10,8 @@ export class TransitionError extends Error {
       | "INVALID_STAGE"
       | "LOCKED_SUB"
       | "MISSING_ANSWER"
-      | "ALREADY_CLEARED",
+      | "ALREADY_CLEARED"
+      | "NOT_ADMITTED",
     message: string,
   ) {
     super(message);
@@ -45,6 +46,13 @@ export function startOrResume(
   if (user.currentStage !== "START" || user.q1Order !== null) {
     // Already started — resume idempotently with no state mutation.
     return { user, events: [] };
+  }
+  // 予約発行された行は、運営が admit するまで START ボタンを押せない。
+  if (user.reservedAt !== null && user.admittedAt === null) {
+    throw new TransitionError(
+      "NOT_ADMITTED",
+      "reservation has not been admitted by an operator yet",
+    );
   }
 
   const updated: UserRow = {
