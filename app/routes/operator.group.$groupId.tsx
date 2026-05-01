@@ -639,16 +639,14 @@ function shortId(groupId: string): string {
   return `IC-${tail.slice(0, 4).toUpperCase()}-${tail.slice(4).toUpperCase()}`;
 }
 
-/** ISO8601 を `YYYY/MM/DD HH:MM:SS` に整形。null/未設定時は `—`。 */
+/** ISO8601 を `MM/DD HH:MM` に整形。null/未設定時は `—`。 */
 function formatDateTime(iso: string | null | undefined): string {
   if (!iso) return "—";
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return iso;
-  const yyyy = d.getFullYear();
   const mm = String(d.getMonth() + 1).padStart(2, "0");
   const dd = String(d.getDate()).padStart(2, "0");
   const HH = String(d.getHours()).padStart(2, "0");
   const MM = String(d.getMinutes()).padStart(2, "0");
-  const SS = String(d.getSeconds()).padStart(2, "0");
-  return `${yyyy}/${mm}/${dd} ${HH}:${MM}:${SS}`;
+  return `${mm}/${dd} ${HH}:${MM}`;
 }
