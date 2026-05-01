@@ -1,4 +1,4 @@
-import { and, eq, isNull } from "drizzle-orm";
+import { and, eq, isNotNull, isNull } from "drizzle-orm";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
 import * as schema from "../../../db/schema";
 import type { Q1Order, Stage } from "../../../db/schema";
@@ -138,6 +138,110 @@ export async function softDeleteUser(
       createdAt: params.now,
     }),
   ]);
+}
+
+/**
+ * 待機中の予約 (reserved_at IS NOT NULL AND admitted_at IS NULL) に対して
+ * admitted_at を打つ。参加者の /start 画面側で START ボタンを開放する判定に使う。
+ *
+ * 既に admit 済み・未予約・soft-deleted な行に対しては Error を投げる。
+ */
+export async function admitReservation(
+  db: DrizzleD1Database<typeof schema>,
+  params: {
+    operatorId: string;
+    groupId: string;
+    reasonCode: string;
+    note: string | null;
+    now: string;
+  },
+): Promise<void> {
+  const actionId = crypto.randomUUID();
+  const updated = await db
+    .update(schema.users)
+    .set({ admittedAt: params.now, updatedAt: params.now })
+    .where(
+      and(
+        eq(schema.users.groupId, params.groupId),
+        isNotNull(schema.users.reservedAt),
+        isNull(schema.users.admittedAt),
+        eq(schema.users.isDeleted, 0),
+      ),
+    )
+    .returning({ groupId: schema.users.groupId });
+
+  if (updated.length === 0) {
+    const [row] = await db
+      .select({
+        reservedAt: schema.users.reservedAt,
+        admittedAt: schema.users.admittedAt,
+        isDeleted: schema.users.isDeleted,
+      })
+      .from(schema.users)
+      .where(eq(schema.users.groupId, params.groupId))
+      .limit(1);
+
+    if (!row) throw new Error(`group not found: ${params.groupId}`);
+    if (!row.reservedAt) throw new Error(`group is not a reservation`);
+    if (row.admittedAt) throw new Error(`reservation already admitted`);
+    if (row.isDeleted === 1) throw new Error(`reservation has been canceled`);
+    throw new Error(`reservation could not be admitted`);
+  }
+
+  await db.insert(schema.operatorActions).values({
+    id: actionId,
+    operatorId: params.operatorId,
+    groupId: params.groupId,
+    actionType: "RESERVATION_ADMIT",
+    fromStage: null,
+    toStage: null,
+    reasonCode: params.reasonCode,
+    note: params.note,
+    createdAt: params.now,
+  });
+}
+
+/**
+ * 予約のキャンセル。is_deleted = 1 を立てて待機列から除外する。
+ * audit log の action_type は RESERVATION_CANCEL。
+ */
+export async function cancelReservation(
+  db: DrizzleD1Database<typeof schema>,
+  params: {
+    operatorId: string;
+    groupId: string;
+    reasonCode: string;
+    note: string | null;
+    now: string;
+  },
+): Promise<void> {
+  const actionId = crypto.randomUUID();
+  const updated = await db
+    .update(schema.users)
+    .set({ isDeleted: 1, updatedAt: params.now })
+    .where(
+      and(
+        eq(schema.users.groupId, params.groupId),
+        isNotNull(schema.users.reservedAt),
+        isNull(schema.users.admittedAt),
+        eq(schema.users.isDeleted, 0),
+      ),
+    )
+    .returning({ groupId: schema.users.groupId });
+
+  if (updated.length === 0) return;
+
+  await db.insert(schema.operatorActions).values({
+    id: actionId,
+    operatorId: params.operatorId,
+    groupId: params.groupId,
+    actionType: "RESERVATION_CANCEL",
+    fromStage: null,
+    toStage: null,
+    reasonCode: params.reasonCode,
+    note: params.note,
+    createdAt: params.now,
+  });
 }
 
 export async function markReported(

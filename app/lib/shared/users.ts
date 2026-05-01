@@ -8,6 +8,8 @@ type UserInsert = typeof users.$inferInsert;
 export type CreateUserOpts = {
   groupName?: string | null;
   groupSize?: number | null;
+  /** ISO 8601 timestamp. Set when issuing as a reservation; null/undefined for immediate issue. */
+  reservedAt?: string | null;
 };
 
 /**
@@ -41,6 +43,7 @@ export async function createUser<TSchema extends Record<string, unknown>>(
   };
   if (opts.groupName !== undefined) values.groupName = opts.groupName;
   if (opts.groupSize !== undefined) values.groupSize = opts.groupSize;
+  if (opts.reservedAt !== undefined) values.reservedAt = opts.reservedAt;
 
   await db.insert(users).values(values);
   const [row] = await db
