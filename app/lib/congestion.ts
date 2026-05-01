@@ -2,7 +2,7 @@ import { and, eq, count, isNotNull } from "drizzle-orm";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
 import { users } from "../../db/schema";
 
-export const CONGESTION_CAPACITY = 30;
+export const CONGESTION_CAPACITY = 25;
 
 export type CongestionSnapshot = {
   activeParticipants: number;
