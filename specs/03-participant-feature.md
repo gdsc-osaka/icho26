@@ -61,7 +61,9 @@ export default [
 
 | Cookie | 値 | 属性 |
 |---|---|---|
-| `group_session` | `groupId`(`g_` + UUIDv4) | `HttpOnly`、`Secure`、`SameSite=Strict`、`Path=/`、有効期限 24 時間 |
+| `group_session` | `groupId`(`g_` + UUIDv4) | `HttpOnly`、`Secure`、`SameSite=Lax`、`Path=/`、有効期限 24 時間 |
+
+`SameSite` は `Lax` を使う。来場者は OS のカメラ/QR ハンドラから URL を開くため、ブラウザはこれを cross-site の top-level navigation として扱う。`Strict` だと既存 Cookie が QR 再スキャン時に送信されず、`/start/:groupId` → 進行ステージへの redirect chain を経由した直後の同一サイトリクエストでも Strict 文脈が引き継がれて Cookie が落ちるため、再スキャンしたユーザーが `/` の "QR をスキャン" 画面に戻されてしまう。
 
 実装は `app/lib/participant/session.ts` に集約する:
 
