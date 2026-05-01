@@ -9,10 +9,7 @@ import {
   OperatorShell,
 } from "~/components/operator";
 import { useLocalStorageBoolean } from "~/lib/hooks/useLocalStorageBoolean";
-import {
-  admitReservation,
-  cancelReservation,
-} from "~/lib/operator/mutations";
+import { admitReservation, cancelReservation } from "~/lib/operator/mutations";
 import {
   RESERVATION_SLOT_MINUTES,
   listWaitingReservations,
@@ -104,10 +101,7 @@ export async function action({
     } catch (err) {
       return {
         ok: false,
-        error:
-          err instanceof Error
-            ? err.message
-            : "入室処理に失敗しました",
+        error: err instanceof Error ? err.message : "入室処理に失敗しました",
       };
     }
     return null;
@@ -508,8 +502,7 @@ function WaitingQueuePanel({
 function WaitingRow({ reservation }: { reservation: WaitingReservation }) {
   const admitFetcher = useFetcher();
   const cancelFetcher = useFetcher();
-  const busy =
-    admitFetcher.state !== "idle" || cancelFetcher.state !== "idle";
+  const busy = admitFetcher.state !== "idle" || cancelFetcher.state !== "idle";
 
   return (
     <li className="flex flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">

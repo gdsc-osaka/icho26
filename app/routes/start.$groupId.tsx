@@ -1,11 +1,6 @@
 import { drizzle } from "drizzle-orm/d1";
 import { useEffect, useState } from "react";
-import {
-  Form,
-  redirect,
-  useLoaderData,
-  useRevalidator,
-} from "react-router";
+import { Form, redirect, useLoaderData, useRevalidator } from "react-router";
 import * as schema from "../../db/schema";
 import { Icon } from "~/components";
 import { getReservationStatus } from "~/lib/operator/reservations";
