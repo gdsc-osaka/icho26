@@ -22,6 +22,7 @@ export default [
   route("complete/epilogue", "routes/complete.epilogue.tsx"),
   route("complete/explain", "routes/complete.explain.tsx"),
   route("complete/report", "routes/complete.report.tsx"),
+  route("congestion", "routes/congestion.tsx"),
 
   // Operator routes (Step 5)
   route("operator/login", "routes/operator.login.tsx"),
