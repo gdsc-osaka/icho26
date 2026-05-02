@@ -1,5 +1,6 @@
 import { drizzle } from "drizzle-orm/d1";
 import { useEffect, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import { Form, redirect, useActionData, useLoaderData } from "react-router";
 import { ErrorAlert, HintChat, Icon, PageShell } from "~/components";
 import { isCorrect } from "~/lib/participant/judge";
@@ -16,7 +17,7 @@ import type { Route } from "./+types/q3";
 const CODE_LENGTH = 4;
 
 type ActionResult =
-  | { ok: false; phase: "keyword" | "code"; message: string }
+  | { ok: false; phase: "keyword" | "code"; messageKey: string }
   | { ok: true };
 
 export async function loader({ request, context }: Route.LoaderArgs) {
@@ -72,7 +73,7 @@ export async function action({
       return {
         ok: false,
         phase: "keyword",
-        message: "PHASE_01 認証失敗。キーワードを再確認してください。",
+        messageKey: "errors.q3KeywordFailed",
       };
     }
     // 成功 → loader 再走させ Privilege 画面が View Transition でフェードイン
@@ -103,7 +104,7 @@ export async function action({
       return {
         ok: false,
         phase: "code",
-        message: "PHASE_02 コード不一致。4 桁の数字を再確認してください。",
+        messageKey: "errors.q3CodeFailed",
       };
     }
     if (t.user.currentStage === "Q4") throw redirect("/q4");
@@ -112,14 +113,16 @@ export async function action({
   return {
     ok: false,
     phase: "keyword",
-    message: "想定外の状態です。",
+    messageKey: "errors.unexpectedState",
   };
 }
 
 export default function Q3() {
+  const { t } = useTranslation();
   const { keywordCleared } = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
-  const errorMessage = actionData?.ok === false ? actionData.message : null;
+  const errorMessage =
+    actionData?.ok === false ? t(actionData.messageKey) : null;
 
   return (
     <>
@@ -266,15 +269,12 @@ export default function Q3() {
 /* -------------------------------------------------------------------------- */
 
 function IndoorSearchScreen({ errorMessage }: { errorMessage: string | null }) {
+  const { t } = useTranslation();
   return (
     <PageShell sessionId="ID: X-99">
       <div key="phase-1" className="q3-stage-enter">
         <IrisHaloAvatar />
-        <NarrativeCard>
-          「佐藤さんは、本当に大事なことをモニターに残さない人でした。
-          みんなが通り過ぎる壁——
-          色褪せたチラシや誰も読み返さない予定表の中に、彼はそっと紛れ込ませていたのです。
-        </NarrativeCard>
+        <NarrativeCard>{t("q3.narrative")}</NarrativeCard>
 
         <Form
           method="post"
@@ -286,7 +286,7 @@ function IndoorSearchScreen({ errorMessage }: { errorMessage: string | null }) {
           <ExecuteDecryptButton />
         </Form>
 
-        <HintChat hint="STAGE 03 / PHASE_01 はことわざ『掃き溜めに鶴』のひらがな。クリアすると PHASE_02 が解放されます。" />
+        <HintChat hint={t("q3.phase1Hint")} />
       </div>
     </PageShell>
   );
@@ -330,6 +330,7 @@ function NarrativeCard({ children }: { children: React.ReactNode }) {
 }
 
 function KeywordPhase() {
+  const { t } = useTranslation();
   return (
     <div className="relative border border-outline-variant bg-surface-container-low/60 p-6 backdrop-blur-md">
       <CornerBrackets />
@@ -349,7 +350,7 @@ function KeywordPhase() {
           htmlFor="q3-keyword"
           className="block font-mono text-sm tracking-wider text-on-surface-variant"
         >
-          ひらがなでキーワードを入力
+          {t("q3.keywordLabel")}
         </label>
         <div className="relative flex items-center">
           <span className="mr-2 font-mono text-cyan-400 opacity-50">&gt;</span>
@@ -394,6 +395,7 @@ function ExecuteDecryptButton() {
 /* -------------------------------------------------------------------------- */
 
 function PrivilegeScreen({ errorMessage }: { errorMessage: string | null }) {
+  const { t } = useTranslation();
   return (
     <div className="q3-bg-root">
       <div className="q3-bg-noise" />
@@ -434,7 +436,7 @@ function PrivilegeScreen({ errorMessage }: { errorMessage: string | null }) {
             <DecorativeSystemMeta />
           </div>
 
-          <HintChat hint="STAGE 03 / PHASE_02 は『掃き溜めに鶴』にちなんだ数字コードです。4 桁を探して順に入力してください。" />
+          <HintChat hint={t("q3.phase2Hint")} />
         </div>
       </PageShell>
     </div>
@@ -442,6 +444,7 @@ function PrivilegeScreen({ errorMessage }: { errorMessage: string | null }) {
 }
 
 function Phase01CompletedBanner() {
+  const { t } = useTranslation();
   return (
     <section className="relative">
       <div className="mb-2 flex items-center justify-between">
@@ -455,7 +458,7 @@ function Phase01CompletedBanner() {
       <div className="flex items-center justify-between rounded-lg border border-cyan-500/20 bg-surface-container-lowest/60 p-4 backdrop-blur-md">
         <div className="flex flex-col">
           <span className="font-mono text-[10px] uppercase tracking-widest text-cyan-900">
-            Input Data
+            {t("q3.phase1InputData")}
           </span>
           <span className="font-mono tracking-widest text-cyan-100">
             ********
@@ -498,6 +501,7 @@ function PrivilegeIrisAvatar() {
 }
 
 function PrivilegeIrisMessage() {
+  const { t } = useTranslation();
   return (
     <div className="relative w-full overflow-hidden border-l-2 border-cyan-400 bg-surface-container-low/40 p-5 backdrop-blur-md">
       {/* Internal scanline gradient */}
@@ -513,8 +517,7 @@ function PrivilegeIrisMessage() {
         IRIS_SYS_COMM_v4.2
       </span>
       <p className="relative text-sm leading-relaxed text-on-surface">
-        掃き溜めに鶴……ごみの中にも素敵なものがあることを表すことわざです。アプリのさらなる上級権限を開放するには数字のコードが必要です。4
-        桁を探してみてください
+        {t("q3.privilegeMessage")}
         <span
           className="ml-1 inline-block h-3 w-2 align-middle bg-cyan-400"
           style={{ animation: "q3-flicker 1s steps(2) infinite" }}
@@ -603,10 +606,11 @@ function CodeSegmentedInput() {
 }
 
 function Phase02StatusLine() {
+  const { t } = useTranslation();
   return (
     <div className="flex items-center justify-center gap-2 font-mono text-[10px] uppercase tracking-widest text-cyan-700">
       <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-cyan-500" />
-      Waiting for manual override sequence...
+      {t("q3.waitingOverride")}
     </div>
   );
 }

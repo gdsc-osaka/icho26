@@ -7,6 +7,7 @@ import {
 
 export default [
   index("routes/home.tsx"),
+  route("locale", "routes/locale.tsx"),
   // Participant routes (Step 2)
   route("start/:groupId", "routes/start.$groupId.tsx"),
   route("q1", "routes/q1.tsx"),

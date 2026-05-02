@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { GlowButton, Icon, PageShell, SystemPanel } from "~/components";
 
 export function meta() {
@@ -11,6 +12,7 @@ export function meta() {
 }
 
 export default function Home() {
+  const { t } = useTranslation();
   return (
     <PageShell sessionId="ID: ----" rightIcon="sensors">
       <div className="flex flex-1 flex-col items-center justify-center gap-10 py-8">
@@ -28,8 +30,7 @@ export default function Home() {
 
         <SystemPanel className="w-full">
           <p className="text-center text-base leading-relaxed text-on-surface">
-            来場者用 QR をスキャンしてゲームを開始してください。 QR
-            が見つからない場合は運営スタッフにお声がけください。
+            {t("home.scanPrompt")}
           </p>
         </SystemPanel>
 

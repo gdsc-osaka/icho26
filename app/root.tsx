@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import {
   isRouteErrorResponse,
   Links,
@@ -5,10 +6,15 @@ import {
   Outlet,
   Scripts,
   ScrollRestoration,
+  useLoaderData,
 } from "react-router";
+import { I18nextProvider } from "react-i18next";
 
 import type { Route } from "./+types/root";
 import "./app.css";
+import { createI18n } from "./i18n/i18n";
+import { DEFAULT_LOCALE, type Locale } from "./i18n/locale";
+import { getLocale } from "./i18n/locale.server";
 
 export const links: Route.LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -27,9 +33,15 @@ export const links: Route.LinksFunction = () => [
   },
 ];
 
+export async function loader({ request }: Route.LoaderArgs) {
+  return { locale: getLocale(request) };
+}
+
 export function Layout({ children }: { children: React.ReactNode }) {
+  const data = useLoaderData<typeof loader>() as { locale: Locale } | undefined;
+  const locale = data?.locale ?? DEFAULT_LOCALE;
   return (
-    <html lang="ja">
+    <html lang={locale}>
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -46,7 +58,13 @@ export function Layout({ children }: { children: React.ReactNode }) {
 }
 
 export default function App() {
-  return <Outlet />;
+  const { locale } = useLoaderData<typeof loader>();
+  const i18n = useMemo(() => createI18n(locale), [locale]);
+  return (
+    <I18nextProvider i18n={i18n}>
+      <Outlet />
+    </I18nextProvider>
+  );
 }
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {

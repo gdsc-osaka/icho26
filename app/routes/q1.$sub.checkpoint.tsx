@@ -1,4 +1,5 @@
 import { drizzle } from "drizzle-orm/d1";
+import { useTranslation } from "react-i18next";
 import { Form, redirect, useLoaderData } from "react-router";
 import { GlowButton, Icon, PageShell } from "~/components";
 import { applyTransition } from "~/lib/participant/mutations";
@@ -74,6 +75,7 @@ export async function action({ request, params, context }: Route.ActionArgs) {
 }
 
 export default function Q1Checkpoint() {
+  const { t } = useTranslation();
   const data = useLoaderData<typeof loader>();
   const subNum = data.sub === "Q1_1" ? "1" : "2";
   const innerIcon = data.sub === "Q1_1" ? "looks_one" : "looks_two";
@@ -91,10 +93,10 @@ export default function Q1Checkpoint() {
           </span>
         </div>
         <h2 className="text-primary text-2xl font-bold leading-tight">
-          物理キー照合完了。
+          {t("q1Checkpoint.verifiedHeading")}
           <br />
           <span className="opacity-70 text-lg font-normal">
-            最終認証へ進んでください。
+            {t("q1Checkpoint.verifiedSub")}
           </span>
         </h2>
       </div>
@@ -247,10 +249,8 @@ export default function Q1Checkpoint() {
           className="mt-8 text-center space-y-4 max-w-xs mx-auto animate-verify-fade-up"
           style={{ animationDelay: "0.2s" }}
         >
-          <p className="text-on-surface text-sm leading-relaxed">
-            NFCタグの読み取りに成功しました。
-            <br />
-            下のボタンで認証を完了してください。
+          <p className="whitespace-pre-line text-on-surface text-sm leading-relaxed">
+            {t("q1Checkpoint.nfcSuccessBody")}
           </p>
         </div>
       </div>

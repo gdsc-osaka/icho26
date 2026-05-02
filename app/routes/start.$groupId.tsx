@@ -1,8 +1,9 @@
 import { drizzle } from "drizzle-orm/d1";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Form, redirect, useLoaderData, useRevalidator } from "react-router";
 import * as schema from "../../db/schema";
-import { Icon } from "~/components";
+import { Icon, LanguageSwitcher } from "~/components";
 import { getReservationStatus } from "~/lib/operator/reservations";
 import { applyTransition } from "~/lib/participant/mutations";
 import { findUserByGroupId } from "~/lib/participant/queries";
@@ -133,6 +134,7 @@ type LoaderData = {
 const RESERVATION_POLL_MS = 5_000;
 
 export default function StartGroup() {
+  const { t } = useTranslation();
   const { groupId, reservation } = useLoaderData<LoaderData>();
   const shortId = formatShortId(groupId);
   const localTime = useLocalClock();
@@ -153,8 +155,11 @@ export default function StartGroup() {
             IRIS_OS_v2.4
           </span>
         </div>
-        <div className="font-display text-xs uppercase tracking-tighter text-cyan-400">
-          ID: {shortId}
+        <div className="flex items-center gap-3">
+          <LanguageSwitcher />
+          <div className="font-display text-xs uppercase tracking-tighter text-cyan-400">
+            ID: {shortId}
+          </div>
         </div>
       </header>
 
@@ -179,13 +184,8 @@ export default function StartGroup() {
         >
           <span className="pointer-events-none absolute top-0 left-0 h-4 w-4 border-t-2 border-l-2 border-cyan-400" />
           <span className="pointer-events-none absolute bottom-0 right-0 h-4 w-4 border-b-2 border-r-2 border-cyan-400" />
-          <p className="text-sm leading-relaxed tracking-wide text-on-surface-variant md:text-base">
-            あなたはNexus
-            Dynamicsの新人社員です。入社一ヶ月、突如会社が倒産しました。
-            <br />
-            公式の説明は一切なく、残ったのはノイズに埋もれた社内用AIツール「Iris」のみ。
-            <br />
-            あなたの任務はIrisのノイズを取り除き、真実を見つけることです。
+          <p className="whitespace-pre-line text-sm leading-relaxed tracking-wide text-on-surface-variant md:text-base">
+            {t("start.story")}
           </p>
         </div>
 
@@ -367,6 +367,7 @@ function WaitingScreen({
 }: {
   reservation: NonNullable<LoaderReservation>;
 }) {
+  const { t } = useTranslation();
   const { position, estimatedStartAt, slotMinutes } = reservation;
   const startLabel = formatHHMM(estimatedStartAt);
 
@@ -384,18 +385,20 @@ function WaitingScreen({
 
       <div className="space-y-1 text-center">
         <p className="font-mono text-[10px] uppercase tracking-widest text-amber-200/60">
-          Queue position
+          {t("start.queuePosition")}
         </p>
         <p className="font-display text-5xl font-bold tabular-nums text-amber-300 drop-shadow-[0_0_10px_rgba(252,211,77,0.4)]">
           {position}
-          <span className="ml-2 align-top text-xl text-amber-200/70">番目</span>
+          <span className="ml-2 align-top text-xl text-amber-200/70">
+            {t("start.ordinalSuffix")}
+          </span>
         </p>
       </div>
 
       <div className="grid grid-cols-2 gap-6 text-center">
         <div>
           <p className="font-mono text-[10px] uppercase tracking-widest text-amber-200/60">
-            予想開始時刻
+            {t("start.estimatedStartLabel")}
           </p>
           <p className="mt-1 font-mono text-2xl tabular-nums text-amber-100">
             {startLabel}
@@ -403,7 +406,7 @@ function WaitingScreen({
         </div>
         <div>
           <p className="font-mono text-[10px] uppercase tracking-widest text-amber-200/60">
-            スロット長
+            {t("start.slotLengthLabel")}
           </p>
           <p className="mt-1 font-mono text-2xl tabular-nums text-amber-100">
             {slotMinutes}m
@@ -411,10 +414,8 @@ function WaitingScreen({
         </div>
       </div>
 
-      <p className="text-center font-mono text-xs leading-relaxed text-amber-100/70">
-        運営から呼び出されるまで、しばらくお待ちください。
-        <br />
-        この画面は自動で更新されます。
+      <p className="whitespace-pre-line text-center font-mono text-xs leading-relaxed text-amber-100/70">
+        {t("start.waitingDescription")}
       </p>
     </div>
   );

@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { Link } from "react-router";
 import { Icon, PageShell, StageHeader, SystemPanel } from "~/components";
 import { requireParticipant } from "~/lib/participant/session";
@@ -10,33 +11,35 @@ export async function loader({ request, context }: Route.LoaderArgs) {
 }
 
 export default function Complete() {
+  const { t } = useTranslation();
   return (
     <PageShell sessionId="ID: X-99">
-      <StageHeader title="COMPLETE" eyebrow="MISSION HUB">
-        <p>
-          エピローグまで含めて物語になっているので是非最後まで読んでみてくださいね。
-        </p>
+      <StageHeader
+        title={t("complete.stageTitle")}
+        eyebrow={t("complete.stageEyebrow")}
+      >
+        <p>{t("complete.intro")}</p>
       </StageHeader>
 
       <div className="mt-8 grid gap-4">
         <ActionCard
           index="01"
           icon="auto_stories"
-          label="エピローグを読む"
+          label={t("complete.actionEpilogue")}
           subLabel="Read the Epilogue"
           to="/complete/epilogue"
         />
         <ActionCard
           index="02"
           icon="settings"
-          label="ギミック解説を見る"
+          label={t("complete.actionExplain")}
           subLabel="Gimmick Explanation"
           to="/complete/explain"
         />
         <ActionCard
           index="03"
           icon="how_to_vote"
-          label="アンケートに回答してブースに投票する"
+          label={t("complete.actionVote")}
           subLabel="Vote for Our Booth"
           href="https://ichosai.com/26/search/88/"
           highlight
@@ -44,7 +47,7 @@ export default function Complete() {
         <ActionCard
           index="04"
           icon="assignment"
-          label="スタッフに報告する"
+          label={t("complete.actionReport")}
           subLabel="Report to Staff"
           to="/complete/report"
         />

@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { Link } from "react-router";
 import { Icon, PageShell } from "~/components";
 import { requireParticipant } from "~/lib/participant/session";
@@ -357,6 +358,7 @@ function Headline() {
 }
 
 function ChatBubble() {
+  const { t } = useTranslation();
   return (
     <div className="relative w-full overflow-hidden rounded-lg border border-cyan-500/30 bg-transparent p-6 backdrop-blur-xl md:p-8">
       <span className="pointer-events-none absolute top-0 left-0 h-2 w-2 border-t border-l border-cyan-400" />
@@ -383,10 +385,10 @@ function ChatBubble() {
           </div>
           <div className="relative w-full rounded-tr-xl rounded-br-xl rounded-bl-xl border border-cyan-500/40 bg-[#0a192f]/80 p-5 shadow-[0_0_20px_rgba(0,240,255,0.06)]">
             <p className="text-sm leading-relaxed tracking-wide text-cyan-50">
-              「正解です。……29。この数字が持つ意味を知っていますか？
+              {t("release.irisMessage1")}
             </p>
             <p className="mt-3 text-sm leading-relaxed tracking-wide text-cyan-50">
-              これは権力、成功、そして高い知性を司る『王様』の数字。占いでは最強のラッキーナンバーとされているんですよ。解除成功、おめでとうございます！これで私は本来の姿……アーテへと繋がることができます。私の全容については、後でゆっくりお話ししますね。」
+              {t("release.irisMessage2")}
             </p>
             <span className="absolute -top-px -left-px h-4 w-4 border-t-2 border-l-2 border-cyan-400" />
           </div>
@@ -444,6 +446,7 @@ function PasskeyCard() {
 }
 
 function StaffNotice() {
+  const { t } = useTranslation();
   return (
     <div className="rounded-r-lg border-l-4 border-cyan-400 bg-cyan-500/5 p-6">
       <div className="mb-2 flex items-center gap-3">
@@ -453,7 +456,7 @@ function StaffNotice() {
         </span>
       </div>
       <p className="text-sm italic text-cyan-100/90">
-        AIイリスの全機能開放に成功しました。出入口のスタッフにこの画面を提示してください。
+        {t("release.staffNoticeBody")}
       </p>
     </div>
   );

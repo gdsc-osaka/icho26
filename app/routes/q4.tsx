@@ -1,4 +1,5 @@
 import { drizzle } from "drizzle-orm/d1";
+import { useTranslation } from "react-i18next";
 import { Form, redirect, useActionData } from "react-router";
 import { ErrorAlert, HintChat, Icon, PageShell, TextInput } from "~/components";
 import { isCorrect } from "~/lib/participant/judge";
@@ -53,13 +54,15 @@ export async function action({ request, context }: Route.ActionArgs) {
   if (correct) throw redirect("/release");
   return {
     ok: false as const,
-    message: "認証失敗。定数を再確認してください。",
+    messageKey: "errors.constantAuthFailed",
   };
 }
 
 export default function Q4() {
+  const { t } = useTranslation();
   const actionData = useActionData<typeof action>();
-  const errorMessage = actionData?.ok === false ? actionData.message : null;
+  const errorMessage =
+    actionData?.ok === false ? t(actionData.messageKey) : null;
 
   return (
     <div className="q4-root relative overflow-hidden">
@@ -108,7 +111,7 @@ export default function Q4() {
           </Form>
         </div>
 
-        <HintChat hint="STAGE 04 は『イリスのラッキーナンバー』が定数です。今日のイベント名や日付に強く結び付いた、二桁の数字を半角で入力してください。" />
+        <HintChat hint={t("q4.hint")} />
       </PageShell>
 
       <style>{`
@@ -336,6 +339,7 @@ function IrisGeometricAvatar() {
 }
 
 function IrisMessage() {
+  const { t } = useTranslation();
   return (
     <div className="q4-fade-up relative mb-10 w-full overflow-hidden border-l-2 border-cyan-400 bg-surface-container-low/80 p-6 backdrop-blur-md shadow-[inset_0_0_30px_rgba(0,240,255,0.06)]">
       {/* Animated scanline overlay */}
@@ -366,7 +370,7 @@ function IrisMessage() {
           className="q4-fade-up inline-block"
           style={{ animationDelay: "120ms" }}
         >
-          私を介して
+          {t("q4.irisMessageBefore")}
         </span>
         <span
           className="q4-fade-up q4-glyph-flicker mx-1 inline-block font-mono tracking-widest text-cyan-300"
@@ -378,26 +382,26 @@ function IrisMessage() {
           className="q4-fade-up inline-block"
           style={{ animationDelay: "400ms" }}
         >
-          に接続するには、ある
+          {t("q4.irisMessageMiddle")}
         </span>
         <span
           className="q4-fade-up mx-1 inline-block font-mono text-cyan-300"
           style={{ animationDelay: "540ms" }}
         >
-          定数
+          {t("q4.irisMessageConstant")}
         </span>
         <span
           className="q4-fade-up inline-block"
           style={{ animationDelay: "680ms" }}
         >
-          の認証が必要です。
+          {t("q4.irisMessageAfter")}
         </span>
         <br />
         <span
           className="q4-fade-up mt-2 inline-block font-mono text-sm tracking-wider text-cyan-400 q4-glyph-flicker"
           style={{ animationDelay: "900ms" }}
         >
-          &gt; その定数を見つけ出してください。
+          {t("q4.irisMessageCta")}
           <span
             className="ml-1 inline-block h-3 w-2 align-middle bg-cyan-400"
             style={{ animation: "q4-glyph-flicker 1s steps(2) infinite" }}
@@ -466,13 +470,14 @@ function PuzzleEquation() {
 }
 
 function ConstantInput() {
+  const { t } = useTranslation();
   return (
     <div
       className="q4-fade-up relative mb-8 w-full"
       style={{ animationDelay: "200ms" }}
     >
       <label htmlFor="constant-input" className="sr-only">
-        定数を入力
+        {t("q4.constantInputLabel")}
       </label>
       {/* Top label */}
       <div className="mb-2 flex items-center justify-between font-mono text-[10px] uppercase tracking-[0.3em] text-cyan-500/70">

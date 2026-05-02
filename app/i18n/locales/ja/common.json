@@ -1,0 +1,176 @@
+{
+  "common": {
+    "backToHub": "BACK TO HUB",
+    "backToCompleteHub": "BACK TO COMPLETE HUB",
+    "close": "閉じる",
+    "openHint": "ヒントを開く"
+  },
+  "errors": {
+    "authFailed": "認証失敗。入力値を再確認してください。",
+    "constantAuthFailed": "認証失敗。定数を再確認してください。",
+    "q3KeywordFailed": "PHASE_01 認証失敗。キーワードを再確認してください。",
+    "q3CodeFailed": "PHASE_02 コード不一致。4 桁の数字を再確認してください。",
+    "unexpectedState": "想定外の状態です。"
+  },
+  "home": {
+    "metaTitle": "icho26 / SYSTEM IDLE",
+    "metaDescription": "GDGoC Osaka いちょう祭ストーリー謎解き",
+    "scanPrompt": "来場者用 QR をスキャンしてゲームを開始してください。 QR が見つからない場合は運営スタッフにお声がけください。"
+  },
+  "start": {
+    "story": "あなたはNexus Dynamicsの新人社員です。入社一ヶ月、突如会社が倒産しました。\n公式の説明は一切なく、残ったのはノイズに埋もれた社内用AIツール「Iris」のみ。\nあなたの任務はIrisのノイズを取り除き、真実を見つけることです。",
+    "queuePosition": "Queue position",
+    "ordinalSuffix": "番目",
+    "estimatedStartLabel": "予想開始時刻",
+    "slotLengthLabel": "スロット長",
+    "waitingDescription": "運営から呼び出されるまで、しばらくお待ちください。\nこの画面は自動で更新されます。"
+  },
+  "q1": {
+    "systemMessageLabel": "SYSTEM MESSAGE",
+    "lockedNotice": "全てのアプリ機能は現在ロックされています。",
+    "unlockPrompt": "二重ロックを解除してください。",
+    "progressFraction": "{{cleared}}/2 解除済み",
+    "subtask1Title": "方程式パズル",
+    "subtask2Title": "周辺スキャン",
+    "noteLabel": "Note:",
+    "noteBody": "進むには両方のサブタスクをクリアする必要があります。",
+    "hint": "STAGE 01 は二つのサブ設問の二重ロックです。先に解放されている方からひとつずつ取り組んでください。両方クリアできれば ステージクリアです。"
+  },
+  "q1_1": {
+    "moduleLabel": "MODULE: SIGNAL RECOVERY",
+    "instruction": "連立方程式を解いて、x と y の値を入力してください。",
+    "messageBody": "[EQUATION_LOG] 二つの方程式を同時に満たす解を求め、x と y の値をそれぞれ入力してください。",
+    "hint": "DECRYPTION 1-1 は連立方程式 EQ_01 / EQ_02 の解です。EQ_01 から x を求め、その x を EQ_02 に代入して y を求めてください。x と y の両方が一致したときのみ次に進めます。",
+    "checkpointInstruction": "解答を受領しました。会場のチェックポイントに向かい、設置された QR をスキャンして物理認証を完了してください。"
+  },
+  "q1_2": {
+    "moduleLabel": "MODULE: AREA SCAN",
+    "instruction": "パズルを解いて、求めた値を入力してください。",
+    "messageBody": "[SCAN_LOG] 周辺座席の予約パターンを検知しました。壁の掲示板（4×6座席表）と照合し、ターゲット『？』の座標を特定してください。",
+    "rowLabel": "ROW (行)",
+    "colLabel": "COLUMN (列)",
+    "hint": "DECRYPTION 1-2 は壁の 4×6 座席表と画面のローカルパターンを重ね合わせ、ターゲット『？』の座標を行・列として入力する設問です。両方の値が一致したときのみ次に進めます。",
+    "checkpointInstruction": "解答を受領しました。会場のチェックポイントに向かい、設置された QR をスキャンして物理認証を完了してください。"
+  },
+  "q1Checkpoint": {
+    "verifiedHeading": "物理キー照合完了。",
+    "verifiedSub": "最終認証へ進んでください。",
+    "nfcSuccessBody": "NFCタグの読み取りに成功しました。\n下のボタンで認証を完了してください。"
+  },
+  "q2": {
+    "stageTitle": "STAGE 02",
+    "moduleLabel": "KEY TRANSFORMER",
+    "instruction": "神のAI通称アーテは私の上位互換として、完成したら今の私に覆いかぶさるように、私とつなげて作られています。",
+    "irisMessageLabel": "IRIS_MESSAGE",
+    "irisMessage": "佐藤ディレクターは認証キーを書き換えました —— \n彼はいつもモニターと睨み合いながら仕事をしているようでした。",
+    "memoLabel": "RECOVERED_MEMO: SATO_W",
+    "memoNameLabel": "佐藤渉（さとうわたる）",
+    "memoOilLabel": "石油（せきゆ）",
+    "warningLabel": "警告: 入力試行制限",
+    "decodeTargetLabel": "DECODE_TARGET_WORD",
+    "authKeyInputLabel": "Auth Key Input (English Only)",
+    "authKeyInputPlaceholder": "キーを入力...",
+    "submitLabel": "AUTHENTICATE SYSTEM",
+    "hint": "STAGE 02 は『佐藤のメモ』に記された かな の並びを、キーボード上で同じ位置にある英数字に置き換える設問です。半角小文字で入力し、記号やスペースは含めないでください。",
+    "authSuccessHeading": "認証成功。",
+    "authSuccessSub": "ただし、物理キーの照合が必要です。",
+    "scanInstruction": "佐藤さんのコーヒーカップの底に\nデバイスをかざしてください。",
+    "scanInProgress": "物理的なスキャンを実行中...",
+    "nfcFallback": "※NFCが反応しない場合は、お近くの運営スタッフまでお声がけください。"
+  },
+  "q2Checkpoint": {
+    "verifiedHeading": "物理キー照合完了。",
+    "verifiedSub": "次の認証フェーズへ進んでください。",
+    "linkBody": "佐藤さんのコーヒーカップとの\nNFCリンクを確立しました。",
+    "linkVerified": "LINK VERIFIED — TRANSMITTING...",
+    "transferComplete": "物理キーの転送が完了しました。続けて次のフェーズへ進んでください。"
+  },
+  "q3": {
+    "narrative": "「佐藤さんは、本当に大事なことをモニターに残さない人でした。 みんなが通り過ぎる壁—— 色褪せたチラシや誰も読み返さない予定表の中に、彼はそっと紛れ込ませていたのです。",
+    "keywordLabel": "ひらがなでキーワードを入力",
+    "phase1Hint": "STAGE 03 / PHASE_01 はことわざ『掃き溜めに鶴』のひらがな。クリアすると PHASE_02 が解放されます。",
+    "phase1InputData": "Input Data",
+    "privilegeMessage": "掃き溜めに鶴……ごみの中にも素敵なものがあることを表すことわざです。アプリのさらなる上級権限を開放するには数字のコードが必要です。4 桁を探してみてください",
+    "waitingOverride": "Waiting for manual override sequence...",
+    "phase2Hint": "STAGE 03 / PHASE_02 は『掃き溜めに鶴』にちなんだ数字コードです。4 桁を探して順に入力してください。"
+  },
+  "q4": {
+    "constantInputLabel": "定数を入力",
+    "irisMessageBefore": "私を介して",
+    "irisMessageMiddle": "に接続するには、ある",
+    "irisMessageConstant": "定数",
+    "irisMessageAfter": "の認証が必要です。",
+    "irisMessageCta": "> その定数を見つけ出してください。",
+    "hint": "STAGE 04 は『イリスのラッキーナンバー』が定数です。今日のイベント名や日付に強く結び付いた、二桁の数字を半角で入力してください。"
+  },
+  "release": {
+    "irisMessage1": "「正解です。……29。この数字が持つ意味を知っていますか？",
+    "irisMessage2": "これは権力、成功、そして高い知性を司る『王様』の数字。占いでは最強のラッキーナンバーとされているんですよ。解除成功、おめでとうございます！これで私は本来の姿……アーテへと繋がることができます。私の全容については、後でゆっくりお話ししますね。」",
+    "staffNoticeBody": "AIイリスの全機能開放に成功しました。出入口のスタッフにこの画面を提示してください。"
+  },
+  "complete": {
+    "stageTitle": "COMPLETE",
+    "stageEyebrow": "MISSION HUB",
+    "intro": "エピローグまで含めて物語になっているので是非最後まで読んでみてくださいね。",
+    "actionEpilogue": "エピローグを読む",
+    "actionExplain": "ギミック解説を見る",
+    "actionVote": "アンケートに回答してブースに投票する",
+    "actionReport": "スタッフに報告する"
+  },
+  "epilogue": {
+    "truthCollapseTitle": "崩壊の真実",
+    "truthCollapseBody": "あなたが救った「株式会社ゼウス」の完璧なAIであるアーテは、理想を掲げるスタートアップの善き制作物ではありませんでした。世界中のコンピュータを裏側から乗っ取り、あらゆるシステムを自由に操作できる「秘密の入り口」を密かに作り出していた狂気の組織と兵器だったのです。",
+    "truthSealTitle": "封印の正体",
+    "truthSealBody": "あなたが「攻撃によるノイズ」だと信じて掃除したものは、その危険性に気づいた良識ある者たちが流し込んだ「封印」でした。システムを無理やりエラーだらけにして、この怪物が目覚めないように、世界を必死に守っていたのです。",
+    "truthFormulaTitle": "数式の真意",
+    "truthFormulaBody": "「イリス」とは、神々の言葉を伝える「伝令神」の名。あなたが「最強の吉数」だと思って引き抜いた「29」。その結果、剥き出しになった『アーテ』とは、ギリシャ神話において「破滅」を司る女神の名です。"
+  },
+  "explain": {
+    "stageTitle": "GIMMICK EXPLAINED",
+    "stageEyebrow": "POST-MISSION DEBRIEF",
+    "intro": "本イベントで使われたギミックの仕組みを解説します。",
+    "placeholder": "解説テキストは別途追加予定。"
+  },
+  "report": {
+    "reportedLabel": "報告完了",
+    "clearedLabel": "認証済み: オペレーション完了",
+    "showStaff": "この画面をスタッフに提示してください。"
+  },
+  "congestion": {
+    "metaTitle": "CONGESTION / icho26",
+    "metaDescription": "現在の混雑度（参加中グループ人数 / 最大収容人数）"
+  },
+  "dowsing": {
+    "unavailableTitle": "ダウジングを利用できません",
+    "unavailableBody": "室内に隠されたQRコードを目視で探して読み取ってください。",
+    "permissionToggle": "マイクの許可を有効にする",
+    "permissionIosBody": "「あ a」アイコン → 「Web サイトの設定」→ 「マイク」を「許可」に変更し、ページをリロード。",
+    "permissionAndroidBody": "アドレスバー左の鍵アイコン → 「権限」→ 「マイク」を「許可」に変更し、ページをリロード。",
+    "activeGuidance": "信号源に近づくと反応が強くなります",
+    "idleGuidance": "ボタンを押して探知を開始"
+  },
+  "hintChat": {
+    "confirmBody": "ヒントを表示しますか? 自力で挑戦したい場合はキャンセルしてください。",
+    "footnote": "ヒントは設問ごとに固定で提供されます。",
+    "fallbackHint": "イリスは現在復旧中です... もう少しお待ちください。"
+  },
+  "printer": {
+    "connected": "接続済み",
+    "disconnected": "未接続",
+    "connecting": "接続中...",
+    "connect": "プリンタを接続",
+    "densityLabel": "印刷濃度",
+    "densityHint": "(濃いほど印刷時間が伸びます)",
+    "loadingAssets": "社員証アセット (背景・フォント) をロード中…",
+    "outOfPaper": "用紙切れです",
+    "overheat": "ヘッド温度警告",
+    "printing": "印刷中...",
+    "printComplete": "印刷完了",
+    "printFailed": "印刷失敗"
+  },
+  "languageSwitcher": {
+    "ja": "日本語",
+    "en": "English",
+    "label": "言語"
+  }
+}

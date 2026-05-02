@@ -1,4 +1,5 @@
 import { drizzle } from "drizzle-orm/d1";
+import { useTranslation } from "react-i18next";
 import { Form, redirect, useLoaderData } from "react-router";
 import { GlowButton, Icon, PageShell } from "~/components";
 import { applyTransition } from "~/lib/participant/mutations";
@@ -58,6 +59,7 @@ export async function action({ request, context }: Route.ActionArgs) {
 }
 
 export default function Q2Checkpoint() {
+  const { t } = useTranslation();
   const data = useLoaderData<typeof loader>();
 
   return (
@@ -73,10 +75,10 @@ export default function Q2Checkpoint() {
           </span>
         </div>
         <h2 className="text-primary text-2xl font-bold leading-tight">
-          物理キー照合完了。
+          {t("q2Checkpoint.verifiedHeading")}
           <br />
           <span className="opacity-70 text-lg font-normal">
-            次の認証フェーズへ進んでください。
+            {t("q2Checkpoint.verifiedSub")}
           </span>
         </h2>
       </div>
@@ -187,16 +189,14 @@ export default function Q2Checkpoint() {
           className="mt-10 text-center space-y-4 max-w-xs mx-auto animate-verify-fade-up"
           style={{ animationDelay: "0.2s" }}
         >
-          <p className="text-on-surface text-sm leading-relaxed">
-            佐藤さんのコーヒーカップとの
-            <br />
-            NFCリンクを確立しました。
+          <p className="whitespace-pre-line text-on-surface text-sm leading-relaxed">
+            {t("q2Checkpoint.linkBody")}
           </p>
 
           <div className="space-y-2">
             <div className="flex justify-between font-['Space_Grotesk'] text-[10px] text-cyan-400/70 tracking-widest uppercase">
               <span className="animate-scan-progress-pulse">
-                LINK VERIFIED — TRANSMITTING...
+                {t("q2Checkpoint.linkVerified")}
               </span>
               <span>100%</span>
             </div>
@@ -230,7 +230,7 @@ export default function Q2Checkpoint() {
             className="text-cyan-400 text-lg shrink-0"
           />
           <p className="text-xs text-on-surface-variant leading-relaxed">
-            物理キーの転送が完了しました。続けて次のフェーズへ進んでください。
+            {t("q2Checkpoint.transferComplete")}
           </p>
         </div>
       </div>

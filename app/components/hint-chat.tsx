@@ -1,15 +1,16 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Icon } from "./icon";
 
 type ViewState = "idle" | "confirm" | "hint";
-
-const FALLBACK_HINT = "イリスは現在復旧中です... もう少しお待ちください。";
 
 type Props = {
   hint?: string;
 };
 
-export function HintChat({ hint = FALLBACK_HINT }: Props) {
+export function HintChat({ hint }: Props) {
+  const { t } = useTranslation();
+  const resolvedHint = hint ?? t("hintChat.fallbackHint");
   const [view, setView] = useState<ViewState>("idle");
   const close = () => setView("idle");
 
@@ -17,7 +18,7 @@ export function HintChat({ hint = FALLBACK_HINT }: Props) {
     <>
       <button
         type="button"
-        aria-label="ヒントを開く"
+        aria-label={t("common.openHint")}
         onClick={() => setView("confirm")}
         className="fixed bottom-6 left-4 z-40 flex items-center gap-2 border border-cyan-400 bg-[#05070A]/80 px-4 py-2 font-mono text-xs uppercase tracking-widest text-cyan-400 shadow-[0_0_12px_rgba(0,240,255,0.25)] backdrop-blur hover:bg-cyan-500/10"
       >
@@ -47,7 +48,7 @@ export function HintChat({ hint = FALLBACK_HINT }: Props) {
               </p>
               <button
                 type="button"
-                aria-label="閉じる"
+                aria-label={t("common.close")}
                 onClick={close}
                 className="font-mono text-xs uppercase text-on-surface-variant hover:text-cyan-400"
               >
@@ -58,11 +59,11 @@ export function HintChat({ hint = FALLBACK_HINT }: Props) {
             {view === "confirm" ? (
               <ConfirmBody onConfirm={() => setView("hint")} onCancel={close} />
             ) : (
-              <HintBody hint={hint} />
+              <HintBody hint={resolvedHint} />
             )}
 
             <p className="mt-3 border-t border-cyan-900/50 pt-2 font-mono text-[10px] leading-relaxed text-cyan-900">
-              ヒントは設問ごとに固定で提供されます。
+              {t("hintChat.footnote")}
             </p>
           </div>
         </div>
@@ -78,11 +79,12 @@ function ConfirmBody({
   onConfirm: () => void;
   onCancel: () => void;
 }) {
+  const { t } = useTranslation();
   return (
     <div className="space-y-3">
       <p className="font-mono text-sm leading-relaxed text-on-surface">
         <span className="mr-2 text-cyan-500">iris&gt;</span>
-        ヒントを表示しますか? 自力で挑戦したい場合はキャンセルしてください。
+        {t("hintChat.confirmBody")}
       </p>
       <div className="flex gap-2 pt-1">
         <button

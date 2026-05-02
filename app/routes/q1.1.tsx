@@ -1,4 +1,5 @@
 import { drizzle } from "drizzle-orm/d1";
+import { useTranslation } from "react-i18next";
 import {
   Form,
   Link,
@@ -81,11 +82,12 @@ export async function action({ request, context }: Route.ActionArgs) {
     ? ({ ok: true } as const)
     : ({
         ok: false,
-        message: "認証失敗。入力値を再確認してください。",
+        messageKey: "errors.authFailed",
       } as const);
 }
 
 export default function Q1_1() {
+  const { t } = useTranslation();
   const data = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
   const showCheckpointPrompt = data.answered || actionData?.ok === true;
@@ -94,12 +96,13 @@ export default function Q1_1() {
     return <CheckpointPrompt />;
   }
 
-  const errorMessage = actionData?.ok === false ? actionData.message : null;
+  const errorMessage =
+    actionData?.ok === false ? t(actionData.messageKey) : null;
 
   return (
     <PageShell sessionId="ID: X-99">
-      <StageHeader title="DECRYPTION 1-1" eyebrow="MODULE: SIGNAL RECOVERY">
-        <p>連立方程式を解いて、x と y の値を入力してください。</p>
+      <StageHeader title="DECRYPTION 1-1" eyebrow={t("q1_1.moduleLabel")}>
+        <p>{t("q1_1.instruction")}</p>
       </StageHeader>
 
       <SystemPanel className="my-6">
@@ -113,8 +116,7 @@ export default function Q1_1() {
               [MESSAGE_INCOMING]
             </p>
             <p className="font-mono text-sm leading-relaxed text-on-surface">
-              [EQUATION_LOG] 二つの方程式を同時に満たす解を求め、x と y
-              の値をそれぞれ入力してください。
+              {t("q1_1.messageBody")}
             </p>
           </div>
         </div>
@@ -192,19 +194,17 @@ export default function Q1_1() {
         <Icon name="arrow_back" className="text-sm" /> BACK TO HUB
       </Link>
 
-      <HintChat hint="DECRYPTION 1-1 は連立方程式 EQ_01 / EQ_02 の解です。EQ_01 から x を求め、その x を EQ_02 に代入して y を求めてください。x と y の両方が一致したときのみ次に進めます。" />
+      <HintChat hint={t("q1_1.hint")} />
     </PageShell>
   );
 }
 
 function CheckpointPrompt() {
+  const { t } = useTranslation();
   return (
     <PageShell sessionId="ID: X-99">
       <StageHeader title="DECRYPTION 1-1 — UNLOCKED" eyebrow="STATUS">
-        <p>
-          解答を受領しました。会場のチェックポイントに向かい、設置された QR
-          をスキャンして物理認証を完了してください。
-        </p>
+        <p>{t("q1_1.checkpointInstruction")}</p>
       </StageHeader>
 
       <div className="my-6 flex flex-col items-center gap-3">
