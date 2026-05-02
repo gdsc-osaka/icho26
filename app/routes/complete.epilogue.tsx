@@ -72,9 +72,7 @@ export default function Epilogue() {
             <span className="block bg-error/5 border border-error/20 p-3 font-mono text-error/80 text-center">
               IRIS (55) − 29 (王の力) ＝ ATE (26)
             </span>
-            <span className="mt-2 block">
-              {t("epilogue.truthFormulaBody")}
-            </span>
+            <span className="mt-2 block">{t("epilogue.truthFormulaBody")}</span>
           </TruthBlock>
         </div>
       </SystemPanel>

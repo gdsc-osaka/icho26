@@ -90,9 +90,7 @@ export function DowsingCard({ targetFreqHz, label = "DOWSING" }: Props) {
           )}
 
           <p className="mt-4 text-center font-mono text-[11px] uppercase tracking-wider text-cyan-500/70">
-            {isActive
-              ? t("dowsing.activeGuidance")
-              : t("dowsing.idleGuidance")}
+            {isActive ? t("dowsing.activeGuidance") : t("dowsing.idleGuidance")}
           </p>
 
           <div className="mt-4">
