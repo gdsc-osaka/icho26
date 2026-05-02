@@ -1,4 +1,5 @@
 import { Icon } from "./icon";
+import { LanguageSwitcher } from "./language-switcher";
 
 type Props = {
   /** 右肩に表示する識別ID。例: ID: X-99 */
@@ -19,6 +20,7 @@ export function TopBar({ sessionId, rightIcon }: Props) {
         </h1>
       </div>
       <div className="flex items-center gap-3">
+        <LanguageSwitcher />
         {sessionId && (
           <span className="font-mono text-[10px] uppercase tracking-widest text-cyan-400">
             {sessionId}

@@ -16,7 +16,7 @@ export function meta() {
     { title: "CONGESTION / icho26" },
     {
       name: "description",
-      content: "現在の混雑度（参加中グループ人数 / 最大収容人数）",
+      content: "Current congestion (active group participants / max capacity)",
     },
   ];
 }

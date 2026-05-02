@@ -12,3 +12,4 @@ export { TopBar } from "./top-bar";
 export { BackgroundFX } from "./background-fx";
 export { PageShell } from "./page-shell";
 export { DowsingCard } from "./dowsing-card";
+export { LanguageSwitcher } from "./language-switcher";

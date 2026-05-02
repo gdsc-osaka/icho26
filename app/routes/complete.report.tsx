@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { Link, useLoaderData } from "react-router";
 import { Icon, MonospaceLog, PageShell, SystemPanel } from "~/components";
 import { requireParticipant } from "~/lib/participant/session";
@@ -13,6 +14,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
 }
 
 export default function Report() {
+  const { t } = useTranslation();
   const { groupName, reported } = useLoaderData<typeof loader>();
   return (
     <PageShell sessionId="ID: X-99">
@@ -30,7 +32,7 @@ export default function Report() {
             </h2>
           </SystemPanel>
           <p className="font-mono text-sm uppercase tracking-widest text-cyan-400/80">
-            {reported ? "報告完了" : "認証済み: オペレーション完了"}
+            {reported ? t("report.reportedLabel") : t("report.clearedLabel")}
           </p>
         </div>
       </section>
@@ -45,10 +47,7 @@ export default function Report() {
 
         <div className="mt-4 border-l-4 border-cyan-400 bg-cyan-500/5 p-4">
           <p className="text-base leading-relaxed text-on-surface">
-            この画面をスタッフに提示してください。
-          </p>
-          <p className="mt-2 font-mono text-[10px] uppercase tracking-widest text-cyan-400">
-            Please show this screen to a staff member.
+            {t("report.showStaff")}
           </p>
         </div>
       </SystemPanel>
@@ -57,7 +56,8 @@ export default function Report() {
         to="/complete"
         className="inline-flex items-center gap-2 self-center font-mono text-xs uppercase tracking-widest text-cyan-400"
       >
-        <Icon name="arrow_back" className="text-sm" /> BACK TO COMPLETE HUB
+        <Icon name="arrow_back" className="text-sm" />{" "}
+        {t("common.backToCompleteHub")}
       </Link>
     </PageShell>
   );

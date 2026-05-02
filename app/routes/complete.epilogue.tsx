@@ -1,4 +1,5 @@
 import { drizzle } from "drizzle-orm/d1";
+import { useTranslation } from "react-i18next";
 import { Form, Link, redirect, useLoaderData } from "react-router";
 import { GlowButton, Icon, PageShell, SystemPanel } from "~/components";
 import { applyTransition } from "~/lib/participant/mutations";
@@ -34,6 +35,7 @@ export async function action({ request, context }: Route.ActionArgs) {
 }
 
 export default function Epilogue() {
+  const { t } = useTranslation();
   const { alreadyViewed } = useLoaderData<typeof loader>();
   return (
     <PageShell sessionId="SESSION CORRUPTED" rightIcon="warning">
@@ -60,19 +62,17 @@ export default function Epilogue() {
           UNAUTHORIZED_ACCESS
         </span>
         <div className="space-y-5 pt-4">
-          <TruthBlock title="崩壊の真実">
-            あなたが救った「株式会社ゼウス」の完璧なAIであるアーテは、理想を掲げるスタートアップの善き制作物ではありませんでした。世界中のコンピュータを裏側から乗っ取り、あらゆるシステムを自由に操作できる「秘密の入り口」を密かに作り出していた狂気の組織と兵器だったのです。
+          <TruthBlock title={t("epilogue.truthCollapseTitle")}>
+            {t("epilogue.truthCollapseBody")}
           </TruthBlock>
-          <TruthBlock title="封印の正体">
-            あなたが「攻撃によるノイズ」だと信じて掃除したものは、その危険性に気づいた良識ある者たちが流し込んだ「封印」でした。システムを無理やりエラーだらけにして、この怪物が目覚めないように、世界を必死に守っていたのです。
+          <TruthBlock title={t("epilogue.truthSealTitle")}>
+            {t("epilogue.truthSealBody")}
           </TruthBlock>
-          <TruthBlock title="数式の真意">
+          <TruthBlock title={t("epilogue.truthFormulaTitle")}>
             <span className="block bg-error/5 border border-error/20 p-3 font-mono text-error/80 text-center">
               IRIS (55) − 29 (王の力) ＝ ATE (26)
             </span>
-            <span className="mt-2 block">
-              「イリス」とは、神々の言葉を伝える「伝令神」の名。あなたが「最強の吉数」だと思って引き抜いた「29」。その結果、剥き出しになった『アーテ』とは、ギリシャ神話において「破滅」を司る女神の名です。
-            </span>
+            <span className="mt-2 block">{t("epilogue.truthFormulaBody")}</span>
           </TruthBlock>
         </div>
       </SystemPanel>
@@ -108,7 +108,8 @@ export default function Epilogue() {
         to="/complete"
         className="inline-flex items-center gap-2 self-center font-mono text-xs uppercase tracking-widest text-on-surface-variant hover:text-cyan-400"
       >
-        <Icon name="keyboard_return" className="text-sm" /> BACK TO COMPLETE HUB
+        <Icon name="keyboard_return" className="text-sm" />{" "}
+        {t("common.backToCompleteHub")}
       </Link>
 
       <style>{`

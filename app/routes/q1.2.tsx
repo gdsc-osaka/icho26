@@ -1,4 +1,5 @@
 import { drizzle } from "drizzle-orm/d1";
+import { useTranslation } from "react-i18next";
 import {
   Form,
   Link,
@@ -81,11 +82,12 @@ export async function action({ request, context }: Route.ActionArgs) {
     ? ({ ok: true } as const)
     : ({
         ok: false,
-        message: "認証失敗。入力値を再確認してください。",
+        messageKey: "errors.authFailed",
       } as const);
 }
 
 export default function Q1_2() {
+  const { t } = useTranslation();
   const data = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
   const showCheckpointPrompt = data.answered || actionData?.ok === true;
@@ -94,10 +96,7 @@ export default function Q1_2() {
     return (
       <PageShell sessionId="ID: X-99">
         <StageHeader title="DECRYPTION 1-2 — UNLOCKED" eyebrow="STATUS">
-          <p>
-            解答を受領しました。会場のチェックポイントに向かい、設置された QR
-            をスキャンして物理認証を完了してください。
-          </p>
+          <p>{t("q1_2.checkpointInstruction")}</p>
         </StageHeader>
 
         <div className="my-6 flex flex-col items-center gap-3">
@@ -122,12 +121,13 @@ export default function Q1_2() {
     );
   }
 
-  const errorMessage = actionData?.ok === false ? actionData.message : null;
+  const errorMessage =
+    actionData?.ok === false ? t(actionData.messageKey) : null;
 
   return (
     <PageShell sessionId="ID: X-99">
-      <StageHeader title="DECRYPTION 1-2" eyebrow="MODULE: AREA SCAN">
-        <p>パズルを解いて、求めた値を入力してください。</p>
+      <StageHeader title="DECRYPTION 1-2" eyebrow={t("q1_2.moduleLabel")}>
+        <p>{t("q1_2.instruction")}</p>
       </StageHeader>
 
       <SystemPanel className="my-6">
@@ -141,8 +141,7 @@ export default function Q1_2() {
               [MESSAGE_INCOMING]
             </p>
             <p className="font-mono text-sm leading-relaxed text-on-surface">
-              [SCAN_LOG]
-              周辺座席の予約パターンを検知しました。壁の掲示板（4×6座席表）と照合し、ターゲット『？』の座標を特定してください。
+              {t("q1_2.messageBody")}
             </p>
           </div>
         </div>
@@ -166,7 +165,7 @@ export default function Q1_2() {
               htmlFor="q1-2-row"
               className="block font-mono text-[10px] uppercase tracking-widest text-cyan-500/70"
             >
-              ROW (行)
+              {t("q1_2.rowLabel")}
             </label>
             <div className="mt-1 flex items-center border-b border-cyan-900 focus-within:border-cyan-400">
               <Icon name="table_rows" className="mr-2 text-sm text-cyan-500" />
@@ -187,7 +186,7 @@ export default function Q1_2() {
               htmlFor="q1-2-col"
               className="block font-mono text-[10px] uppercase tracking-widest text-cyan-500/70"
             >
-              COLUMN (列)
+              {t("q1_2.colLabel")}
             </label>
             <div className="mt-1 flex items-center border-b border-cyan-900 focus-within:border-cyan-400">
               <Icon name="view_column" className="mr-2 text-sm text-cyan-500" />
@@ -216,7 +215,7 @@ export default function Q1_2() {
         <Icon name="arrow_back" className="text-sm" /> BACK TO HUB
       </Link>
 
-      <HintChat hint="DECRYPTION 1-2 は壁の 4×6 座席表と画面のローカルパターンを重ね合わせ、ターゲット『？』の座標を行・列として入力する設問です。両方の値が一致したときのみ次に進めます。" />
+      <HintChat hint={t("q1_2.hint")} />
     </PageShell>
   );
 }

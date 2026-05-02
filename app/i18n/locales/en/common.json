@@ -1,0 +1,176 @@
+{
+  "common": {
+    "backToHub": "BACK TO HUB",
+    "backToCompleteHub": "BACK TO COMPLETE HUB",
+    "close": "CLOSE",
+    "openHint": "Open hint"
+  },
+  "errors": {
+    "authFailed": "Authentication failed. Please double-check your input.",
+    "constantAuthFailed": "Authentication failed. Please double-check the constant.",
+    "q3KeywordFailed": "PHASE_01 authentication failed. Please double-check the keyword.",
+    "q3CodeFailed": "PHASE_02 code mismatch. Please double-check the 4-digit code.",
+    "unexpectedState": "Unexpected state."
+  },
+  "home": {
+    "metaTitle": "icho26 / SYSTEM IDLE",
+    "metaDescription": "GDGoC Osaka Icho Festival story puzzle",
+    "scanPrompt": "Scan the visitor QR code to start the game. If you can't find the QR code, please ask a staff member."
+  },
+  "start": {
+    "story": "You are a new employee at Nexus Dynamics. One month into the job, the company suddenly went bankrupt.\nThere was no official explanation — all that remained was the in-house AI tool \"Iris,\" buried in noise.\nYour mission is to clear the noise from Iris and uncover the truth.",
+    "queuePosition": "Queue position",
+    "ordinalSuffix": "in line",
+    "estimatedStartLabel": "Estimated start",
+    "slotLengthLabel": "Slot length",
+    "waitingDescription": "Please wait until staff calls you in.\nThis screen refreshes automatically."
+  },
+  "q1": {
+    "systemMessageLabel": "SYSTEM MESSAGE",
+    "lockedNotice": "All app functions are currently locked.",
+    "unlockPrompt": "Release the dual lock.",
+    "progressFraction": "{{cleared}}/2 unlocked",
+    "subtask1Title": "Equation puzzle",
+    "subtask2Title": "Area scan",
+    "noteLabel": "Note:",
+    "noteBody": "You must clear both subtasks to proceed.",
+    "hint": "STAGE 01 is a dual lock with two subtasks. Start with whichever one is unlocked first and tackle them one at a time. Clear both to complete the stage."
+  },
+  "q1_1": {
+    "moduleLabel": "MODULE: SIGNAL RECOVERY",
+    "instruction": "Solve the simultaneous equations and enter the values for x and y.",
+    "messageBody": "[EQUATION_LOG] Find the solution that satisfies both equations and enter x and y.",
+    "hint": "DECRYPTION 1-1 is the solution to the simultaneous equations EQ_01 / EQ_02. Find x from EQ_01, then substitute it into EQ_02 to find y. You may proceed only when both x and y match.",
+    "checkpointInstruction": "Answer accepted. Head to the on-site checkpoint, scan the QR code there, and complete physical verification."
+  },
+  "q1_2": {
+    "moduleLabel": "MODULE: AREA SCAN",
+    "instruction": "Solve the puzzle and enter the value you found.",
+    "messageBody": "[SCAN_LOG] Reservation pattern detected for nearby seats. Cross-reference the wall chart (4×6 seat map) and identify the coordinates of the target '?'.",
+    "rowLabel": "ROW",
+    "colLabel": "COLUMN",
+    "hint": "DECRYPTION 1-2 asks you to overlay the wall's 4×6 seat map with the local on-screen pattern and enter the row/column of the target '?'. You may proceed only when both values match.",
+    "checkpointInstruction": "Answer accepted. Head to the on-site checkpoint, scan the QR code there, and complete physical verification."
+  },
+  "q1Checkpoint": {
+    "verifiedHeading": "Physical key verified.",
+    "verifiedSub": "Proceed to final authentication.",
+    "nfcSuccessBody": "NFC tag read successfully.\nPress the button below to complete authentication."
+  },
+  "q2": {
+    "stageTitle": "STAGE 02",
+    "moduleLabel": "KEY TRANSFORMER",
+    "instruction": "The godlike AI known as Ate was built as my upper counterpart — designed to merge with me and overlay my current self once it's complete.",
+    "irisMessageLabel": "IRIS_MESSAGE",
+    "irisMessage": "Director Sato rewrote the auth key —— \nHe always seemed to work staring intently at his monitor.",
+    "memoLabel": "RECOVERED_MEMO: SATO_W",
+    "memoNameLabel": "Sato Wataru (さとうわたる)",
+    "memoOilLabel": "Petroleum (せきゆ)",
+    "warningLabel": "WARNING: Input attempt limit",
+    "decodeTargetLabel": "DECODE_TARGET_WORD",
+    "authKeyInputLabel": "Auth Key Input (English Only)",
+    "authKeyInputPlaceholder": "Enter key...",
+    "submitLabel": "AUTHENTICATE SYSTEM",
+    "hint": "STAGE 02 asks you to take the kana sequence from \"Sato's memo\" and replace each character with the alphanumeric key in the same position on a keyboard. Use lowercase ASCII; do not include symbols or spaces.",
+    "authSuccessHeading": "Authentication successful.",
+    "authSuccessSub": "Physical key verification still required, however.",
+    "scanInstruction": "Hold your device against the bottom of\nSato's coffee cup.",
+    "scanInProgress": "Running physical scan...",
+    "nfcFallback": "* If NFC doesn't respond, please ask a nearby staff member."
+  },
+  "q2Checkpoint": {
+    "verifiedHeading": "Physical key verified.",
+    "verifiedSub": "Proceed to the next authentication phase.",
+    "linkBody": "NFC link with Sato's coffee cup\nhas been established.",
+    "linkVerified": "LINK VERIFIED — TRANSMITTING...",
+    "transferComplete": "Physical key transfer complete. Continue to the next phase."
+  },
+  "q3": {
+    "narrative": "\"Sato wasn't the type to leave anything truly important on a monitor. He'd quietly slip it into the walls people walk past — into faded flyers and schedules no one re-reads.",
+    "keywordLabel": "Enter the keyword in hiragana",
+    "phase1Hint": "STAGE 03 / PHASE_01 is the hiragana of the proverb \"haki dame ni tsuru\" (a crane in a rubbish heap). Clearing it unlocks PHASE_02.",
+    "phase1InputData": "Input Data",
+    "privilegeMessage": "\"A crane in a rubbish heap\" — a proverb meaning that beautiful things can be found even in mundane places. Unlocking the next privilege requires a numeric code. Look for the 4 digits.",
+    "waitingOverride": "Waiting for manual override sequence...",
+    "phase2Hint": "STAGE 03 / PHASE_02 is a numeric code tied to \"a crane in a rubbish heap.\" Find the 4 digits and enter them in order."
+  },
+  "q4": {
+    "constantInputLabel": "Enter the constant",
+    "irisMessageBefore": "To connect through me to",
+    "irisMessageMiddle": ", you need authentication with a certain",
+    "irisMessageConstant": "constant",
+    "irisMessageAfter": ".",
+    "irisMessageCta": "> Find that constant.",
+    "hint": "STAGE 04: the constant is \"Iris's lucky number.\" Enter a two-digit number (ASCII) tied closely to today's event name or date."
+  },
+  "release": {
+    "irisMessage1": "\"Correct. ……29. Do you know what this number means?",
+    "irisMessage2": "It is the number of the 'King' — ruling power, success, and high intelligence. In fortune-telling it's said to be the strongest lucky number. Congratulations on the unlock! Now I can connect to my true form…… Ate. I'll tell you the full story later, slowly.\"",
+    "staffNoticeBody": "All Iris features have been unlocked. Please show this screen to the staff at the exit."
+  },
+  "complete": {
+    "stageTitle": "COMPLETE",
+    "stageEyebrow": "MISSION HUB",
+    "intro": "The story continues through the epilogue — please read all the way to the end.",
+    "actionEpilogue": "Read the epilogue",
+    "actionExplain": "View gimmick explanation",
+    "actionVote": "Take the survey and vote for our booth",
+    "actionReport": "Report to staff"
+  },
+  "epilogue": {
+    "truthCollapseTitle": "The truth of the collapse",
+    "truthCollapseBody": "The perfect AI Ate, built by the \"Zeus Corporation\" you saved, was not the wholesome creation of a high-minded startup. It was a weapon of a deranged organisation, secretly building a \"hidden door\" that could take over computers worldwide and freely manipulate every system.",
+    "truthSealTitle": "What the seal really was",
+    "truthSealBody": "What you cleared away, believing it was \"noise from an attack,\" was in fact a \"seal\" placed by people of conscience who recognised the danger. They forced the system into errors to keep the monster from waking, desperately holding the world together.",
+    "truthFormulaTitle": "The meaning of the formula",
+    "truthFormulaBody": "\"Iris\" is the name of the messenger goddess who carries the words of the gods. The \"29\" you pulled out, believing it the \"strongest lucky number,\" left exposed the name of \"Ate\" — the goddess of ruin in Greek mythology."
+  },
+  "explain": {
+    "stageTitle": "GIMMICK EXPLAINED",
+    "stageEyebrow": "POST-MISSION DEBRIEF",
+    "intro": "An explanation of the gimmicks used in this event.",
+    "placeholder": "Explanation text to be added later."
+  },
+  "report": {
+    "reportedLabel": "Report submitted",
+    "clearedLabel": "Verified: operation complete",
+    "showStaff": "Please show this screen to a staff member."
+  },
+  "congestion": {
+    "metaTitle": "CONGESTION / icho26",
+    "metaDescription": "Current congestion (active group participants / max capacity)"
+  },
+  "dowsing": {
+    "unavailableTitle": "Dowsing is unavailable",
+    "unavailableBody": "Please find and scan the QR code hidden in the room visually.",
+    "permissionToggle": "Enable microphone permission",
+    "permissionIosBody": "Tap the \"あ a\" icon → \"Website settings\" → set \"Microphone\" to \"Allow\" and reload the page.",
+    "permissionAndroidBody": "Tap the lock icon left of the address bar → \"Permissions\" → set \"Microphone\" to \"Allow\" and reload the page.",
+    "activeGuidance": "Get closer to the signal source for a stronger response",
+    "idleGuidance": "Press the button to start detection"
+  },
+  "hintChat": {
+    "confirmBody": "Show the hint? Press cancel if you want to keep trying on your own.",
+    "footnote": "Hints are fixed per question.",
+    "fallbackHint": "Iris is currently being repaired... please wait a moment."
+  },
+  "printer": {
+    "connected": "Connected",
+    "disconnected": "Not connected",
+    "connecting": "Connecting...",
+    "connect": "Connect printer",
+    "densityLabel": "Print density",
+    "densityHint": "(higher density = longer print time)",
+    "loadingAssets": "Loading badge assets (background, fonts)…",
+    "outOfPaper": "Out of paper",
+    "overheat": "Print head overheat warning",
+    "printing": "Printing...",
+    "printComplete": "Print complete",
+    "printFailed": "Print failed"
+  },
+  "languageSwitcher": {
+    "ja": "日本語",
+    "en": "English",
+    "label": "Language"
+  }
+}

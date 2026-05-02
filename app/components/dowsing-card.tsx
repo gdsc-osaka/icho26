@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   CIRCLE_SHAKE_COEF,
   CIRCLE_SHAKE_MAX_PX,
@@ -26,6 +27,7 @@ type Props = {
  * 解答送信後の AWAITING PHYSICAL VERIFICATION 表示と並べて配置する想定。
  */
 export function DowsingCard({ targetFreqHz, label = "DOWSING" }: Props) {
+  const { t } = useTranslation();
   const {
     state,
     dynamicProximity,
@@ -88,9 +90,7 @@ export function DowsingCard({ targetFreqHz, label = "DOWSING" }: Props) {
           )}
 
           <p className="mt-4 text-center font-mono text-[11px] uppercase tracking-wider text-cyan-500/70">
-            {isActive
-              ? "信号源に近づくと反応が強くなります"
-              : "ボタンを押して探知を開始"}
+            {isActive ? t("dowsing.activeGuidance") : t("dowsing.idleGuidance")}
           </p>
 
           <div className="mt-4">
@@ -218,6 +218,7 @@ function SignalTimeline({
 }
 
 function UnavailableBody({ errorReason }: { errorReason: string | null }) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   return (
     <div className="space-y-3">
@@ -225,10 +226,10 @@ function UnavailableBody({ errorReason }: { errorReason: string | null }) {
         <Icon name="mic_off" className="mt-0.5 text-cyan-500/80" />
         <div className="space-y-1">
           <p className="font-mono text-xs uppercase tracking-widest text-cyan-400">
-            ダウジングを利用できません
+            {t("dowsing.unavailableTitle")}
           </p>
           <p className="text-sm leading-relaxed text-on-surface-variant">
-            室内に隠されたQRコードを目視で探して読み取ってください。
+            {t("dowsing.unavailableBody")}
           </p>
           {errorReason && (
             <p className="font-mono text-[10px] uppercase tracking-widest text-cyan-900">
@@ -242,21 +243,15 @@ function UnavailableBody({ errorReason }: { errorReason: string | null }) {
         onClick={() => setOpen((v) => !v)}
         className="flex w-full items-center justify-between border border-cyan-900/40 px-3 py-2 font-mono text-[10px] uppercase tracking-widest text-on-surface-variant hover:border-cyan-400 hover:text-cyan-400"
       >
-        <span>マイクの許可を有効にする</span>
+        <span>{t("dowsing.permissionToggle")}</span>
         <Icon name={open ? "expand_less" : "expand_more"} className="text-sm" />
       </button>
       {open && (
         <div className="space-y-2 border border-cyan-900/30 p-3 text-xs leading-relaxed text-on-surface-variant">
           <p className="font-bold text-cyan-400">iOS Safari</p>
-          <p>
-            「あ a」アイコン → 「Web サイトの設定」→
-            「マイク」を「許可」に変更し、ページをリロード。
-          </p>
+          <p>{t("dowsing.permissionIosBody")}</p>
           <p className="mt-2 font-bold text-cyan-400">Android Chrome</p>
-          <p>
-            アドレスバー左の鍵アイコン → 「権限」→
-            「マイク」を「許可」に変更し、ページをリロード。
-          </p>
+          <p>{t("dowsing.permissionAndroidBody")}</p>
         </div>
       )}
     </div>

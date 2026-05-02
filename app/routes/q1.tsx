@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { Link, useLoaderData } from "react-router";
 import { HintChat, Icon, PageShell, SystemPanel } from "~/components";
 import { requireParticipant } from "~/lib/participant/session";
@@ -15,6 +16,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
 }
 
 export default function Q1Hub() {
+  const { t } = useTranslation();
   const data = useLoaderData<typeof loader>();
   const cleared = Number(data.q1_1Cleared) + Number(data.q1_2Cleared);
 
@@ -25,14 +27,14 @@ export default function Q1Hub() {
       <div className="mb-8 text-center">
         <div className="mb-3 inline-block border border-cyan-500/40 bg-cyan-950/30 px-3 py-1">
           <p className="font-mono text-[10px] uppercase tracking-widest text-cyan-400">
-            SYSTEM MESSAGE
+            {t("q1.systemMessageLabel")}
           </p>
         </div>
         <p className="font-mono leading-relaxed text-primary">
-          全てのアプリ機能は現在ロックされています。
+          {t("q1.lockedNotice")}
           <br />
           <span className="font-bold text-cyan-400">
-            二重ロックを解除してください。
+            {t("q1.unlockPrompt")}
           </span>
         </p>
       </div>
@@ -42,7 +44,7 @@ export default function Q1Hub() {
       <div className="mt-6 space-y-4">
         <SubCard
           eyebrow="SUBTASK Q1-1"
-          title="方程式パズル"
+          title={t("q1.subtask1Title")}
           icon="grid_view"
           path="/q1/1"
           cleared={data.q1_1Cleared}
@@ -50,7 +52,7 @@ export default function Q1Hub() {
         />
         <SubCard
           eyebrow="SUBTASK Q1-2"
-          title="周辺スキャン"
+          title={t("q1.subtask2Title")}
           icon="schema"
           path="/q1/2"
           cleared={data.q1_2Cleared}
@@ -61,12 +63,12 @@ export default function Q1Hub() {
       <div className="mt-8 flex items-start gap-3 border-l-2 border-cyan-500/50 bg-cyan-950/10 p-4">
         <Icon name="info" className="mt-0.5 text-sm text-cyan-500" />
         <p className="font-mono text-xs leading-relaxed text-cyan-300/70">
-          <span className="font-bold text-cyan-400">Note:</span>{" "}
-          進むには両方のサブタスクをクリアする必要があります。
+          <span className="font-bold text-cyan-400">{t("q1.noteLabel")}</span>{" "}
+          {t("q1.noteBody")}
         </p>
       </div>
 
-      <HintChat hint="STAGE 01 は二つのサブ設問の二重ロックです。先に解放されている方からひとつずつ取り組んでください。両方クリアできれば ステージクリアです。" />
+      <HintChat hint={t("q1.hint")} />
     </PageShell>
   );
 }
@@ -86,6 +88,7 @@ function Hologram() {
 }
 
 function ProgressBar({ cleared }: { cleared: number }) {
+  const { t } = useTranslation();
   return (
     <div className="w-full">
       <div className="mb-2 flex items-end justify-between">
@@ -93,7 +96,7 @@ function ProgressBar({ cleared }: { cleared: number }) {
           PROGRESS_STATUS
         </span>
         <span className="font-mono text-xs text-cyan-400">
-          {cleared}/2 解除済み
+          {t("q1.progressFraction", { cleared })}
         </span>
       </div>
       <div className="flex h-1.5 w-full gap-1 bg-surface-container-highest">

@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { Link } from "react-router";
 import { Icon, PageShell, StageHeader, SystemPanel } from "~/components";
 import { requireParticipant } from "~/lib/participant/session";
@@ -10,10 +11,14 @@ export async function loader({ request, context }: Route.LoaderArgs) {
 }
 
 export default function Explain() {
+  const { t } = useTranslation();
   return (
     <PageShell sessionId="ID: X-99">
-      <StageHeader title="GIMMICK EXPLAINED" eyebrow="POST-MISSION DEBRIEF">
-        <p>本イベントで使われたギミックの仕組みを解説します。</p>
+      <StageHeader
+        title={t("explain.stageTitle")}
+        eyebrow={t("explain.stageEyebrow")}
+      >
+        <p>{t("explain.intro")}</p>
       </StageHeader>
 
       <SystemPanel className="my-8">
@@ -24,7 +29,7 @@ export default function Explain() {
           </span>
         </div>
         <p className="text-sm leading-relaxed text-on-surface-variant">
-          解説テキストは別途追加予定。
+          {t("explain.placeholder")}
         </p>
       </SystemPanel>
 
@@ -32,7 +37,8 @@ export default function Explain() {
         to="/complete"
         className="inline-flex items-center gap-2 self-center font-mono text-xs uppercase tracking-widest text-cyan-400"
       >
-        <Icon name="arrow_back" className="text-sm" /> BACK TO COMPLETE HUB
+        <Icon name="arrow_back" className="text-sm" />{" "}
+        {t("common.backToCompleteHub")}
       </Link>
     </PageShell>
   );
